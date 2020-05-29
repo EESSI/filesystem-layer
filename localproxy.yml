@@ -1,0 +1,4 @@
+- name: CVMFS
+  hosts: cvmfslocalproxies
+  roles:
+    - galaxyproject.cvmfs
