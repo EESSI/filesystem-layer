@@ -1,0 +1,57 @@
+---
+# vars file for eessi project
+
+#cvmfs_geo_license_key: 
+
+# Defaults for eessi-hpc.org config repo, syntax for each key is the same as that of cvmfs_<key | pluralize>
+galaxy_cvmfs_config_repo:
+  domain: eessi-hpc.org
+  key:
+    path: /etc/cvmfs/keys/eessi-hpc.org/cvmfs-config.eessi-hpc.org.pub
+    key: |
+     -----BEGIN PUBLIC KEY-----
+     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqoTBc/Eksr9ECEOoCzHA
+     F20UjePR7mJyWB13eTBXnjq7PLKKilfk2llLKetPIRMEmbvp97NiQ9ALe/tiGDzT
+     1Wg82Mf9oO4DNQYrTfE/MP5inIrMtSv1WnYJYV4Bgm24s8IhHXytIf1D4qt0x1v5
+     0yRui0dwaZrErWKRKufbJ6ehmEDHuVSEAujrORyig/jYFKVyTaCsXnmwFDJmX2Uw
+     RGCaf0M9ZLYs9t/SWA0s08rle5kH82hgBsIvUr7PLT7hbU407VK6+Y02tuxbI0JR
+     +hCt494UsFs3tchmTebpK+x3pVRXybQ66Qm1mQiaz+2VbUJdQEov4RCC5PcOmOOk
+     BwIDAQAB
+     -----END PUBLIC KEY-----
+  urls:
+    - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
+  repository:
+    repository: cvmfs-config.eessi-hpc.org
+    stratum0: cvmfs-s0.eessi-hpc.org
+    owner: "{{ cvmfs_repo_owner | default('root') }}"
+    server_options: []
+    client_options: []
+
+# Defaults for eessi-hpc.org repos
+galaxy_cvmfs_keys:
+  - path: /etc/cvmfs/keys/eessi-hpc.org/software.eessi-hpc.org.pub
+    key: |
+     -----BEGIN PUBLIC KEY-----
+     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlRZkDZK9mohxdyTiZ7As
+     oLV1ApNb8sGxcl+9PY7Fv03yL0+3nmKZT6Ib3dM920X2pTWSPswtzP1oLLNAUur+
+     /ftsFIRLZFg9vi6JkPjK9jQAJzkTZ1jMEHLb01duDFTtZG9Nm2Xg6S5e1XEkJG9u
+     /wrvQTFAExF0+m5JKpPEZzqWOZ0epekvjtjJ63sEhyyNWLKv15/PdNTN++QxKflh
+     gaVt87G9pBgfyV2c1RR3Bv0aq45R3vmuv/mYnHw6DeueWkyXEo96pDi4Zq7DuDpB
+     X3rWTeySEnNh7A4PgXt6Blyh0cRduLGzJQcLRGB0vfWm97ICgJQYwndW++dXPocI
+     cwIDAQAB
+     -----END PUBLIC KEY-----
+
+galaxy_cvmfs_server_urls:
+  - domain: eessi-hpc.org
+    use_geoapi: false
+    urls:
+      - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
+      
+galaxy_cvmfs_repositories:
+  - repository: software.eessi-hpc.org
+    stratum0: cvmfs-s0.eessi-hpc.org
+    owner: "{{ cvmfs_repo_owner | default('root') }}"
+    key_dir: /etc/cvmfs/keys/eessi-hpc.org
+    server_options:
+      - CVMFS_AUTO_GC=false
+    client_options: []
