@@ -1,0 +1,3 @@
+[submodule "roles/galaxyproject.cvmfs"]
+	path = roles/galaxyproject.cvmfs
+	url = https://github.com/galaxyproject/ansible-cvmfs
