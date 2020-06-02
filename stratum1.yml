@@ -10,4 +10,4 @@
     #      - "http://cvmfs.example.org/cvmfs/@fqrn@"
     #      - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
   roles:
-    - galaxyproject.cvmfs
+    - cvmfs

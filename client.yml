@@ -3,4 +3,4 @@
   vars:
     eessi_cvmfs_repos_enabled: config-repo
   roles:
-    - galaxyproject.cvmfs
+    - cvmfs

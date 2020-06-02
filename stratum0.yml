@@ -8,4 +8,4 @@
           - "http://cvmfs-s0.eessi-hpc.org/cvmfs/@fqrn@"
     cvmfs_repositories: "{{ eessi_cvmfs_repositories }}"
   roles:
-    - galaxyproject.cvmfs
+    - cvmfs
