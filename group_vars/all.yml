@@ -32,17 +32,6 @@ eessi_cvmfs_config_repo:
 
 # Defaults for eessi-hpc.org repos
 eessi_cvmfs_keys:
-  - path: /etc/cvmfs/keys/eessi-hpc.org/software.eessi-hpc.org.pub
-    key: |
-     -----BEGIN PUBLIC KEY-----
-     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlRZkDZK9mohxdyTiZ7As
-     oLV1ApNb8sGxcl+9PY7Fv03yL0+3nmKZT6Ib3dM920X2pTWSPswtzP1oLLNAUur+
-     /ftsFIRLZFg9vi6JkPjK9jQAJzkTZ1jMEHLb01duDFTtZG9Nm2Xg6S5e1XEkJG9u
-     /wrvQTFAExF0+m5JKpPEZzqWOZ0epekvjtjJ63sEhyyNWLKv15/PdNTN++QxKflh
-     gaVt87G9pBgfyV2c1RR3Bv0aq45R3vmuv/mYnHw6DeueWkyXEo96pDi4Zq7DuDpB
-     X3rWTeySEnNh7A4PgXt6Blyh0cRduLGzJQcLRGB0vfWm97ICgJQYwndW++dXPocI
-     cwIDAQAB
-     -----END PUBLIC KEY-----
   - path: /etc/cvmfs/keys/eessi-hpc.org/pilot.eessi-hpc.org.pub
     key: |     
      -----BEGIN PUBLIC KEY-----
@@ -62,16 +51,6 @@ cvmfs_cvmfs_server_urls:
       - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
       
 eessi_cvmfs_repositories:
-  - repository: software.eessi-hpc.org
-    stratum0: cvmfs-s0.eessi-hpc.org
-    owner: "{{ cvmfs_repo_owner | default('root') }}"
-    key_dir: /etc/cvmfs/keys/eessi-hpc.org
-    server_options:
-      - CVMFS_AUTO_GC=false
-      - CVMFS_GARBAGE_COLLECTION=true
-      - CVMFS_AUTO_GC=false
-    client_options:
-      - CVMFS_NFILES=4096
   - repository: pilot.eessi-hpc.org
     stratum0: cvmfs-s0.eessi-hpc.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
