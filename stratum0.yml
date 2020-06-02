@@ -6,24 +6,6 @@
       - domain: eessi-hpc.org
         urls:
           - "http://cvmfs-s0.eessi-hpc.org/cvmfs/@fqrn@"
-    cvmfs_repositories:
-      - repository: software.eessi-hpc.org
-        stratum0: cvmfs-s0.eessi-hpc.org
-        key_dir: /etc/cvmfs/keys/eessi-hpc.org.org
-        server_options:
-          - CVMFS_AUTO_TAG=false
-          - CVMFS_GARBAGE_COLLECTION=true
-          - CVMFS_AUTO_GC=false
-        client_options:
-          - CVMFS_NFILES=4096
-      - repository: cvmfs-config.eessi-hpc.org
-        stratum0: cvmfs-s0.eessi-hpc.org
-        key_dir: /etc/cvmfs/keys/eessi-hpc.org
-        server_options:
-          - CVMFS_AUTO_TAG=false
-          - CVMFS_GARBAGE_COLLECTION=true
-          - CVMFS_AUTO_GC=false
-        client_options:
-          - CVMFS_NFILES=4096
+    cvmfs_repositories: "{{ galaxy_cvmfs_repositories }}"
   roles:
     - galaxyproject.cvmfs
