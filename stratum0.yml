@@ -6,6 +6,6 @@
       - domain: eessi-hpc.org
         urls:
           - "http://cvmfs-s0.eessi-hpc.org/cvmfs/@fqrn@"
-    cvmfs_repositories: "{{ galaxy_cvmfs_repositories }}"
+    cvmfs_repositories: "{{ eessi_cvmfs_repositories }}"
   roles:
     - galaxyproject.cvmfs

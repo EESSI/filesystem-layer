@@ -3,8 +3,11 @@
 
 #cvmfs_geo_license_key: 
 
+# Automatically configure EESSI CVMFS repos
+eessi_cvmfs_repos_enabled: config-repo
+
 # Defaults for eessi-hpc.org config repo, syntax for each key is the same as that of cvmfs_<key | pluralize>
-galaxy_cvmfs_config_repo:
+eessi_cvmfs_config_repo:
   domain: eessi-hpc.org
   key:
     path: /etc/cvmfs/keys/eessi-hpc.org/cvmfs-config.eessi-hpc.org.pub
@@ -28,7 +31,7 @@ galaxy_cvmfs_config_repo:
     client_options: []
 
 # Defaults for eessi-hpc.org repos
-galaxy_cvmfs_keys:
+eessi_cvmfs_keys:
   - path: /etc/cvmfs/keys/eessi-hpc.org/software.eessi-hpc.org.pub
     key: |
      -----BEGIN PUBLIC KEY-----
@@ -52,13 +55,13 @@ galaxy_cvmfs_keys:
      FQIDAQAB
      -----END PUBLIC KEY-----
 
-galaxy_cvmfs_server_urls:
+cvmfs_cvmfs_server_urls:
   - domain: eessi-hpc.org
     use_geoapi: false
     urls:
       - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
       
-galaxy_cvmfs_repositories:
+eessi_cvmfs_repositories:
   - repository: software.eessi-hpc.org
     stratum0: cvmfs-s0.eessi-hpc.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
@@ -80,3 +83,9 @@ galaxy_cvmfs_repositories:
     client_options:
       - CVMFS_NFILES=4096
 
+# Set all the Galaxy defaults to EESSI defaults
+galaxy_cvmfs_config_repo: "{{ eessi_cvmfs_config_repo }}"
+galaxy_cvmfs_keys: "{{ eessi_cvmfs_keys }}"
+galaxy_cvmfs_server_urls: "{{ cvmfs_cvmfs_server_urls }}"
+galaxy_cvmfs_repositories: "{{ eessi_cvmfs_repositories }}"
+galaxy_cvmfs_repos_enabled: "{{ eessi_cvmfs_repos_enabled }}"

@@ -2,16 +2,12 @@
   hosts: cvmfsstratum1servers
   vars:
     #cvmfs_srv_device: /dev/sdb
-    galaxy_cvmfs_repos_enabled: true
+    eessi_cvmfs_repos_enabled: true
     # override the default
     #eessi_cvmfs_server_urls:
-    #  - domain: galaxyproject.org
+    #  - domain: eessi-hpc.org
     #    urls:
     #      - "http://cvmfs.example.org/cvmfs/@fqrn@"
-    #      - "http://cvmfs1-psu0.galaxyproject.org/cvmfs/@fqrn@"
-    #      - "http://cvmfs1-iu0.galaxyproject.org/cvmfs/@fqrn@"
-    #      - "http://cvmfs1-tacc0.galaxyproject.org/cvmfs/@fqrn@"
-    #      - "http://cvmfs1-mel0.gvl.org.au/cvmfs/@fqrn@"
-    #      - "http://cvmfs1-ufr0.galaxyproject.eu/cvmfs/@fqrn@"
+    #      - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
   roles:
     - galaxyproject.cvmfs
