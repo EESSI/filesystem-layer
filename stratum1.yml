@@ -3,11 +3,5 @@
   vars:
     #cvmfs_srv_device: /dev/sdb
     eessi_cvmfs_repos_enabled: true
-    # override the default
-    #eessi_cvmfs_server_urls:
-    #  - domain: eessi-hpc.org
-    #    urls:
-    #      - "http://cvmfs.example.org/cvmfs/@fqrn@"
-    #      - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
   roles:
     - cvmfs
