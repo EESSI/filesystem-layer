@@ -44,7 +44,7 @@ eessi_cvmfs_keys:
      FQIDAQAB
      -----END PUBLIC KEY-----
 
-cvmfs_cvmfs_server_urls:
+eessi_cvmfs_server_urls:
   - domain: eessi-hpc.org
     use_geoapi: false
     urls:
@@ -65,6 +65,6 @@ eessi_cvmfs_repositories:
 # Set all the Galaxy defaults to EESSI defaults
 galaxy_cvmfs_config_repo: "{{ eessi_cvmfs_config_repo }}"
 galaxy_cvmfs_keys: "{{ eessi_cvmfs_keys }}"
-galaxy_cvmfs_server_urls: "{{ cvmfs_cvmfs_server_urls }}"
+galaxy_cvmfs_server_urls: "{{ eessi_cvmfs_server_urls }}"
 galaxy_cvmfs_repositories: "{{ eessi_cvmfs_repositories }}"
 galaxy_cvmfs_repos_enabled: "{{ eessi_cvmfs_repos_enabled }}"
