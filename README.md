@@ -1,10 +1,22 @@
 # CVMFS layer
 
+## Introduction
+The EESSI project uses the CernVM File System (CVMFS) for distributing its software. More details about CVMFS can be found at its homepage and documentation:
+
+http://cernvm.cern.ch/portal/filesystem
+https://cvmfs.readthedocs.io
+The following introductory video on Youtube gives a quite good overview of CVMFS as well:
+https://www.youtube.com/playlist?list=FLqCLabkRddpbHj4wYNFYjAA
+
+## CVMFS infrastructure
+
 The CVMFS layer of the EESSI project consists of the usual CVMFS infrastructure:
 * one Stratum 0 server;
-* multiple Stratum 1 servers;
+* multiple Stratum 1 servers, which contain replicas of the Stratum 0 repositories;
 * multiple local Squid proxy servers;
 * CVMFS clients with the appropriate configuration files on all the machines that need access to the CVMFS repositories.
+
+## Installation and configuration
 
 For the installation of all components we make use of the Ansible files provided by the Galaxy project:
 https://github.com/galaxyproject/ansible-cvmfs
