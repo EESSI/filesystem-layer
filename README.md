@@ -8,6 +8,7 @@ The CVMFS layer of the EESSI project consists of the usual CVMFS infrastructure:
 
 For the installation of all components we make use of the Ansible files provided by the Galaxy project:
 https://github.com/galaxyproject/ansible-cvmfs
+This repository is added as a submodule inside the roles directory, so make sure to use the --recursive options when cloning this repository.
 
 The EESSI specific settings can be found in group_vars/all.yml, and in templates we added a template for a Squid configation for the local proxy servers; this file is not included in the Galaxy repository.
 
