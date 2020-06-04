@@ -10,6 +10,9 @@
 # Automatically configure EESSI CVMFS repos
 eessi_cvmfs_repos_enabled: config-repo
 
+# Email address for the project, which will be put in the contact file on the config repo.
+eessi_email: eessi@list.rug.nl
+
 # Defaults for eessi-hpc.org config repo, syntax for each key is the same as that of cvmfs_<key | pluralize>
 eessi_cvmfs_config_repo:
   domain: eessi-hpc.org
@@ -50,7 +53,7 @@ eessi_cvmfs_keys:
 
 eessi_cvmfs_server_urls:
   - domain: eessi-hpc.org
-    use_geoapi: false
+    use_geoapi: true
     urls:
       - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
       
