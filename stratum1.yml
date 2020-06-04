@@ -1,0 +1,7 @@
+- name: CVMFS
+  hosts: cvmfsstratum1servers
+  vars:
+    #cvmfs_srv_device: /dev/sdb
+    eessi_cvmfs_repos_enabled: true
+  roles:
+    - cvmfs

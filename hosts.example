@@ -1,0 +1,18 @@
+[cvmfsstratum0servers]
+your-stratum0.org
+
+[cvmfsstratum1servers]
+your-stratum1.org
+
+[cvmfslocalproxies]
+your-proxy-1
+your-proxy-2
+
+[cvmfsclients]
+your-client-1
+your-client-2
+
+[cvmfsclients:vars]
+cvmfs_http_proxies=["your-proxy-1:3128", "your-proxy-2:3128"]
+
+

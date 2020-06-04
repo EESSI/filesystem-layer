@@ -1,0 +1,6 @@
+- name: CVMFS
+  hosts: cvmfsclients
+  vars:
+    eessi_cvmfs_repos_enabled: config-repo
+  roles:
+    - cvmfs
