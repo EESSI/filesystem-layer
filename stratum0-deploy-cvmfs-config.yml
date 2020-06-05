@@ -8,7 +8,7 @@
     - name: Start the CVMFS transaction, create directories, and copy files
       block:
         - name: start CVMFS transaction
-          shell: cvmfs_server transaction "{{ eessi_cvmfs_config_repo.repository.repository }}"
+          command: cvmfs_server transaction "{{ eessi_cvmfs_config_repo.repository.repository }}"
 
         - name: create directories
           file:
@@ -44,7 +44,7 @@
             dest: "/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}/etc/cvmfs/default.conf"
 
         - name: publish CVMFS transaction
-          shell: cvmfs_server publish "{{ eessi_cvmfs_config_repo.repository.repository }}"
+          command: cvmfs_server publish "{{ eessi_cvmfs_config_repo.repository.repository }}"
       rescue:
         - name: cancel the transaction
-          shell: cvmfs_server abort -f "{{ eessi_cvmfs_config_repo.repository.repository }}"
+          command: cvmfs_server abort -f "{{ eessi_cvmfs_config_repo.repository.repository }}"
