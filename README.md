@@ -22,6 +22,9 @@ The CVMFS layer of the EESSI project consists of the usual CVMFS infrastructure:
 
 ### Prerequisites
 
+The main prerequisite is Ansible, which can be easily installed via the package manager of most Linux distributions or via pip. For more details, see the Ansible installation guide:
+https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
+
 For the installation of all components we make use of the Ansible files provided by the Galaxy project:
 https://github.com/galaxyproject/ansible-cvmfs
 This repository is added as a submodule inside the roles directory, so make sure to use the --recursive options when cloning this repository:
@@ -37,9 +40,6 @@ git submodule update
 ```
 For more information about (working with) submodules, see:
 https://git-scm.com/book/en/v2/Git-Tools-Submodules
-
-You will also need Ansible, which can be easily installed via the package manager of most Linux distributions or via pip. For more details, see the Ansible installation guide:
-https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html
 
 ### Configuration
 
