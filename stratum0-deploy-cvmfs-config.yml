@@ -9,7 +9,7 @@
       block:
         - name: start CVMFS transaction
           shell: cvmfs_server transaction "{{ eessi_cvmfs_config_repo.repository.repository }}"
-     
+
         - name: create directories
           file:
             path: "{{ item }}"
@@ -22,10 +22,12 @@
         - name: deploy public keys
           copy: content="{{ item.key }}" dest="/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}{{ item.path }}"
           with_items: "{{ eessi_cvmfs_keys }}"
-     
+
         - name: create contacts file
-          copy: content="{{ eessi_email }}\n" dest="/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}/etc/cvmfs/contact/{{ eessi_cvmfs_config_repo.domain }}"
-     
+          copy:
+            content: "{{ eessi_email }}\n"
+            dest: "/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}/etc/cvmfs/contact/{{ eessi_cvmfs_config_repo.domain }}"
+
         - name: create domain configuration file
           copy:
             content: |
@@ -33,14 +35,14 @@
               CVMFS_KEYS_DIR="/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}/etc/cvmfs/keys/{{ eessi_cvmfs_config_repo.domain }}"
               CVMFS_USE_GEOAPI="{{ eessi_cvmfs_server_urls[0].use_geoapi | default(false) | ternary('yes', 'no') }}"
             dest: "/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}/etc/cvmfs/domain.d/{{ eessi_cvmfs_config_repo.domain }}.conf"
-       
+
         - name: create default CVMFS configuration file
           copy:
             content: |
               # For reference see https://sft.its.cern.ch/jira/browse/CVM-878
               CVMFS_LOW_SPEED_LIMIT=10000
             dest: "/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}/etc/cvmfs/default.conf"
-     
+
         - name: publish CVMFS transaction
           shell: cvmfs_server publish "{{ eessi_cvmfs_config_repo.repository.repository }}"
       rescue:
