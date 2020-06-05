@@ -2,6 +2,7 @@
   hosts: cvmfsstratum1servers
   vars:
     #cvmfs_srv_device: /dev/sdb
-    eessi_cvmfs_repos_enabled: true
+    cvmfs_repositories: "{{ eessi_cvmfs_repositories + [eessi_cvmfs_config_repo.repository] }}"
   roles:
+    - geerlingguy.repo-epel
     - cvmfs
