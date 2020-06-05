@@ -79,6 +79,12 @@ You can put your license key in group_vars/all.yml, or add a section in your hos
 cvmfs_geo_license_key=XXXXX
 ```
 
+Furthermore, the Stratum 1 runs a Squid server. The template configuration file is part of the Galaxy Ansible role and can be found at:
+roles/cvmfs/templates/stratum1_squid.conf.j2
+If you want to customize it, for instance for limiting the access to the Stratum 1, you can make your own version of this template file and point to it by adding the following to group_vars/all.yml or the section in your hosts file:
+```
+cvmfs_squid_conf_src=/path/to/your_stratum1_squid.conf.j2
+```
 Install the Stratum 1 using:
 ```
 ansible-playbook -i hosts -b -K stratum1.yml
@@ -86,7 +92,9 @@ ansible-playbook -i hosts -b -K stratum1.yml
 This will automatically make replicas of all the repositories defined in group_vars/all.yml.
 
 ### Local proxies
-Adjust the template Squid configuration file templates/localproxy_squid.conf.j2, for instance if you want to change the default port or want to limit access. Then run:
+The local proxies also need a Squid configuration file; the default can be found in templates/localproxy_squid.conf.j2. Again, you might want to change it, for instance if you want to change the default port or want to limit access. You can do this in a similar way as with the Stratum 1.
+
+Deploy your proxies using:
 ```
 ansible-playbook -i hosts -b -K localproxy.yml
 ```
