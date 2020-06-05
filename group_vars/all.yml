@@ -40,7 +40,7 @@ eessi_cvmfs_config_repo:
 # Defaults for eessi-hpc.org repos
 eessi_cvmfs_keys:
   - path: /etc/cvmfs/keys/eessi-hpc.org/pilot.eessi-hpc.org.pub
-    key: |     
+    key: |
      -----BEGIN PUBLIC KEY-----
      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAommtaoqQ36Rb/cFnqUWg
      8FoYCOjJWVBMQ4sVZ87oFRWehOUbcfy/ah85D9055HQws7i/hLNGJJAa7Es3E2o8
@@ -56,7 +56,7 @@ eessi_cvmfs_server_urls:
     use_geoapi: true
     urls:
       - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
-      
+
 eessi_cvmfs_repositories:
   - repository: pilot.eessi-hpc.org
     stratum0: cvmfs-s0.eessi-hpc.org

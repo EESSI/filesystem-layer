@@ -1,3 +1,4 @@
+![Ansible Lint](https://github.com/bedroge/cvmfs-layer/workflows/Ansible%20Lint/badge.svg)
 # CVMFS layer
 
 ## Introduction
