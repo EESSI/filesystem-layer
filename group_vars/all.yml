@@ -34,6 +34,7 @@ eessi_cvmfs_config_repo:
     repository: cvmfs-config.eessi-hpc.org
     stratum0: cvmfs-s0.eessi-hpc.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
+    key_dir: /etc/cvmfs/keys/eessi-hpc.org
     server_options: []
     client_options: []
 
