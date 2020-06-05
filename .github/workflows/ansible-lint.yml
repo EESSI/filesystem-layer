@@ -3,7 +3,7 @@ name: Ansible Lint
 on: [push, pull_request]
 
 jobs:
-  build:
+  ansible-lint:
 
     runs-on: ubuntu-latest
 
