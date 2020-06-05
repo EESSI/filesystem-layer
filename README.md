@@ -76,9 +76,13 @@ Then install the files for the configuration repository:
 ansible-playbook -i hosts -b -K stratum0-deploy-cvmfs-config.yml
 ```
 
+Note that there can be only one Stratum 0, so you should only run this playbook
+for testing purposes or in case we need to move or redeploy the current Stratum 0 server.
+
 ### Stratum 1
-Installing a Stratum 1 requires a GEO API license key.
-More information on how to obtain it is available in the CVMFS documentation: 
+Installing a Stratum 1 requires a GEO API license key, which will be used to find
+the (geographically) closest Stratum 1 server for your client and proxies.
+More information on how to (freely) obtain this key is available in the CVMFS documentation: 
 https://cvmfs.readthedocs.io/en/stable/cpt-replica.html#geo-api-setup .
 
 You can put your license key in `group_vars/all.yml`, or add a section in your `hosts` file:
