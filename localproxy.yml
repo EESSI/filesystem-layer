@@ -1,4 +1,6 @@
-- name: CVMFS
+# Install CVMFS local proxy (Squid) server(s).
+---
+- name: CVMFS local proxies.
   hosts: cvmfslocalproxies
   roles:
     - cvmfs

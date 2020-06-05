@@ -1,4 +1,6 @@
-- name: CVMFS
+# Install CVMFS clients.
+---
+- name: CVMFS clients
   hosts: cvmfsclients
   vars:
     eessi_cvmfs_repos_enabled: config-repo

@@ -1,4 +1,6 @@
-- name: CVMFS
+# Install CVMFS Stratum 1 server(s).
+---
+- name: CVMFS Stratum 1
   hosts: cvmfsstratum1servers
   vars:
     #cvmfs_srv_device: /dev/sdb
