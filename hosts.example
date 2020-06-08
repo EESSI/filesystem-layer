@@ -8,11 +8,14 @@ your-stratum1.org
 your-proxy-1
 your-proxy-2
 
+[cvmfslocalproxies:vars]
+cvmfs_localproxy_allowed_clients = ["192.168.0.0/12", "10.0.0.15"]
+
 [cvmfsclients]
 your-client-1
 your-client-2
 
 [cvmfsclients:vars]
-cvmfs_http_proxies=["your-proxy-1:3128", "your-proxy-2:3128"]
+cvmfs_http_proxies = ["your-proxy-1:3128", "your-proxy-2:3128"]
 
 
