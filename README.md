@@ -48,8 +48,8 @@ https://git-scm.com/book/en/v2/Git-Tools-Submodules
 
 ### Configuration
 
-The EESSI specific settings can be found in `group_vars/all.yml`, and in `templates` we added a template
-for a Squid configuration for the local proxy servers; this file is not included in the Galaxy repository.
+The EESSI specific settings can be found in `group_vars/all.yml`, and in `templates` we added our own templates
+of Squid configurations for the Stratum 1 and local proxy servers.
 For all playbooks you will also need to have an appropriate Ansible `hosts` file;
 see the supplied `hosts.example` for the structure and host groups that you need for these playbooks.
 
@@ -95,11 +95,11 @@ You can put your license key in `group_vars/all.yml`, or add a section in your `
 cvmfs_geo_license_key=XXXXX
 ```
 
-Furthermore, the Stratum 1 runs a Squid server. The template configuration file is part of the Galaxy Ansible role
-and can be found at `roles/cvmfs/templates/stratum1_squid.conf.j2`.
+Furthermore, the Stratum 1 runs a Squid server. The template configuration file can be found at 
+`templates/eessi_stratum1_squid.conf.j2`.
 If you want to customize it, for instance for limiting the access to the Stratum 1,
-you can make your own version of this template file and point to it by adding the following
-to `group_vars/all.yml` or the section in your `hosts` file:
+you can make your own version of this template file and point to it by editing the playbook or
+adding the following to `group_vars/all.yml` or the section in your `hosts` file:
 ```yaml
 cvmfs_squid_conf_src=/path/to/your_stratum1_squid.conf.j2
 ```
