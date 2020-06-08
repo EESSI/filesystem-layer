@@ -118,6 +118,9 @@ You can put this, for instance, in your hosts file. See `hosts.example` for more
 
 If you want to customize the Squid configuration more, you can also make your own file, and point to it using `cvmfs_squid_conf_src` (see the Stratum 1 section).
 
+Do keep in mind that you should never accept proxy request from everywhere to everywhere!
+Besides having a Squid configuration with the right ACLs, it is recommended to also have a firewall that limits access to your proxy.
+
 Deploy your proxies using:
 ```
 ansible-playbook -i hosts -b -K localproxy.yml
