@@ -130,3 +130,56 @@ Finally, run the playbook:
 ```
 ansible-playbook -i hosts -b -K client.yml
 ```
+
+## Verification and usage
+
+### Client
+
+Once the client has been installed, you should be able to access all repositories under /cvmfs. They might not immediately show up in that directory before you have actually used them, so you might first have to run ls, e.g.:
+```
+ls /cvmfs/cvmfs-config.eessi-hpc.org
+```
+
+On the client machines you can use the `cvmfs_config` tool for different operations. For instance, you can verify the file system by running:
+```
+$ sudo cvmfs_config probe cvmfs-config.eessi-hpc.org
+Probing /cvmfs/cvmfs-config.eessi-hpc.org... OK
+```
+
+Checking for misconfigurations can be done with:
+```
+sudo cvmfs_config chksetup
+```
+
+In case of unclear issues, you can enable the debug mode and log to a file by setting the following environment variable:
+```
+CVMFS_DEBUGFILE=/some/path/to/cvmfs.log
+```
+
+### Proxy / Stratum 1
+
+In order to test your local proxy and/or Stratum 1, even without a client installed, you can use curl:
+```
+curl --proxy http://url-to-your-proxy:3128 --head http://url-to-your-stratum1/cvmfs/cvmfs-config.eessi-hpc.org/.cvmfspublished
+```
+This should return:
+```
+HTTP/1.1 200 OK
+...
+X-Cache: MISS from url-to-your-proxy
+```
+The second time you run it, you should get a cache hit:
+```
+X-Cache: HIT from url-to-your-proxy
+```
+
+### Using the CVMFS infrastructure
+
+When the infrastructure seems to work, you can try publishing some new files. This can be done by starting a transaction on the Stratum 0, adding some files, and publishing the transaction:
+```
+sudo cvmfs_server transaction pilot.eessi-hpc.org
+mkdir /cvmfs/pilot.eessi-hpc.org/testdir
+touch /cvmfs/pilot.eessi-hpc.org/testdir/testfile
+sudo cvmfs_server publish pilot.eessi-hpc.org
+```
+It might take a few minutes, but then the new file should show up at the clients.
