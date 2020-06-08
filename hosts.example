@@ -9,6 +9,8 @@ your-proxy-1
 your-proxy-2
 
 [cvmfslocalproxies:vars]
+# List of clients allowed to access the proxy.
+# Add individual IPs and/or use CIDR notation.
 cvmfs_localproxy_allowed_clients = ["192.168.0.0/12", "10.0.0.15"]
 
 [cvmfsclients]

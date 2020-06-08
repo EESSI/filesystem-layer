@@ -113,8 +113,10 @@ This will automatically make replicas of all the repositories defined in `group_
 The local proxies also need a Squid configuration file; the default can be found in 
 `templates/localproxy_squid.conf.j2`.
 
-Again, you might want to change it, for instance if you want to change the default port or want to limit access.
-You can do this in a similar way as with the Stratum 1.
+You have to define the lists of IP addresses / ranges (using CIDR notation) that are allowed to use the proxy using the variable `cvmfs_localproxy_allowed_clients`.
+You can put this, for instance, in your hosts file. See `hosts.example` for more details.
+
+If you want to customize the Squid configuration more, you can also make your own file, and point to it using `cvmfs_squid_conf_src` (see the Stratum 1 section).
 
 Deploy your proxies using:
 ```
