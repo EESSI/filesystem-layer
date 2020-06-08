@@ -26,16 +26,20 @@ The main prerequisite is Ansible (https://github.com/ansible/ansible),
 which can be easily installed via the package manager of most Linux distributions or via `pip install`.
 For more details, see the Ansible installation guide: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html.
 
-For the installation of all components we make use of the Ansible files provided by the Galaxy project (see
-https://github.com/galaxyproject/ansible-cvmfs).
-This repository is added as a submodule inside the `roles` directory, so make sure to use the `--recursive` option when cloning this repository:
+For the installation of all components we make use of two Ansible roles: the CVMFS installation role provided by the Galaxy project (see
+https://github.com/galaxyproject/ansible-cvmfs), and a role for adding the EPEL repository (https://github.com/geerlingguy/ansible-role-repo-epel).
+Both repositories are added as a submodule inside the `roles` directory, so make sure to use the `--recursive` option when cloning this repository:
 ```
 git clone --recursive git@github.com:EESSI/cvmfs-layer.git
 ```
-Alternatively, clone this repository first, and init and update the required submodule later:
+Alternatively, clone this repository first, and init and update the required submodules later:
 ```
 git clone git@github.com:EESSI/cvmfs-layer.git
-cd cvmfs-layer/roles/cvmfs/
+cd cvmfs-layer/roles
+cd cvmfs
+git submodule init
+git submodule update
+cd ../geerlingguy.repo-epel
 git submodule init
 git submodule update
 ```
