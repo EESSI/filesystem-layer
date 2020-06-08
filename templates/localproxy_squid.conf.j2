@@ -1,9 +1,27 @@
-http_port 3128
-http_access allow all
+# List of local IP addresses (separate IPs and/or CIDR notation) allowed to access your local proxy
+acl local_nodes src {{ cvmfs_localproxy_allowed_clients|join(' ') }}
 
+# Destination domains that are allowed
+acl stratum_ones dstdomain .eessi-hpc.org
+
+# Squid port (default: 3128)
+{% for port in cvmfs_localproxy_http_ports %}
+http_port {{ port }}
+{% endfor %}
+
+# Deny access to anything which is not part of our stratum_ones ACL.
+http_access deny !stratum_ones
+
+# Only allow access from our local machines
+http_access allow local_nodes
+http_access allow localhost
+
+# Finally, deny all other access to this proxy
+http_access deny all
+
+# Cache settings
 minimum_expiry_time 0
 maximum_object_size 1024 MB
-
 cache_mem 128 MB
 maximum_object_size_in_memory 128 KB
 # 50 GB disk cache
