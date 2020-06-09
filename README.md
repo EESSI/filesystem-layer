@@ -35,11 +35,7 @@ git clone --recursive git@github.com:EESSI/cvmfs-layer.git
 Alternatively, clone this repository first, and init and update the required submodules later:
 ```
 git clone git@github.com:EESSI/cvmfs-layer.git
-cd cvmfs-layer/roles
-cd cvmfs
-git submodule init
-git submodule update
-cd ../geerlingguy.repo-epel
+cd cvmfs-layer
 git submodule init
 git submodule update
 ```
