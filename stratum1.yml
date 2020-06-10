@@ -5,6 +5,7 @@
   vars:
     #cvmfs_srv_device: /dev/sdb
     cvmfs_repositories: "{{ eessi_cvmfs_repositories + [eessi_cvmfs_config_repo.repository] }}"
+    cvmfs_keys: "{{ eessi_cvmfs_keys + [eessi_cvmfs_config_repo.key] }}"
     cvmfs_squid_conf_src: eessi_stratum1_squid.conf.j2
   roles:
     - geerlingguy.repo-epel
