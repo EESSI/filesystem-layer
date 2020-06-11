@@ -7,7 +7,7 @@
 # https://github.com/EESSI/cvmfs-layer/issues/2
 #cvmfs_geo_license_key: 
 
-# Automatically configure EESSI CVMFS repos
+# Automatically configure EESSI CVMFS repos.
 eessi_cvmfs_repos_enabled: config-repo
 
 # Email address for the project, which will be put in the contact file on the config repo.
@@ -34,10 +34,17 @@ eessi_cvmfs_config_repo:
     repository: cvmfs-config.eessi-hpc.org
     stratum0: cvmfs-s0.eessi-hpc.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
+    key_dir: /etc/cvmfs/keys/eessi-hpc.org
     server_options: []
     client_options: []
 
-# Defaults for eessi-hpc.org repos
+#
+# Defaults for eessi-hpc.org repos.
+#
+
+# Public keys for the repositories, which you can find on the Stratum 0 at:
+# /etc/cvmfs/keys/*.pub
+# Note: you first have to run the stratum0.yml playbook once to generate the repositories and keys.
 eessi_cvmfs_keys:
   - path: /etc/cvmfs/keys/eessi-hpc.org/pilot.eessi-hpc.org.pub
     key: |
@@ -51,12 +58,14 @@ eessi_cvmfs_keys:
      FQIDAQAB
      -----END PUBLIC KEY-----
 
+# URLs for all the Stratum 1 servers.
 eessi_cvmfs_server_urls:
   - domain: eessi-hpc.org
     use_geoapi: true
     urls:
       - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
 
+# Configuration of all the repositories.
 eessi_cvmfs_repositories:
   - repository: pilot.eessi-hpc.org
     stratum0: cvmfs-s0.eessi-hpc.org

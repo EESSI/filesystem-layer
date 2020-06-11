@@ -1,7 +1,12 @@
-- name: CVMFS
+# Install CVMFS Stratum 1 server(s).
+---
+- name: CVMFS Stratum 1
   hosts: cvmfsstratum1servers
   vars:
     #cvmfs_srv_device: /dev/sdb
-    eessi_cvmfs_repos_enabled: true
+    cvmfs_repositories: "{{ eessi_cvmfs_repositories + [eessi_cvmfs_config_repo.repository] }}"
+    cvmfs_keys: "{{ eessi_cvmfs_keys + [eessi_cvmfs_config_repo.key] }}"
+    cvmfs_squid_conf_src: eessi_stratum1_squid.conf.j2
   roles:
+    - geerlingguy.repo-epel
     - cvmfs

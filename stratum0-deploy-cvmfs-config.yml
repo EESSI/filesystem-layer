@@ -2,7 +2,7 @@
 # Note: first deploy your Stratum 0 and make sure that group_vars/all.yml contains the right configuration,
 #       including all the keys of the repositories that have to be configured.
 ---
-- name: CVMFS
+- name: CVMFS Stratum 0 deploy config repository
   hosts: cvmfsstratum0servers
   tasks:
     - name: Start the CVMFS transaction, create directories, and copy files

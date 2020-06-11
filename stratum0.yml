@@ -1,11 +1,9 @@
-- name: CVMFS
+# Install a CVMFS Stratum 0 server.
+---
+- name: CVMFS Stratum 0
   hosts: cvmfsstratum0servers
   vars:
-    cvmfs_numfiles: 4096
-    cvmfs_server_urls:
-      - domain: eessi-hpc.org
-        urls:
-          - "http://cvmfs-s0.eessi-hpc.org/cvmfs/@fqrn@"
-    cvmfs_repositories: "{{ eessi_cvmfs_repositories }}"
+    cvmfs_repositories: "{{ eessi_cvmfs_repositories + [eessi_cvmfs_config_repo.repository] }}"
   roles:
+    - geerlingguy.repo-epel
     - cvmfs
