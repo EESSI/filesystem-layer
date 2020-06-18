@@ -1,5 +1,5 @@
-![Ansible Lint](https://github.com/bedroge/cvmfs-layer/workflows/Ansible%20Lint/badge.svg)
-# CVMFS layer
+![Ansible Lint](https://github.com/EESSI/filesystem-layer/workflows/Ansible%20Lint/badge.svg)
+# Filesystem layer
 
 ## Introduction
 The EESSI project uses the CernVM File System (CVMFS) for distributing its software. More details about CVMFS can be found at its homepage and documentation:
