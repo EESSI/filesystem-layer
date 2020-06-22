@@ -4,7 +4,7 @@
 # The license key for the Geo API:
 # https://cvmfs.readthedocs.io/en/stable/cpt-replica.html#geo-api-setup
 # For some unclear reason, the Stratum 1 installation fails when this is not set:
-# https://github.com/EESSI/cvmfs-layer/issues/2
+# https://github.com/EESSI/filesystem-layer/issues/2
 #cvmfs_geo_license_key: 
 
 # Automatically configure EESSI CVMFS repos.
