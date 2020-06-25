@@ -26,7 +26,7 @@ The main prerequisite is Ansible (https://github.com/ansible/ansible),
 which can be easily installed via the package manager of most Linux distributions or via `pip install`.
 For more details, see the Ansible installation guide: https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html.
 Note that Ansible needs to be able to log in to the remote machines where you want to install some CVMFS component,
-and needs to be able to use privilege escalation (e.g. sudo) on those machines to execute tasks with root permission.
+and needs to be able to use privilege escalation (e.g. `sudo`) on those machines to execute tasks with root permission.
 
 For the installation of all components we make use of two Ansible roles: the CVMFS installation role provided by the Galaxy project (see
 https://github.com/galaxyproject/ansible-cvmfs), and a role for adding the EPEL repository (https://github.com/geerlingguy/ansible-role-repo-epel).
