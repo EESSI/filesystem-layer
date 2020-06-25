@@ -1,3 +1,10 @@
+##
+## This file is managed by Ansible.  ALL CHANGES WILL BE OVERWRITTEN.
+##
+
+# Contact dual-stack websites over IPv4 first
+dns_v4_first on
+
 # List of local IP addresses (separate IPs and/or CIDR notation) allowed to access your local proxy
 acl local_nodes src {{ cvmfs_localproxy_allowed_clients|join(' ') }}
 
