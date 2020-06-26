@@ -1,0 +1,65 @@
+# Build Debian (deb) and Redhat (rpm) packages for CVMFS clients.
+---
+- name: Build deb and yum packages.
+  hosts: localhost
+  vars:
+    deb_package_dependencies: []
+#      - cvmfs
+#      - cvmfs-config-none
+    build_debian_package_files_directories:
+      - src: "{{ temp_buildinput.path }}/etc/"
+        dest: "etc"
+    build_debian_package_control_fields:
+      Package: cvmfs-config-eessi
+      Version: 0.1
+      Priority: optional
+      Architecture: all
+      Depends: "{{ deb_package_dependencies|join(',') }}"
+      Maintainer: Bob Dröge
+      Description: CVMFS config repository package for EESSI.
+  pre_tasks:
+    # Create a temporary directory where we generate the contents of the packages.
+    - name: Create temporary directory
+      tempfile:
+        state:  directory
+        suffix: buildinput
+      register: temp_buildinput
+
+    # 
+    - name: Create directory structure for the CVMFS config
+      file:
+       path: "{{ item }}"
+       state: directory
+       mode: 0775
+      with_items:
+      - "{{ temp_buildinput.path }}"
+      - "{{ temp_buildinput.path }}/etc"
+      - "{{ temp_buildinput.path }}/etc/cvmfs"
+      - "{{ temp_buildinput.path }}/etc/cvmfs/keys"
+      - "{{ temp_buildinput.path }}/etc/cvmfs/keys/{{ eessi_cvmfs_config_repo.domain }}"
+      - "{{ temp_buildinput.path }}/etc/cvmfs/config.d"
+      - "{{ temp_buildinput.path }}/etc/cvmfs/default.d"
+
+    - name: Make EESSI CVMFS public key file
+      copy:
+        content: "{{ eessi_cvmfs_config_repo.key.key }}"
+        dest: "{{ temp_buildinput.path }}{{ eessi_cvmfs_config_repo.key.path }}"
+
+    - name: Make EESSI CVMFS configuration file
+      copy:
+        content: |
+          ## This file is maintained by Ansible - CHANGES WILL BE OVERWRITTEN
+          CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(',') }}"
+          CVMFS_PUBLIC_KEY="{{ eessi_cvmfs_config_repo.key.path }}"
+        dest: "{{ temp_buildinput.path }}/etc/cvmfs/config.d/{{ eessi_cvmfs_config_repo.repository.repository }}.conf"
+
+    - name: Make EESSI CVMFS default configuration file
+      copy:
+        content: |
+          CVMFS_CONFIG_REPOSITORY="{{ eessi_cvmfs_config_repo.repository.repository }}"
+          CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
+        dest: "{{ temp_buildinput.path }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
+
+  roles:
+    - role: freedomofpress.build-debian-package
+      tags: build
