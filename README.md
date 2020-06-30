@@ -169,7 +169,7 @@ sudo cvmfs_config chksetup
 
 In case of unclear issues, you can enable the debug mode and log to a file by setting the following environment variable:
 ```
-CVMFS_DEBUGFILE=/some/path/to/cvmfs.log
+CVMFS_DEBUGLOG=/some/path/to/cvmfs.log
 ```
 
 ### Proxy / Stratum 1
