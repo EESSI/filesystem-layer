@@ -3,7 +3,7 @@ name: Build packages
 on: [push, pull_request]
 
 jobs:
-  debian:
+  build:
 
     runs-on: ubuntu-latest
 
@@ -11,8 +11,9 @@ jobs:
     # Important: This sets up your GITHUB_WORKSPACE environment variable
     - uses: actions/checkout@v2
 
-    - name: Build Debian package
-      uses: dawidd6/action-debian-package@v1
+    - name: ansible check with debian:stable
+      uses: roles-ansible/check-ansible-debian-stable-action@master
       with:
-        source_directory: templates # lolcat # optional, relative to workspace directory
-        artifacts_directory: output # optional, relative to workspace directory
+        targets: "./build-packages.yml"
+        hosts: "localhost"
+        requirements: "freedomofpress.build-debian-package"
