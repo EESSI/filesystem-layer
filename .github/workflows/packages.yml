@@ -11,9 +11,8 @@ jobs:
     # Important: This sets up your GITHUB_WORKSPACE environment variable
     - uses: actions/checkout@v2
 
-    - name: ansible check with debian:stable
-      uses: roles-ansible/check-ansible-debian-stable-action@master
+    - name: ansible check with debian:stretch
+      uses: roles-ansible/check-ansible-debian-stretch-action@master
       with:
         targets: "./build-packages.yml"
         hosts: "localhost"
-        requirements: "freedomofpress.build-debian-package"
