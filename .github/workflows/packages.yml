@@ -28,5 +28,5 @@ jobs:
     - name: upload package as artifact
       uses: actions/upload-artifact@v2
       with:
-        name: deb_package
-        path: ${{ github.workspace }}
+        #name: deb_package
+        path: ${{ github.workspace }}/build/*.deb
