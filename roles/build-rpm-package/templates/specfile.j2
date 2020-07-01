@@ -1,0 +1,19 @@
+Name: {{ package_name }}
+Version: {{ package_version }}
+Release: 1
+Summary: {{ package_description }}
+License: MIT
+
+BuildArch: noarch
+
+%description
+{{ package_description }}
+
+%prep
+%install
+mkdir -p %{buildroot}
+#/{{ package_name }}-{{ package_version }}
+tar -C %{buildroot} -zxvf {{ build_rpm_package_directory }}/SOURCES/{{ package_name }}-{{ package_version }}.tar.gz
+
+%files
+/*

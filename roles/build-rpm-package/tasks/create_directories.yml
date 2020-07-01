@@ -1,0 +1,32 @@
+---
+- name: Clean up build files.
+  file:
+    state: absent
+    path: "{{ build_rpm_package_directory }}"
+
+- name: Create base build directory.
+  file:
+    state: directory
+    path: "{{ item }}"
+  with_items:
+    - "{{ build_rpm_package_directory }}"
+    - "{{ build_rpm_package_directory }}/SOURCES"
+    - "{{ build_rpm_package_directory }}/{{ package_name }}-{{ package_version }}"
+    - "{{ build_rpm_package_directory }}/SPECS"
+
+#- name: Copy source files
+#  copy:
+#    src: "{{ build_rpm_package_files_directories }}/"
+#    dest: "{{ build_rpm_package_directory }}/SOURCES/{{ package_name }}-{{ package_version }}"
+
+- name: Make tarball of source files
+  archive:
+    #path: "{{ build_rpm_package_directory }}/SOURCES/{{ package_name }}-{{ package_version }}"
+    path: "{{ build_rpm_package_files_directories }}/"
+    dest: "{{ build_rpm_package_directory }}/SOURCES/{{ package_name }}-{{ package_version }}.tar.gz"
+
+- name: Make Spec file
+  template:
+    src: specfile.j2
+    dest: "{{ build_rpm_package_directory }}/SPECS/{{ package_name }}-{{ package_version }}.spec"
+  

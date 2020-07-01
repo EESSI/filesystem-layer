@@ -1,0 +1,10 @@
+---
+# tasks file for build-rpm-package
+- include: packages.yml
+  tags: packages
+
+- include: create_directories.yml
+  tags: directories
+
+- include: build_rpm_package.yml
+  tags: build
