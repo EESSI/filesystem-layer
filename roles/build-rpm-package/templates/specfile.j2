@@ -12,8 +12,9 @@ BuildArch: noarch
 %prep
 %install
 mkdir -p %{buildroot}
-#/{{ package_name }}-{{ package_version }}
 tar -C %{buildroot} -zxvf {{ build_rpm_package_directory }}/SOURCES/{{ package_name }}-{{ package_version }}.tar.gz
 
 %files
-/*
+{% for file in rpmcontents.files %}
+{{ file.path | regex_replace(build_rpm_package_files_directories) }}
+{% endfor %}
