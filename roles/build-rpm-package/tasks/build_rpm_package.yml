@@ -1,6 +1,13 @@
 ---
 - name: Build RPM package.
-  command: "rpmbuild --define \"_topdir {{ build_rpm_package_directory }}\" --define \"_rpmdir {{ build_rpm_package_local_directory }}\" -bb {{ build_rpm_package_directory }}/SPECS/{{ package_name }}-{{ package_version }}.spec"
+  command:
+    cmd: |
+      rpmbuild
+        --define "_topdir {{ build_rpm_package_directory }}"
+        --define "_rpmdir {{ build_rpm_package_local_directory }}"
+         -bb
+        {{ build_rpm_package_directory }}/SPECS/{{ package_name }}-{{ package_version }}.spec
+    creates: "{{ build_rpm_package_local_directory }}/noarch/{{ package_name }}-{{ package_version }}*.rpm"
 
 #- name: Copy package to local directory
 #  copy:

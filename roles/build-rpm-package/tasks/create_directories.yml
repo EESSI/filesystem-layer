@@ -29,4 +29,3 @@
   template:
     src: specfile.j2
     dest: "{{ build_rpm_package_directory }}/SPECS/{{ package_name }}-{{ package_version }}.spec"
-  
