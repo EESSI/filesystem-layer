@@ -25,8 +25,14 @@ jobs:
         targets: "./build-packages.yml"
         hosts: "localhost"
 
-    - name: upload package as artifact
+    - name: upload deb package as artifact
       uses: actions/upload-artifact@v2
       with:
-        #name: deb_package
+        name: Deb package
         path: ${{ github.workspace }}/build/*.deb
+
+    - name: upload rpm package as artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: RPM package
+        path: ${{ github.workspace }}/build/noarch/*.rpm
