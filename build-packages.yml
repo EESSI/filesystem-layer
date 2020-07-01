@@ -3,20 +3,9 @@
 - name: Build deb and yum packages.
   hosts: localhost
   vars:
-    deb_package_dependencies: []
-#      - cvmfs
-#      - cvmfs-config-none
-    build_debian_package_files_directories:
-      - src: "{{ temp_buildinput.path }}/etc/"
-        dest: "etc"
-    build_debian_package_control_fields:
-      Package: cvmfs-config-eessi
-      Version: 0.1
-      Priority: optional
-      Architecture: all
-      Depends: "{{ deb_package_dependencies|join(',') }}"
-      Maintainer: Bob Dröge
-      Description: CVMFS config repository package for EESSI.
+    package_name: cvmfs-config-eessi
+    package_version: 0.1
+    package_description: CVMFS config repository package for EESSI.
   pre_tasks:
     # Create a temporary directory where we generate the contents of the packages.
     - name: Create temporary directory
@@ -60,14 +49,26 @@
           CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
         dest: "{{ temp_buildinput.path }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
 
-    - name: install rpmbuild
-      apt:
-        name: rpm
-        state: present
-
-    - name: run rpmbuild tool
-      command: rpmbuild
-
   roles:
     - role: freedomofpress.build-debian-package
       tags: build
+      vars:
+        deb_package_dependencies: []
+#          - cvmfs
+#          - cvmfs-config-none
+        build_debian_package_files_directories:
+          - src: "{{ temp_buildinput.path }}/etc/"
+            dest: "etc"
+        build_debian_package_control_fields:
+          Package: "{{ package_name }}"
+          Version: "{{ package_version }}"
+          Priority: optional
+          Architecture: all
+          Depends: "{{ deb_package_dependencies|join(',') }}"
+          Maintainer: Bob Dröge
+          Description: "{{ package_description }}"
+    - role: build-rpm-package
+      tags: build
+      vars:
+        build_rpm_package_directory: /tmp/rpmbuild
+        build_rpm_package_files_directories: "{{ temp_buildinput.path }}"
