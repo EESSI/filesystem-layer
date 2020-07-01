@@ -11,7 +11,7 @@ on:
       - master
 
 jobs:
-  build_deb:
+  build-packages:
 
     runs-on: ubuntu-latest
 
