@@ -60,7 +60,12 @@
           CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
         dest: "{{ temp_buildinput.path }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
 
-    - name: rpmbuild
+    - name: install rpmbuild
+      apt:
+        name: rpm
+        state: present
+
+    - name: run rpmbuild tool
       command: rpmbuild
 
   roles:
