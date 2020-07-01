@@ -60,6 +60,9 @@
           CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
         dest: "{{ temp_buildinput.path }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
 
+    - name: rpmbuild
+      command: rpmbuild
+
   roles:
     - role: freedomofpress.build-debian-package
       tags: build
