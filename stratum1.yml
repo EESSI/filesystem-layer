@@ -10,4 +10,4 @@
   roles:
     - role: geerlingguy.repo-epel
       when: ansible_facts['os_family'] == 'RedHat'
-    - cvmfs
+    - galaxyproject.cvmfs

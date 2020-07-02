@@ -5,4 +5,4 @@
   vars:
     cvmfs_squid_conf_src: eessi_localproxy_squid.conf.j2
   roles:
-    - cvmfs
+    - galaxyproject.cvmfs
