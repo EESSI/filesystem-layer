@@ -30,19 +30,11 @@ and needs to be able to use privilege escalation (e.g. `sudo`) on those machines
 
 For the installation of all components we make use of two Ansible roles: the CVMFS installation role provided by the Galaxy project (see
 https://github.com/galaxyproject/ansible-cvmfs), and a role for adding the EPEL repository (https://github.com/geerlingguy/ansible-role-repo-epel).
-Both repositories are added as a submodule inside the `roles` directory, so make sure to use the `--recursive` option when cloning this repository:
+
+To download the dependency roles do:
 ```
-git clone --recursive https://github.com/EESSI/filesystem-layer.git
+ansible-galaxy role install -r requirements.yml -p ./roles
 ```
-Alternatively, clone this repository first, and init and update the required submodules later:
-```
-git clone https://github.com/EESSI/filesystem-layer.git
-cd filesystem-layer
-git submodule init
-git submodule update
-```
-For more information about (working with) submodules, see:
-https://git-scm.com/book/en/v2/Git-Tools-Submodules
 
 ### Configuration
 

@@ -1,0 +1,10 @@
+---
+
+# ansible-galaxy role install -r requirements.yml -p ./roles
+roles:
+
+  - name: galaxyproject.cvmfs
+    version: 0.2.10
+
+  - name: geerlingguy.repo-epel
+    version: 1.3.0
