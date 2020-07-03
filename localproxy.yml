@@ -3,4 +3,4 @@
 - name: CVMFS local proxies.
   hosts: cvmfslocalproxies
   roles:
-    - cvmfs
+    - galaxyproject.cvmfs

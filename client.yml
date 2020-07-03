@@ -3,4 +3,4 @@
 - name: CVMFS clients
   hosts: cvmfsclients
   roles:
-    - cvmfs
+    - galaxyproject.cvmfs
