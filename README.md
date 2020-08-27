@@ -37,35 +37,46 @@ ansible-galaxy role install -r requirements.yml -p ./roles
 
 ### Configuration
 
-The EESSI specific settings can be found in `group_vars/all.yml`, and in `templates` we added our own templates
+The EESSI specific settings can be found in `inventory/group_vars/all.yml`, and in `templates` we added our own templates
 of Squid configurations for the Stratum 1 and local proxy servers.
-For all playbooks you will also need to have an appropriate Ansible `hosts` file;
-see the supplied `hosts.example` for the structure and host groups that you need for these playbooks.
+For all playbooks you will also need to have an appropriate Ansible `hosts` file in the `inventory` folder;
+see the supplied `inventory/hosts.example` for the structure and host groups that you need for these playbooks.
+
+Ansible offers several ways to override any configuration parameters. Of course you can edit a playbook or the `all.yml` file,
+but it is best to keep these files unmodified. For temporarily overriding variables, you can use the command-line option `-e`, e.g.:
+```
+ansible-playbook -e some_parameter=new_value playbook.yml
+```
+If the setting is for a specific machine, it is recommended to make a file in the `inventory/host_vars` directory and use the machine name as name of the file.
+This file can contain any settings that should be overridden for this particular machine. See `stratum0host.example` in that directory for an example.
+Any other files that you will create in this directory will be ignored by git.
+
+Similarly, if you need to override a setting for a group of machines, e.g. for all your clients or proxies,
+you can modify the corresponding file in `inventory/group_vars`, though you should be aware that these files are tracked by git. For this reason,
+some specific group variables involving IP addresses (for the proxies and clients) are put in the `hosts.examples` file.
 
 ## Running the playbooks
 
 In general, all the playbooks can be run like this:
 ```
-ansible-playbook -i hosts -b <name of playbook>.yml
+ansible-playbook -b <name of playbook>.yml
 ```
-where `-i` allows you to specify the path to your hosts file, and `-b` means "become", i.e. run with `sudo`.
+Here `-b` means "become", i.e. run with `sudo`.
 If this requires a password, include `-K`, which will ask for the `sudo` password when running the playbook:
 ```
 ansible-playbook -i hosts -b -K <name of playbook>.yml
 ```
 
-Before you run any of the commands below, make sure that you updated the file `group_vars/all.yml`
-and include the new/extra URLs of any server you want to change/add (e.g. add your Stratum 1).
+Before you run any of the commands below, make sure that you created a `inventory/hosts` file and updated the configuration files
+in `inventory/group_vars` and/or `inventory/host_vars`.
 
 ### Firewalls
 To make all communication between the CVMFS services possible, some ports have to be opened on the Stratum 0 (default: port 80), 
 Stratum 1 (default: port 80 and 8000), and local proxy (default: port 3128).
-These default port numbers are listed in `roles/cvmfs/defaults/main.yml`, but can be overridden elsewhere.
+These default port numbers are listed in `roles/galaxyproject.cvmfs/defaults/main.yml`, but can be overridden elsewhere.
 
 The Ansible playbook can update your firewall rules automatically (`firewalld` on Redhat systems, `ufw` on Debian systems), 
 but by default it will not do this. If you want to enable this functionality, set `cvmfs_manage_firewall` to `true`.
-This can be done in either `group_vars/all.yml`, or in a vars section in your hosts or playbook file, or by passing 
-`-e cvmfs_manage_firewall=true` to the `ansible-playbook` command.
 
 ### Stratum 0
 First install the Stratum 0 server:
@@ -87,17 +98,12 @@ the (geographically) closest Stratum 1 server for your client and proxies.
 More information on how to (freely) obtain this key is available in the CVMFS documentation: 
 https://cvmfs.readthedocs.io/en/stable/cpt-replica.html#geo-api-setup .
 
-You can put your license key in `group_vars/all.yml`, or add a section in your `hosts` file:
-```yaml
-[cvmfsstratum1servers:vars]
-cvmfs_geo_license_key=XXXXX
-```
+You can put your license key in a file in `inventory/host_vars`; see `stratum1host.example` for an example. 
 
 Furthermore, the Stratum 1 runs a Squid server. The template configuration file can be found at 
 `templates/eessi_stratum1_squid.conf.j2`.
 If you want to customize it, for instance for limiting the access to the Stratum 1,
-you can make your own version of this template file and point to it by editing the playbook or
-adding the following to `group_vars/all.yml` or the section in your `hosts` file:
+you can make your own version of this template file and point to it by overriding this setting in the `host_vars` file for your Stratum 1:
 ```yaml
 cvmfs_squid_conf_src=/path/to/your_stratum1_squid.conf.j2
 ```
