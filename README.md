@@ -7,8 +7,7 @@ The EESSI project uses the CernVM File System (CVMFS) for distributing its softw
 - http://cernvm.cern.ch/portal/filesystem
 - https://cvmfs.readthedocs.io
 
-The following introductory video on Youtube gives a quite good overview of CVMFS as well:
-https://www.youtube.com/playlist?list=FLqCLabkRddpbHj4wYNFYjAA
+The following introductory video on Youtube gives a quite good overview of CVMFS as well: https://www.youtube.com/watch?v=MyYx-xaL36k
 
 ## CVMFS infrastructure
 
