@@ -1,0 +1,22 @@
+BootStrap: docker
+From: centos:7
+
+%post
+    yum update -y
+    yum install -y epel-release
+    yum install -y http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs-release-latest.noarch.rpm
+    yum install -y cvmfs cvmfs-config-default cvmfs-fuse3
+    yum install -y /root/cvmfs-config-eessi-0.1-1.noarch.rpm
+    yum install -y fuse-overlayfs
+
+    cat << EOF > /etc/cvmfs/default.local
+CVMFS_QUOTA_LIMIT=10000
+CVMFS_HTTP_PROXY="DIRECT"
+EOF
+    mkdir -p /cvmfs/pilot.eessi-hpc.org
+
+%environment
+    export LC_ALL=C
+
+%files
+    cvmfs-config-eessi-0.1-1.noarch.rpm /root
