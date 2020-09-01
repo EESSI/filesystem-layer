@@ -1,1 +1,1 @@
-cvmfs_srv_device: /dev/sdc
+cvmfs_srv_device: /dev/sdb
