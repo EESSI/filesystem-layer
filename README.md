@@ -43,32 +43,36 @@ For all playbooks you will also need to have an appropriate Ansible `hosts` file
 see the supplied `inventory/hosts.example` for the structure and host groups that you need for these playbooks.
 
 Ansible offers several ways to override any configuration parameters. Of course you can edit a playbook or the `all.yml` file,
-but it is best to keep these files unmodified. For temporarily overriding variables, you can use the command-line option `-e`, e.g.:
-```
-ansible-playbook -e some_parameter=new_value playbook.yml
-```
-If the setting is for a specific machine, it is recommended to make a file in the `inventory/host_vars` directory and use the machine name as name of the file.
+but it is best to keep these files unmodified.
+
+#### Machine-specific configuration
+If the setting is for one specific machine (e.g. your Stratum 1 machine), it is recommended to make a file in the `inventory/host_vars` directory and use the machine name as name of the file.
 This file can contain any settings that should be overridden for this particular machine. See `stratum0host.example` in that directory for an example.
 Any other files that you will create in this directory will be ignored by git.
 
-Similarly, if you need to override a setting for a group of machines, e.g. for all your clients or proxies,
-you can modify the corresponding file in `inventory/group_vars`, though you should be aware that these files are tracked by git. For this reason,
-some specific group variables involving IP addresses (for the proxies and clients) are put in the `hosts.examples` file.
+
+#### Site-specific configuration
+Any other site-specific configuration items can go into a file `inventory/local_site_specific_vars.yml` (which will be ignored by git).
+We provided an example file that shows the kind of configuration that you should minimally provide.
+You can also add more items that you would like to override to this file. See the next section for instructions about passing
+your configuration file to the playbook.
+
 
 ## Running the playbooks
 
 In general, all the playbooks can be run like this:
 ```
-ansible-playbook -b <name of playbook>.yml
+ansible-playbook -b -e @inventory/local_site_specific_vars.yml <name of playbook>.yml
 ```
-Here `-b` means "become", i.e. run with `sudo`.
+Here the option `-e @/path/to/your/config.yml` is used to include your site-specific configuration file.
+The `-b` option means "become", i.e. run with `sudo`.
 If this requires a password, include `-K`, which will ask for the `sudo` password when running the playbook:
 ```
 ansible-playbook -i hosts -b -K <name of playbook>.yml
 ```
 
-Before you run any of the commands below, make sure that you created a `inventory/hosts` file and updated the configuration files
-in `inventory/group_vars` and/or `inventory/host_vars`.
+Before you run any of the commands below, make sure that you created a `inventory/hosts` file, a site-specific configuration file,
+and, if necessary, created machine-specific configuration files in `inventory/host_vars`.
 
 ### Firewalls
 To make all communication between the CVMFS services possible, some ports have to be opened on the Stratum 0 (default: port 80), 
