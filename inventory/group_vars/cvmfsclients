@@ -1,3 +1,8 @@
 ---
 
+# List of proxies to be used for the clients.
+# Override this setting in your local_config_options.yml file.
+cvmfs_http_proxies: "{{ local_cvmfs_http_proxies }}"
+
+# Use the CVMFS configuration repository for the clients.
 eessi_cvmfs_repos_enabled: config-repo
