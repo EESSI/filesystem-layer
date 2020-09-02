@@ -77,7 +77,8 @@ and, if necessary, created machine-specific configuration files in `inventory/ho
 ### Firewalls
 To make all communication between the CVMFS services possible, some ports have to be opened on the Stratum 0 (default: port 80), 
 Stratum 1 (default: port 80 and 8000), and local proxy (default: port 3128).
-These default port numbers are listed in `roles/galaxyproject.cvmfs/defaults/main.yml`, but can be overridden elsewhere.
+These default port numbers are listed in `roles/galaxyproject.cvmfs/defaults/main.yml`, but can be overridden in your local
+configuration file (`local_site_specific_vars.yml`).
 
 The Ansible playbook can update your firewall rules automatically (`firewalld` on Redhat systems, `ufw` on Debian systems), 
 but by default it will not do this. If you want to enable this functionality, set `cvmfs_manage_firewall` to `true`.
@@ -102,15 +103,14 @@ the (geographically) closest Stratum 1 server for your client and proxies.
 More information on how to (freely) obtain this key is available in the CVMFS documentation: 
 https://cvmfs.readthedocs.io/en/stable/cpt-replica.html#geo-api-setup .
 
-You can put your license key in a file in `inventory/host_vars`; see `stratum1host.example` for an example. 
+You can put your license key in the local configuration file `inventory/local_site_specific_vars.yml`. 
 
 Furthermore, the Stratum 1 runs a Squid server. The template configuration file can be found at 
 `templates/eessi_stratum1_squid.conf.j2`.
 If you want to customize it, for instance for limiting the access to the Stratum 1,
-you can make your own version of this template file and point to it by overriding this setting in the `host_vars` file for your Stratum 1:
-```yaml
-cvmfs_squid_conf_src=/path/to/your_stratum1_squid.conf.j2
-```
+you can make your own version of this template file and point to it by overriding the following setting in `inventory/local_site_specific_vars.yml`.
+See the comments in the example file for more details.
+
 Install the Stratum 1 using:
 ```
 ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml stratum1.yml
@@ -120,11 +120,11 @@ This will automatically make replicas of all the repositories defined in `group_
 ### Local proxies
 The local proxies also need a Squid configuration file; the default can be found in 
 `templates/localproxy_squid.conf.j2`.
+If you want to customize the Squid configuration more, you can also make your own file, and point to in `inventory/local_site_specific_vars.yml`.
+See the comments in the example file for more details.
 
-You have to define the lists of IP addresses / ranges (using CIDR notation) that are allowed to use the proxy using the variable `cvmfs_localproxy_allowed_clients`.
-You can put this, for instance, in your hosts file. See `hosts.example` for more details.
-
-If you want to customize the Squid configuration more, you can also make your own file, and point to it using `cvmfs_squid_conf_src` (see the Stratum 1 section).
+Furthermore, you have to define the lists of IP addresses / ranges (using CIDR notation) that are allowed to use the proxy using the variable `local_cvmfs_http_proxies_allowed_clients`.
+Again, see `inventory/local_site_specific_vars.yml.example` for more details.
 
 Do keep in mind that you should never accept proxy request from everywhere to everywhere!
 Besides having a Squid configuration with the right ACLs, it is recommended to also have a firewall that limits access to your proxy.
@@ -136,13 +136,11 @@ ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml localproxy.yml
 
 ### Clients
 Make sure that your hosts file contains the list of hosts where the CVMFS client should be installed.
-Furthermore, you can add a vars section for the clients that contains the list of (local) proxy servers
-that your clients should use:
-```yaml
-[cvmfsclients:vars]
-cvmfs_http_proxies=["your-local.proxy:3128"]
-```
+Furthermore, you can define a list of (local) proxy servers
+that your clients should use in `inventory/local_site_specific_vars.yml` using the parameter `local_cvmfs_http_proxies`.
+See `inventory/local_site_specific_vars.yml.example` for more details.
 If you just want to roll out one client without a proxy, you can leave this out.
+
 Finally, run the playbook:
 ```
 ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml client.yml
