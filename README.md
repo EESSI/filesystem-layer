@@ -68,7 +68,7 @@ Here the option `-e @/path/to/your/config.yml` is used to include your site-spec
 The `-b` option means "become", i.e. run with `sudo`.
 If this requires a password, include `-K`, which will ask for the `sudo` password when running the playbook:
 ```
-ansible-playbook -i hosts -b -K <name of playbook>.yml
+ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml <name of playbook>.yml
 ```
 
 Before you run any of the commands below, make sure that you created a `inventory/hosts` file, a site-specific configuration file,
@@ -85,12 +85,12 @@ but by default it will not do this. If you want to enable this functionality, se
 ### Stratum 0
 First install the Stratum 0 server:
 ```
-ansible-playbook -i hosts -b -K stratum0.yml
+ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml stratum0.yml
 ```
 
 Then install the files for the configuration repository:
 ```
-ansible-playbook -i hosts -b -K stratum0-deploy-cvmfs-config.yml
+ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml stratum0-deploy-cvmfs-config.yml
 ```
 
 Note that there can be only one Stratum 0, so you should only run this playbook
@@ -113,7 +113,7 @@ cvmfs_squid_conf_src=/path/to/your_stratum1_squid.conf.j2
 ```
 Install the Stratum 1 using:
 ```
-ansible-playbook -i hosts -b -K stratum1.yml
+ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml stratum1.yml
 ```
 This will automatically make replicas of all the repositories defined in `group_vars/all.yml`.
 
@@ -131,7 +131,7 @@ Besides having a Squid configuration with the right ACLs, it is recommended to a
 
 Deploy your proxies using:
 ```
-ansible-playbook -i hosts -b -K localproxy.yml
+ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml localproxy.yml
 ```
 
 ### Clients
@@ -145,7 +145,7 @@ cvmfs_http_proxies=["your-local.proxy:3128"]
 If you just want to roll out one client without a proxy, you can leave this out.
 Finally, run the playbook:
 ```
-ansible-playbook -i hosts -b -K client.yml
+ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml client.yml
 ```
 
 ## Verification and usage
