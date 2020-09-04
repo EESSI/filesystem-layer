@@ -1,0 +1,5 @@
+Docker container to provide easy access to EESSI pilot repository,
+see https://hub.docker.com/repository/docker/eessi/client-pilot and https://eessi.github.io/docs/pilot .
+
+cvmfs-config-eessi-0.1-1.noarch.rpm downloaded via https://github.com/EESSI/filesystem-layer/suites/863782271/artifacts/9974699 (see
+https://github.com/EESSI/filesystem-layer/pull/24)

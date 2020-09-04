@@ -1,0 +1,1 @@
+d48ee97c80e7d4a72c2bfc9358e07be536bc6c53c77296103c5755125c9131b1 cvmfs-config-eessi-0.1-1.noarch.rpm
