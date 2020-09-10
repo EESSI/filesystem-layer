@@ -32,7 +32,7 @@ Now start the container as a Singularity instance (which will run it like a serv
 singularity instance start EESSI-squid-proxy.sif cvmfs_proxy
 ```
 
-The last argument defines the name for this instance, which can be used to connect a shell (`singularity shell instance://cvmfs_proxy`) or stop the instance:
+The last argument defines the name for this instance, which can be used to connect a shell (`singularity shell instance://cvmfs_proxy`) or to stop the instance:
 ```
 singularity instance stop cvmfs_proxy
 ```
