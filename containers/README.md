@@ -29,7 +29,7 @@ export SINGULARITY_HOME="/tmp/$USER/home:/home/$USER"
 
 Now start the container as a Singularity instance (which will run it like a service in the background):
 ```
-singularity instance start -B ./log:/var/log/squid -B ./cache:/var/spool/squid -B run:/var/run -B eessi_localproxy_squid.conf:/etc/squid/squid.conf EESSI-squid-proxy.sif cvmfs_proxy
+singularity instance start EESSI-squid-proxy.sif cvmfs_proxy
 ```
 
 The last argument defines the name for this instance, which can be used to connect a shell (`singularity shell instance://cvmfs_proxy`) or stop the instance:
