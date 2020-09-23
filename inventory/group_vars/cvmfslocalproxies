@@ -1,0 +1,7 @@
+---
+
+cvmfs_squid_conf_src: "{{ local_proxies_cvmfs_squid_conf_src | default('eessi_localproxy_squid.conf.j2') }}"
+
+# List of clients allowed to access your proxies.
+# Override this setting in local_site_specific_vars.yml.
+cvmfs_localproxy_allowed_clients: "{{ local_cvmfs_http_proxies_allowed_clients }}"
