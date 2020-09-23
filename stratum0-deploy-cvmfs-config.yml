@@ -21,8 +21,10 @@
             - "/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}/etc/cvmfs/domain.d"
 
         - name: deploy public keys
-          copy: content="{{ item.key }}" dest="/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}{{ item.path }}"
-          mode: "755"
+          copy:
+            content: "{{ item.key }}"
+            dest: "/cvmfs/{{ eessi_cvmfs_config_repo.repository.repository }}{{ item.path }}"
+            mode: "755"
           with_items: "{{ eessi_cvmfs_keys }}"
 
         - name: create contacts file
