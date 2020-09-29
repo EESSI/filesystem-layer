@@ -4,13 +4,11 @@ on:
   push:
     branches:
       - master
-      - build_packages
     tags:
       - 'v*'
   pull_request:
     branches:
       - master
-      - build_packages
 
 jobs:
 
