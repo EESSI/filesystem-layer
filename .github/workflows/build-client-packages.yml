@@ -1,0 +1,123 @@
+name: Build client packages
+
+on:
+  push:
+    branches:
+      - master
+      - build_packages
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+      - build_packages
+
+jobs:
+
+  build-packages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get the version number for the packages
+        id: get_version
+        # If this is a tag, use the tag name (e.g. v1.2.3) without v as version number.
+        # Otherwise, just use 0.0.
+        run: |
+          VERSION=0.0
+          REF_NAME=${{ github.ref }}
+          [[ $REF_NAME == refs/tags/v* ]] && VERSION=${REF_NAME/refs\/tags\/v/}
+          echo ::set-output name=version::${VERSION}
+
+      - name: Prepare package source
+        uses: roles-ansible/check-ansible-debian-stretch-action@master
+        with:
+          targets: "./prepare-client-packages.yml"
+          hosts: "localhost"
+
+      - name: Build RPM package
+        id: build-rpm
+        uses: kentik/pkg@v1.0.0-rc6
+        with:
+          name: cvmfs-config-eessi
+          version: ${{ steps.get_version.outputs.version }}
+          arch: x86_64
+          format: rpm
+          package: package/client_packages_metadata.yaml
+
+      - name: Build Deb package
+        id: build-deb
+        uses: kentik/pkg@v1.0.0-rc6
+        with:
+          name: cvmfs-config-eessi
+          version: ${{ steps.get_version.outputs.version }}
+          arch: x86_64
+          format: deb
+          package: package/client_packages_metadata.yaml
+
+      - name: Upload Deb package as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Deb package
+          path: ${{ steps.build-deb.outputs.package }}
+
+      - name: Upload RPM package as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: RPM package
+          path: ${{ steps.build-rpm.outputs.package }}
+
+  release:
+    needs: build-packages
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Deb package
+        uses: actions/download-artifact@v2
+        with:
+          name: Deb package
+
+      - name: Download RPM package
+        uses: actions/download-artifact@v2
+        with:
+          name: RPM package
+
+      - name: Find filenames of downloaded packages
+        id: find_filenames
+        shell: bash
+        run: |
+          rpmfile="$(ls -1 *.rpm)"
+          debfile="$(ls -1 *.deb)"
+          echo ::set-output name=rpmfile::${rpmfile}
+          echo ::set-output name=debfile::${debfile}
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Filesystem Layer ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload RPM as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_filenames.outputs.rpmfile }}
+          asset_name: ${{ steps.find_filenames.outputs.rpmfile }}
+          asset_content_type: application/x-rpm
+
+      - name: Upload Deb as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_filenames.outputs.debfile }}
+          asset_name: ${{ steps.find_filenames.outputs.debfile }}
+          asset_content_type: application/x-debian-package
