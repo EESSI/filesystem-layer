@@ -40,14 +40,14 @@ jobs:
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-esssi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package"
+          fpm_opts: "--debug -n cvmfs-config-esssi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
 
       - name: Build Deb package
         id: build-deb
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-esssi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package"
+          fpm_opts: "--debug -n cvmfs-config-esssi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
 
       - name: Find filenames of downloaded packages
         id: find_filenames
