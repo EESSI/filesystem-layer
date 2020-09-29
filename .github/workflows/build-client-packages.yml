@@ -33,7 +33,7 @@ jobs:
       # the group_vars folder inside the inventory folder. This symlink fixes that.
       - name: Make symlink to group_vars
         run: ln -s inventory/group_vars
-￼
+
       - name: Prepare package source
         uses: roles-ansible/check-ansible-debian-stretch-action@master
         with:
