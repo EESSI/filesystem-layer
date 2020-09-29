@@ -1,0 +1,54 @@
+# Prepare the input files for the Debian (deb) and Redhat (rpm) packages for CVMFS clients.
+---
+- name: Prepare Deb and RPM packages
+  hosts: localhost
+  vars:
+    package_vendor: EESSI
+    package_maintainer: EESSI <eessi@list.rug.nl>
+    package_description: CVMFS config repository package for EESSI.
+    package_source_dir: "{{ lookup('env', 'GITHUB_WORKSPACE') | default('/tmp', True) }}/package"
+  tasks:
+    - name: Create directory structure for the CVMFS config
+      file:
+       path: "{{ item }}"
+       state: directory
+       mode: 0775
+      with_items:
+      - "{{ package_source_dir }}"
+      - "{{ package_source_dir }}/etc"
+      - "{{ package_source_dir }}/etc/cvmfs"
+      - "{{ package_source_dir }}/etc/cvmfs/keys"
+      - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_cvmfs_config_repo.domain }}"
+      - "{{ package_source_dir }}/etc/cvmfs/config.d"
+      - "{{ package_source_dir }}/etc/cvmfs/default.d"
+
+    - name: Make EESSI CVMFS public key file
+      copy:
+        content: "{{ eessi_cvmfs_config_repo.key.key }}"
+        dest: "{{ package_source_dir }}{{ eessi_cvmfs_config_repo.key.path }}"
+
+    - name: Make EESSI CVMFS configuration file
+      copy:
+        content: |
+          CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(',') }}"
+          CVMFS_PUBLIC_KEY="{{ eessi_cvmfs_config_repo.key.path }}"
+        dest: "{{ package_source_dir }}/etc/cvmfs/config.d/{{ eessi_cvmfs_config_repo.repository.repository }}.conf"
+
+    - name: Make EESSI CVMFS default configuration file
+      copy:
+        content: |
+          CVMFS_CONFIG_REPOSITORY="{{ eessi_cvmfs_config_repo.repository.repository }}"
+          CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
+        dest: "{{ package_source_dir }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
+
+    - name: Register all files to be included in the package
+      find:
+        paths: "{{ package_source_dir }}/"
+        recurse: yes
+        file_type: file
+      register: pkg_files
+
+    - name: Make package metadata file
+      template:
+        src: client_packages_metadata.j2
+        dest: "{{ package_source_dir }}/client_packages_metadata.yaml"
