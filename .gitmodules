@@ -1,9 +1,0 @@
-[submodule "roles/galaxyproject.cvmfs"]
-	path = roles/cvmfs
-	url = https://github.com/galaxyproject/ansible-cvmfs
-[submodule "roles/geerlingguy.repo-epel"]
-	path = roles/geerlingguy.repo-epel
-	url = https://github.com/geerlingguy/ansible-role-repo-epel
-[submodule "roles/freedomofpress.build-debian-package"]
-	path = roles/freedomofpress.build-debian-package
-	url = https://github.com/EESSI/ansible-role-build-debian-package.git

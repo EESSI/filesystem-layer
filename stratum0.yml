@@ -2,9 +2,7 @@
 ---
 - name: CVMFS Stratum 0
   hosts: cvmfsstratum0servers
-  vars:
-    cvmfs_repositories: "{{ eessi_cvmfs_repositories + [eessi_cvmfs_config_repo.repository] }}"
   roles:
     - role: geerlingguy.repo-epel
       when: ansible_facts['os_family'] == 'RedHat'
-    - cvmfs
+    - galaxyproject.cvmfs
