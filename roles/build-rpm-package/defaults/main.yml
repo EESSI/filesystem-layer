@@ -1,6 +1,0 @@
----
-# defaults file for build-rpm-package
-build_rpm_package_local_directory: build
-
-# Build directory.
-build_rpm_package_directory: /tmp/rpmbuild
