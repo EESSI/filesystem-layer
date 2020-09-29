@@ -26,6 +26,7 @@
       copy:
         content: "{{ eessi_cvmfs_config_repo.key.key }}"
         dest: "{{ package_source_dir }}{{ eessi_cvmfs_config_repo.key.path }}"
+        mode: 0644
 
     - name: Make EESSI CVMFS configuration file
       copy:
@@ -33,6 +34,7 @@
           CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(',') }}"
           CVMFS_PUBLIC_KEY="{{ eessi_cvmfs_config_repo.key.path }}"
         dest: "{{ package_source_dir }}/etc/cvmfs/config.d/{{ eessi_cvmfs_config_repo.repository.repository }}.conf"
+        mode: 0644
 
     - name: Make EESSI CVMFS default configuration file
       copy:
@@ -40,6 +42,7 @@
           CVMFS_CONFIG_REPOSITORY="{{ eessi_cvmfs_config_repo.repository.repository }}"
           CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
         dest: "{{ package_source_dir }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
+        mode: 0644
 
     - name: Register all files to be included in the package
       find:
@@ -52,3 +55,4 @@
       template:
         src: client_packages_metadata.j2
         dest: "{{ package_source_dir }}/client_packages_metadata.yaml"
+        mode: 0644
