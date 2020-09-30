@@ -162,15 +162,18 @@ rpm -i cvmfs-config-eessi-*.rpm
 dpkg -i cvmfs-config-eessi-*.rpm
 ```
 
-Finally, you need to make a file `/etc/cvmfs/default.local` manually; this file is used for local settings and
+Next, you need to make a file `/etc/cvmfs/default.local` manually; this file is used for local settings and
 contains, for instance, the URL to your local proxy and the size of the local cache. As an example, you can put
 the following in this file, which corresponds to not using a proxy and setting the local quota limit to 40000MB:
 ```
 CVMFS_HTTP_PROXY=DIRECT
 CVMFS_QUOTA_LIMIT=40000
 ```
+For more details about configuring your client, see https://cvmfs.readthedocs.io/en/stable/cpt-configure.html.
 
-Admin note: for building the client configuration packages, see 
+Finally, run `cvmfs_config setup` to set up CVMFS.
+
+*Admin note: for building the client configuration packages, see [this section](#building-the-cvmfs-configuration-packages).*
 
 ## Verification and usage
 
