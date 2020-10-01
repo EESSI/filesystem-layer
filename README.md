@@ -159,7 +159,7 @@ These packages can be found on the [Releases](https://github.com/eessi/filesyste
 Download the package for your operating system, and install it, e.g.:
 ```
 rpm -i cvmfs-config-eessi-*.rpm
-dpkg -i cvmfs-config-eessi-*.rpm
+dpkg -i cvmfs-config-eessi-*.deb
 ```
 
 Next, you need to make a file `/etc/cvmfs/default.local` manually; this file is used for local settings and
