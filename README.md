@@ -135,6 +135,8 @@ ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml localproxy.yml
 ```
 
 ### Clients
+
+#### Method 1: Ansible 
 Make sure that your hosts file contains the list of hosts where the CVMFS client should be installed.
 Furthermore, you can define a list of (local) proxy servers
 that your clients should use in `inventory/local_site_specific_vars.yml` using the parameter `local_cvmfs_http_proxies`.
@@ -145,6 +147,33 @@ Finally, run the playbook:
 ```
 ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml client.yml
 ```
+
+#### Method 2: Packages
+On many operating systems the CVMFS client can be installed through your package manager.
+For details, see the [Getting Started page](https://cvmfs.readthedocs.io/en/stable/cpt-quickstart.html)
+in the documentation.
+
+After installing the client, you will have to configure it.
+For this you can use the CVMFS configuration packages that we provide for clients.
+These packages can be found on the [Releases](https://github.com/eessi/filesystem-layer/releases) page.
+Download the package for your operating system, and install it, e.g.:
+```
+rpm -i cvmfs-config-eessi-*.rpm
+dpkg -i cvmfs-config-eessi-*.deb
+```
+
+Next, you need to make a file `/etc/cvmfs/default.local` manually; this file is used for local settings and
+contains, for instance, the URL to your local proxy and the size of the local cache. As an example, you can put
+the following in this file, which corresponds to not using a proxy and setting the local quota limit to 40000MB:
+```
+CVMFS_HTTP_PROXY=DIRECT
+CVMFS_QUOTA_LIMIT=40000
+```
+For more details about configuring your client, see https://cvmfs.readthedocs.io/en/stable/cpt-configure.html.
+
+Finally, run `cvmfs_config setup` to set up CVMFS.
+
+*Admin note: for building the client configuration packages, see [this section](#building-the-cvmfs-configuration-packages).*
 
 ## Verification and usage
 
@@ -198,3 +227,12 @@ touch /cvmfs/pilot.eessi-hpc.org/testdir/testfile
 sudo cvmfs_server publish pilot.eessi-hpc.org
 ```
 It might take a few minutes, but then the new file should show up at the clients.
+
+
+## Building the CVMFS configuration packages
+
+For each push and pull request to the master branch, packages are automatically built by a Github Action.
+The resulting (unversioned) packages can be found as build artifacts on the page of each run of this action.
+When a new tag is created to mark a versioned release of the repository (e.g. `v1.2.3`, where the `v` is required!),
+the action builds a package with the same version number, creates a release, and stores the packages
+as release assets.
