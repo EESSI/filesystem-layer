@@ -11,11 +11,8 @@ RUN yum install -y httpd
 
 #ENTRYPOINT ["/entrypoint.sh"]
 
-RUN cat << EOF > ${GITHUB_WORKSPACE}/inventory/hosts
-[cvmfsstratum0servers]
-127.0.0.1
-EOF
-
+RUN echo "[cvmfsstratum0servers]" > ${GITHUB_WORKSPACE}/inventory/hosts
+RUN echo "127.0.0.1" >> ${GITHUB_WORKSPACE}/inventory/hosts
 RUN ansible-galaxy role install -r ${GITHUB_WORKSPACE}/requirements.yml -p ${GITHUB_WORKSPACE}/roles
 RUN ansible-playbook --connection=local ${GITHUB_WORKSPACE}/$1
 
