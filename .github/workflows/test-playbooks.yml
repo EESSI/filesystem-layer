@@ -16,8 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Prepare package source
-        uses: roles-ansible/check-ansible-debian-stretch-action@master
+      - name: Test Stratum 0 playbook
+        uses: ./.github/actions/test-filesystem-layer-playbooks
         with:
-          targets: "./stratum0.yml"
-          hosts: "localhost"
+          playbook: "stratum0.yml"
