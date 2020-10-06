@@ -10,7 +10,7 @@ EOF
 #systemctl status httpd
 #systemctl start httpd
 #systemctl status httpd
-RUN echo "systemd" > /proc/1/comm
+echo "systemd" > /proc/1/comm
 
 ansible-galaxy role install -r requirements.yml -p ./roles
 ansible-playbook --connection=local -v ${GITHUB_WORKSPACE}/$1
