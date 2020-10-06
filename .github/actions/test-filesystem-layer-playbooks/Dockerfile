@@ -1,6 +1,9 @@
-FROM ansible/ansible:centos7
+FROM centos:centos7
 
 USER root
+
+RUN apt-get install -y python3-pip
+RUN pip3 install ansible
 
 COPY entrypoint.sh /entrypoint.sh
 
