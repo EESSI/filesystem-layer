@@ -9,3 +9,6 @@ RUN yum install -y ansible
 COPY entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
+
+VOLUME [ “/sys/fs/cgroup” ]
+CMD ["/usr/sbin/init"]
