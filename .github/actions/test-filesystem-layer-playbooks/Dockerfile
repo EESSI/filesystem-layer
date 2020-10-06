@@ -2,8 +2,9 @@ FROM centos:centos7
 
 USER root
 
-RUN yum install -y python3-pip python2-rpm
-RUN pip3 install ansible
+RUN yum install -y epel-release
+RUN yum install -y ansible
+#RUN pip3 install ansible
 
 COPY entrypoint.sh /entrypoint.sh
 
