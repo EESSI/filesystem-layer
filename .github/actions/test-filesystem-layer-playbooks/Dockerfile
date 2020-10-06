@@ -9,6 +9,7 @@ RUN yum install -y ansible
 
 COPY systemctl3.py /usr/bin/systemctl
 RUN chmod +x /usr/bin/systemctl
+RUN echo systemd > /proc/1/comm
 
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
