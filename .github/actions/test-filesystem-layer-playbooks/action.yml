@@ -1,0 +1,13 @@
+# action.yml
+name: 'Test filesystem layer playbooks'
+description: 'Test the Ansible playbooks for installing different components of the filesystem layer'
+inputs:
+  playbook:  
+    description: 'Path to an Ansible Playbook to be tested'
+    required: true
+    #default: '/tmp/gentoo'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+  args:
+    - ${{ inputs.playbook }}
