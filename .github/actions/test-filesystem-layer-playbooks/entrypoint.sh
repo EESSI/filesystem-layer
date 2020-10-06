@@ -7,6 +7,10 @@ cat << EOF > inventory/hosts
 127.0.0.1
 EOF
 
+systemctl status httpd
+systemctl start httpd
+systemctl status httpd
+
 ansible-galaxy role install -r requirements.yml -p ./roles
-ansible-playbook --connection=local ${GITHUB_WORKSPACE}/$1
+ansible-playbook --connection=local -v ${GITHUB_WORKSPACE}/$1
 #ansible-playbook --connection=local -e ansible_python_interpreter=python3 ${GITHUB_WORKSPACE}/$1
