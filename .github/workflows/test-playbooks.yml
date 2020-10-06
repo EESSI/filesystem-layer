@@ -1,0 +1,22 @@
+name: Test Ansible Playbooks
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+
+  stratum0:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Prepare package source
+        uses: roles-ansible/check-ansible-debian-stretch-action@master
+        with:
+          targets: "./stratum0.yml"
+          hosts: "localhost"
