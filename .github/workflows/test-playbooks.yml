@@ -16,11 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Test Stratum 0 playbook
-        uses: ./.github/actions/test-filesystem-layer-playbooks
-        with:
-          playbook: "stratum0.yml"
-
       - name: Build the Docker image
         run: docker build . --file ./.github/workflows/Dockerfile --tag filesystem-layer/centos:7
       - name: Make temporary directory for /srv
