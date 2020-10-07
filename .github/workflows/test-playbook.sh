@@ -1,18 +1,10 @@
 #!/bin/bash -l
 
-cat << EOF > inventory/hosts
-[cvmfsstratum0servers]
-127.0.0.1
+playbook=$1
+hostgroup=$(grep hosts $playbook | awk '{print $2}')
 
-[cvmfsstratum1servers]
-127.0.0.1
-
-[cvmfslocalproxies]
-127.0.0.1
-
-[cvmfsclients]
-127.0.0.1
-EOF
+echo "[$hostgroup]" > inventory/hosts
+echo "127.0.0.1" >> inventory/hosts
 
 ansible-galaxy role install -r requirements.yml -p ./roles
 ansible-playbook --connection=local -v $1

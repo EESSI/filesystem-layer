@@ -11,7 +11,7 @@ on:
 
 jobs:
 
-  build_docker_image:
+  build-docker-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -25,8 +25,8 @@ jobs:
         run: docker push "docker.pkg.github.com/$GITHUB_REPOSITORY/centos:7"
 
 
-  stratum0:
-    needs: build_docker_image
+  test-playbook:
+    needs: build-docker-image
     runs-on: ubuntu-latest
     strategy:
       matrix:
