@@ -10,7 +10,7 @@ RUN yum install -y ansible
 #COPY systemctl3.py /usr/bin/systemctl
 #RUN chmod +x /usr/bin/systemctl
 
-COPY entrypoint.sh /entrypoint.sh
+COPY ./.github/workflows/entrypoint.sh /entrypoint.sh
 #ENTRYPOINT ["/entrypoint.sh"]
 
 VOLUME [ “/sys/fs/cgroup” ]
