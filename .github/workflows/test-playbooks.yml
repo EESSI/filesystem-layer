@@ -22,7 +22,7 @@ jobs:
           playbook: "stratum0.yml"
 
       - name: Build the Docker image
-        run: docker build . --file Dockerfile --tag filesystem-layer/centos:7
+        run: docker build . --file ./.github/workflows/Dockerfile --tag filesystem-layer/centos:7
       - name: Make temporary directory for /srv
         run: mkdir ${GITHUB_WORKSPACE}/srv
       - name: Run the container
