@@ -5,14 +5,8 @@ USER root
 RUN yum install -y epel-release
 RUN yum install -y ansible
 RUN yum install -y cronie
-#RUN yum install -y httpd
-#RUN pip3 install ansible
 
-#COPY systemctl3.py /usr/bin/systemctl
-#RUN chmod +x /usr/bin/systemctl
-
-COPY ./.github/workflows/entrypoint.sh /entrypoint.sh
-#ENTRYPOINT ["/entrypoint.sh"]
+COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
 VOLUME [ “/sys/fs/cgroup” ]
 CMD ["/usr/sbin/init"]

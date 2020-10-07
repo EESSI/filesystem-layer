@@ -28,6 +28,9 @@ jobs:
   stratum0:
     needs: build_docker_image
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        components: [stratum0, stratum1]
     steps:
       - uses: actions/checkout@v2
       - name: Docker login
@@ -39,8 +42,10 @@ jobs:
       - name: Make temporary directory for /srv
         run: mkdir ${GITHUB_WORKSPACE}/srv
       - name: Run the container
-        run: docker run -d --workdir /github/workspace --rm -e INPUT_PLAYBOOK -e HOME -e GITHUB_JOB -e GITHUB_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_REPOSITORY_OWNER -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RETENTION_DAYS -e GITHUB_ACTOR -e GITHUB_WORKFLOW -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GITHUB_EVENT_NAME -e GITHUB_SERVER_URL -e GITHUB_API_URL -e GITHUB_GRAPHQL_URL -e GITHUB_WORKSPACE -e GITHUB_ACTION -e GITHUB_EVENT_PATH -e GITHUB_PATH -e GITHUB_ENV -e RUNNER_OS -e RUNNER_TOOL_CACHE -e RUNNER_TEMP -e RUNNER_WORKSPACE -e ACTIONS_RUNTIME_URL -e ACTIONS_RUNTIME_TOKEN -e ACTIONS_CACHE_URL -e GITHUB_ACTIONS=true -e CI=true -v "/var/run/docker.sock":"/var/run/docker.sock" -v $HOME:"/github/home" -v "$HOME/work/_temp/_github_workflow":"/github/workflow" -v "/home/runner/work/_temp/_runner_file_commands":"/github/file_commands" -v "$GITHUB_WORKSPACE":"/github/workspace" --privileged --device /dev/fuse --mount type=bind,source=${GITHUB_WORKSPACE}/srv,target=/srv --mount type=bind,source=${GITHUB_WORKSPACE}/srv,target=/var/spool/cvmfs --name stratum0 docker.pkg.github.com/$GITHUB_REPOSITORY/centos:7
+        run: docker run -d --workdir /github/workspace --rm -e INPUT_PLAYBOOK -e HOME -e GITHUB_JOB -e GITHUB_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_REPOSITORY_OWNER -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RETENTION_DAYS -e GITHUB_ACTOR -e GITHUB_WORKFLOW -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GITHUB_EVENT_NAME -e GITHUB_SERVER_URL -e GITHUB_API_URL -e GITHUB_GRAPHQL_URL -e GITHUB_WORKSPACE -e GITHUB_ACTION -e GITHUB_EVENT_PATH -e GITHUB_PATH -e GITHUB_ENV -e RUNNER_OS -e RUNNER_TOOL_CACHE -e RUNNER_TEMP -e RUNNER_WORKSPACE -e ACTIONS_RUNTIME_URL -e ACTIONS_RUNTIME_TOKEN -e ACTIONS_CACHE_URL -e GITHUB_ACTIONS=true -e CI=true -v "/var/run/docker.sock":"/var/run/docker.sock" -v $HOME:"/github/home" -v "$HOME/work/_temp/_github_workflow":"/github/workflow" -v "/home/runner/work/_temp/_runner_file_commands":"/github/file_commands" -v "$GITHUB_WORKSPACE":"/github/workspace" --privileged --device /dev/fuse --mount type=bind,source=${GITHUB_WORKSPACE}/srv,target=/srv --mount type=bind,source=${GITHUB_WORKSPACE}/srv,target=/var/spool/cvmfs --name ${{ github.job }} docker.pkg.github.com/$GITHUB_REPOSITORY/centos:7
       - name: Exec the playbook
-        run: docker exec stratum0 /entrypoint.sh
+        run: docker exec ${{ github.job }} /test-playbook.sh ${{ github.job }}.yml
+      #- name: Execute the playbook
+      #  run: docker exec stratum0 /test-playbook.sh stratum0-deploy-cvmfs-config.yml
       - name: Stop the container
-        run: docker kill stratum0
+        run: docker kill ${{ github.job }}
