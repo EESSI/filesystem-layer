@@ -20,3 +20,14 @@ jobs:
         uses: ./.github/actions/test-filesystem-layer-playbooks
         with:
           playbook: "stratum0.yml"
+
+      - name: Build the Docker image
+        run: docker build . --file Dockerfile --tag filesystem-layer/centos:7
+      - name: Make temporary directory for /srv
+        run: mkdir ${GITHUB_WORKSPACE}/srv
+      - name: Run the container
+        run: docker run --workdir /github/workspace --rm -e INPUT_PLAYBOOK -e HOME -e GITHUB_JOB -e GITHUB_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_REPOSITORY_OWNER -e >
+      - name: Exec the playbook
+        run: docker exec -it stratum0 /entrypoint.sh
+      - name: Stop the container
+        run: docker kill stratum0
