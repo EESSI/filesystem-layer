@@ -3,8 +3,9 @@ FROM ubuntu:20.04
 USER root
 
 RUN apt-get update
-RUN apt-get install -y ansible
-RUN apt-get install -y cron gpg
+RUN apt-get install -y cron gpg python3-pip
+
+RUN pip install ansible
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
