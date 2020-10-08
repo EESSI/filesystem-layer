@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [centos:7] #, ubuntu:18.04, ubuntu:20.04]
+        os: ["centos:7"] #, ubuntu:18.04, ubuntu:20.04]
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
@@ -39,7 +39,7 @@ jobs:
     strategy:
       matrix:
         component: [stratum0, stratum1]
-        os: [centos:7] #, ubuntu:18.04, ubuntu:20.04]
+        os: ["centos:7"] #, ubuntu:18.04, ubuntu:20.04]
     steps:
       - uses: actions/checkout@v2
       - name: Docker login
