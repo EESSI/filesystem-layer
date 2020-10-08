@@ -2,12 +2,12 @@ FROM ubuntu:20.04
 
 USER root
 
-RUN apt update
-RUN apt install -y ansible
-RUN apt install -y cron
+RUN apt-get update
+RUN apt-get install -y ansible
+RUN apt-get install -y cron gpg
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
 VOLUME [ “/sys/fs/cgroup” ]
 #CMD ["/sbin/init"]
-CMD ["sleep infinity"]
+CMD ["/bin/sleep", "infinity"]
