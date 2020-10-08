@@ -3,7 +3,7 @@ FROM ubuntu:20.04
 USER root
 
 RUN apt-get update
-RUN apt-get install -y cron gpg python3-pip
+RUN apt-get install -y cron gpg python3-pip systemd
 
 RUN pip3 install ansible
 
@@ -11,4 +11,5 @@ COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
 VOLUME [ “/sys/fs/cgroup” ]
 #CMD ["/sbin/init"]
-CMD ["/bin/sleep", "infinity"]
+CMD ["/lib/systemd/systemd"]
+#CMD ["/bin/sleep", "infinity"]

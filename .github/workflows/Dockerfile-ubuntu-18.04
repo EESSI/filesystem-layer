@@ -6,12 +6,12 @@ RUN apt-get update
 #RUN apt install -y software-properties-common
 #RUN apt-add-repository --yes --update ppa:ansible/ansible
 #RUN apt-get install -y ansible
-RUN apt-get install -y cron gpg python3-pip
+RUN apt-get install -y cron gpg python3-pip systemd
 
 RUN pip3 install ansible
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
 VOLUME [ “/sys/fs/cgroup” ]
-#CMD ["/sbin/init"]
-CMD ["/bin/sleep", "infinity"]
+CMD ["/lib/systemd/systemd"]
+#CMD ["/bin/sleep", "infinity"]
