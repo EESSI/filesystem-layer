@@ -20,4 +20,5 @@ echo 'local_cvmfs_http_proxies_allowed_clients:' >> inventory/local_site_specifi
 echo '  - 127.0.0.1' >> inventory/local_site_specific_vars.yml
 
 ansible-galaxy role install -r requirements.yml -p ./roles
-ansible-playbook --connection=local -e @inventory/local_site_specific_vars.yml ${playbook}
+cat inventory/local_site_specific_vars.yml
+ansible-playbook --connection=local -e @inventory/local_site_specific_vars.yml -v ${playbook}
