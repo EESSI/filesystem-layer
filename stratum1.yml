@@ -8,9 +8,10 @@
         cvmfs_packages:
           stratum1:
             - apache2
+            - libapache2-mod-wsgi
+            - squid
             - cvmfs-server
             - cvmfs-config-default
-            - squid
       when: ansible_facts['os_family'] == 'Debian'
   roles:
     - role: geerlingguy.repo-epel
