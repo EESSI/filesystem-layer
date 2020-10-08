@@ -10,3 +10,4 @@ COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
 VOLUME [ “/sys/fs/cgroup” ]
 #CMD ["/sbin/init"]
+CMD ["sleep infinity"]
