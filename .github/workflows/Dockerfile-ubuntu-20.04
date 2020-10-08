@@ -1,0 +1,11 @@
+FROM ubuntu:20.04
+
+USER root
+
+RUN apt install -y ansible
+RUN apt install -y cron
+
+COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
+
+VOLUME [ “/sys/fs/cgroup” ]
+CMD ["/usr/sbin/init"]
