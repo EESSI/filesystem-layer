@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        component: [stratum0, stratum1]
+        component: [stratum0, stratum1, localproxy, client]
         os: ["centos7"] #, ubuntu:18.04, ubuntu:20.04]
     steps:
       - uses: actions/checkout@v2
