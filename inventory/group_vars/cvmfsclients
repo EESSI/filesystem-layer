@@ -2,7 +2,7 @@
 
 # List of proxies to be used for the clients.
 # Override this setting in your local_site_specific_vars.yml file.
-cvmfs_http_proxies: "{{ local_cvmfs_http_proxies | default('DIRECT') }}"
+cvmfs_http_proxies: "{{ local_cvmfs_http_proxies | default(['DIRECT']) }}"
 
 # Use the CVMFS configuration repository for the clients.
 eessi_cvmfs_repos_enabled: config-repo
