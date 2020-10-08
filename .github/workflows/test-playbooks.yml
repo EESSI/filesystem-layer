@@ -6,14 +6,14 @@ on:
       - master
       - ci
     paths-ignore:
-      - **.md
-      - **.example
+      - "**.md"
+      - "**.example"
   pull_request:
     branches:
       - master
     paths-ignore:
-      - **.md
-      - **.example
+      - "**.md"
+      - "**.example"
 
 jobs:
 
