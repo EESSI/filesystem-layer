@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
-        run: docker build . --file ./.github/workflows/Dockerfile --tag "docker.pkg.github.com/$GITHUB_REPOSITORY/centos:7"
+        run: docker build . --file ./.github/workflows/Dockerfile-centos7 --tag "docker.pkg.github.com/$GITHUB_REPOSITORY/centos:7"
       - name: Docker login
         run: docker login docker.pkg.github.com -u $GITHUB_ACTOR -p $GITHUB_TOKEN
         env:
