@@ -31,7 +31,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Publish to GPR
-        run: docker push "docker.pkg.github.com/${{ github.repository }}/${{ matrix.os }}"
+        run: docker push "docker.pkg.github.com/$(echo $GITHUB_REPOSITORY | tr '[A-Z]' '[a-z]')/${{ matrix.os }}"
 
   test-playbook:
     needs: build-docker-image
@@ -48,7 +48,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
       - name: Pull Docker image
-        run: docker pull "docker.pkg.github.com/${{ github.repository }}/${{ matrix.os }}"
+        run: docker pull "docker.pkg.github.com/$(echo $GITHUB_REPOSITORY | tr '[A-Z]' '[a-z]')/${{ matrix.os }}"
       - name: Make temporary directory for /srv
         run: mkdir ${GITHUB_WORKSPACE}/srv
       - name: Run the container
