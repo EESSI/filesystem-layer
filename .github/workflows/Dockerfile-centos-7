@@ -1,0 +1,12 @@
+FROM centos:centos7
+
+USER root
+
+RUN yum install -y epel-release
+RUN yum install -y ansible
+RUN yum install -y cronie
+
+COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
+
+VOLUME [ “/sys/fs/cgroup” ]
+CMD ["/usr/sbin/init"]
