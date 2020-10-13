@@ -11,7 +11,7 @@ see https://hub.docker.com/repository/docker/eessi/client-pilot and https://eess
 
 ```shell
 export EESSI_PILOT_VERSION=2020.09
-docker build --no-cache -f Dockerfile.EESSI-client-pilot-centos7-${EESSI_PILOT_VERSION} -t eessi/client-pilot:centos7-${EESSI_PILOT_VERSION} .
+docker build --no-cache -f Dockerfile.EESSI-client-pilot-centos7 -t eessi/client-pilot:centos7-${EESSI_PILOT_VERSION} .
 ```
 
 ### Push to Docker Hub (requires credentials)
