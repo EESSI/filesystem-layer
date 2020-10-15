@@ -1,7 +1,8 @@
-FROM docker.io/library/centos:7.8.2003
+FROM docker.io/arm64v8/centos:7
 
 RUN yum install -y http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs-release-latest.noarch.rpm \
- && yum install -y cvmfs cvmfs-config-default cvmfs-fuse3 sudo vim openssh-clients \
+ && yum install -y cvmfs cvmfs-fuse3 --nogpgcheck \
+ && yum install -y cvmfs-config-default sudo vim openssh-clients \
  && yum install -y https://github.com/EESSI/filesystem-layer/releases/download/v0.2.1/cvmfs-config-eessi-0.2.1-1.noarch.rpm
 
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
