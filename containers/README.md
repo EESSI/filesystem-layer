@@ -5,7 +5,7 @@ This directory contains recipes for containers that are useful in the scope of t
 ## Client container
 
 Container to provide easy access to EESSI pilot repository,
-see https://hub.docker.com/repository/docker/eessi/client-pilot and https://eessi.github.io/docs/pilot .
+see https://hub.docker.com/repository/docker/eessi/client-pilot and https://eessi.github.io/docs/pilot.
 
 ### Build container
 
