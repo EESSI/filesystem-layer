@@ -24,6 +24,7 @@ eessi_cvmfs_config_repo:
      -----END PUBLIC KEY-----
   urls:
     - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
+    - "http://cvmfs-s1-bgo.eessi-hpc.org/cvmfs/@fqrn@"
   repository:
     repository: cvmfs-config.eessi-hpc.org
     stratum0: cvmfs-s0.eessi-hpc.org
@@ -58,6 +59,7 @@ eessi_cvmfs_server_urls:
     use_geoapi: true
     urls:
       - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
+      - "http://cvmfs-s1-bgo.eessi-hpc.org/cvmfs/@fqrn@"
 
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
