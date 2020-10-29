@@ -31,7 +31,7 @@
     - name: Make EESSI CVMFS configuration file
       copy:
         content: |
-          CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(',') }}"
+          CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(';') }}"
           CVMFS_PUBLIC_KEY="{{ eessi_cvmfs_config_repo.key.path }}"
         dest: "{{ package_source_dir }}/etc/cvmfs/config.d/{{ eessi_cvmfs_config_repo.repository.repository }}.conf"
         mode: 0644
