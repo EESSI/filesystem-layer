@@ -8,4 +8,4 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build the Docker image
-        run: docker build . --file containers/Dockerfile.EESSI-client-pilot-centos7
+        run: docker build . --file containers/Dockerfile.EESSI-client-pilot-centos7-x86_64
