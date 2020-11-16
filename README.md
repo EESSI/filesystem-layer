@@ -236,3 +236,12 @@ The resulting (unversioned) packages can be found as build artifacts on the page
 When a new tag is created to mark a versioned release of the repository (e.g. `v1.2.3`, where the `v` is required!),
 the action builds a package with the same version number, creates a release, and stores the packages
 as release assets.
+
+# License
+
+The software in this repository is distributed under the terms of the
+[GNU General Public License v2.0](https://opensource.org/licenses/GPL-2.0).
+
+See [LICENSE](https://github.com/EESSI/filesystem-layer/blob/master/LICENSE) for more information.
+
+SPDX-License-Identifier: GPL-2.0-only
