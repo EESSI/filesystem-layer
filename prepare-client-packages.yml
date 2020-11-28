@@ -43,3 +43,11 @@
           CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
         dest: "{{ package_source_dir }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
         mode: 0644
+
+    - name: Populate EESSI CVMFS local configuration file with some semi-sane defaults
+      copy:
+        content: |
+          CVMFS_HTTP_PROXY=DIRECT
+          CVMFS_QUOTA_LIMIT=5000
+        dest: "{{ package_source_dir }}/etc/cvmfs/default.local
+        mode: 0644
