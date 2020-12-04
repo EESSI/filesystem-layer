@@ -116,7 +116,7 @@ jobs:
         run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
 
       - name: Find filename of generated package
-        id: find_filenames
+        id: find_filename
         shell: bash
         run: |
           pkgfile="$(ls -1 *.pkg)"
@@ -126,9 +126,10 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: macOS package
-          path: ${{ steps.find_filenames.outputs.pkgfile }}
+          path: ${{ steps.find_filename.outputs.pkgfile }}
 
   test-package:
+    needs: [build-packages, build-osx-package]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -141,6 +142,16 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: ${{ matrix.pkg_name }}
+
+      - name: Find filename of package
+        id: find_filename
+        shell: bash
+        run: |
+          pkgfile="$(ls -1 *.${{ pkg_ext }})"
+          echo ::set-output name=pkgfile::${pkgfile}
+
+      - name: Install package
+        run: installer -pkg ./${{ steps.find_filename.outputs.pkgfile }} -target /
 
   release:
     needs: [build-packages, build-osx-package]
