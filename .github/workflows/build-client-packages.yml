@@ -40,6 +40,9 @@ jobs:
           targets: "./prepare-client-packages.yml"
           hosts: "localhost"
 
+# We probably should loop over the set {rpm,deb,osxpkg} to create packages, but
+# it will make debugging more annoying.
+
       - name: Build RPM package
         id: build-rpm
         uses: bpicode/github-action-fpm@master
@@ -53,6 +56,13 @@ jobs:
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
+
+      - name: Build MacOS package
+        id: build-osxpkg
+        uses: bpicode/github-action-fpm@master
+        with:
+          fpm_args: "etc"
+          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
 
       - name: Find filenames of downloaded packages
         id: find_filenames
@@ -75,8 +85,23 @@ jobs:
           name: RPM package
           path: ${{ steps.find_filenames.outputs.rpmfile }}
 
+  build-osx-package:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: brew install gnu-tar
+
+      - name: Install fpm
+        run: gem install --no-document fpm
+
+      - name: Build package
+        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
+
   release:
-    needs: build-packages
+    needs: build-packages,build-osx-package
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
