@@ -91,6 +91,27 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Get the version number for the packages
+        id: get_version
+        # If this is a tag, use the tag name (e.g. v1.2.3) without v as version number.
+        # Otherwise, just use 0.0.
+        run: |
+          VERSION=0.0
+          REF_NAME=${{ github.ref }}
+          [[ $REF_NAME == refs/tags/v* ]] && VERSION=${REF_NAME/refs\/tags\/v/}
+          echo ::set-output name=version::${VERSION}
+
+      # The next step uses a custom Ansible inventory, and due to that it cannot find
+      # the group_vars folder inside the inventory folder. This symlink fixes that.
+      - name: Make symlink to group_vars
+        run: ln -s inventory/group_vars
+
+      - name: Prepare package source
+        uses: roles-ansible/check-ansible-debian-stretch-action@master
+        with:
+          targets: "./prepare-client-packages.yml"
+          hosts: "localhost"
+
       - name: Install dependencies
         run: brew install gnu-tar
 
@@ -98,6 +119,7 @@ jobs:
         run: gem install --no-document fpm
 
       - name: Build package
+        #run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
         run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
 
   release:
