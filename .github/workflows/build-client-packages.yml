@@ -57,13 +57,6 @@ jobs:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
 
-      - name: Build MacOS package
-        id: build-osxpkg
-        uses: bpicode/github-action-fpm@master
-        with:
-          fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
-
       - name: Find filenames of downloaded packages
         id: find_filenames
         shell: bash
@@ -119,8 +112,20 @@ jobs:
         run: gem install --no-document fpm
 
       - name: Build package
-        #run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
         run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
+
+      - name: Find filename of package
+        id: find_filenames
+        shell: bash
+        run: |
+          pkgfile="$(ls -1 *.pkg)"
+          echo ::set-output name=pkgfile::${pkgfile}
+
+      - name: Upload macOS package as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: macOS package
+          path: ${{ steps.find_filenames.outputs.pkgfile }}
 
   release:
     needs: [build-packages, build-osx-package]
