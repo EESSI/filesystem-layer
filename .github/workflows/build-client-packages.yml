@@ -98,7 +98,7 @@ jobs:
         run: gem install --no-document fpm
 
       - name: Build package
-        run: FPM_OPTS="--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'" fpm etc"
+        run: FPM_OPTS="--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'" fpm etc
 
   release:
     needs: [build-packages, build-osx-package]
