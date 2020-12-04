@@ -129,6 +129,7 @@ jobs:
           path: ${{ steps.find_filenames.outputs.pkgfile }}
 
   test-package:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
