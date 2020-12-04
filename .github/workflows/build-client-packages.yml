@@ -136,7 +136,8 @@ jobs:
         include:
           - os: macos-latest
             pkg_name: macOS package
-            pkg_ext: .pkg
+            pkg_ext: pkg
+            pkg_install_cmd: installer -target / -pkg
     steps:
       - name: Download package
         uses: actions/download-artifact@v2
@@ -151,7 +152,7 @@ jobs:
           echo ::set-output name=pkgfile::${pkgfile}
 
       - name: Install package
-        run: installer -pkg ./${{ steps.find_filename.outputs.pkgfile }} -target /
+        run: ${{ pkg_install_cmd }} ./${{ steps.find_filename.outputs.pkgfile }} 
 
   release:
     needs: [build-packages, build-osx-package]
