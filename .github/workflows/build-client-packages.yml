@@ -147,7 +147,7 @@ jobs:
         id: find_filename
         shell: bash
         run: |
-          pkgfile="$(ls -1 *.${{ pkg_ext }})"
+          pkgfile="$(ls -1 *.${{ matrix.pkg_ext }})"
           echo ::set-output name=pkgfile::${pkgfile}
 
       - name: Install package
