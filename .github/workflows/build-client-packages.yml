@@ -152,7 +152,7 @@ jobs:
           echo ::set-output name=pkgfile::${pkgfile}
 
       - name: Install package
-        run: ${{ pkg_install_cmd }} ./${{ steps.find_filename.outputs.pkgfile }} 
+        run: ${{ matrix.pkg_install_cmd }} ./${{ steps.find_filename.outputs.pkgfile }} 
 
   release:
     needs: [build-packages, build-osx-package]
