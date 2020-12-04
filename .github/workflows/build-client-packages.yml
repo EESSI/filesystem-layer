@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - master
-      - osxpkg_support
+      - test_client_packages_ci
     tags:
       - 'v*'
   pull_request:
     branches:
       - master
-      - osxpkg_support
+      - test_client_packages_ci
 
 jobs:
 
