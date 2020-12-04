@@ -106,11 +106,11 @@ jobs:
       - name: Make symlink to group_vars
         run: ln -s inventory/group_vars
 
+      - name: Install Ansible
+        run: pip install ansible
+
       - name: Prepare package source
-        uses: roles-ansible/check-ansible-debian-stretch-action@master
-        with:
-          targets: "./prepare-client-packages.yml"
-          hosts: "localhost"
+        run: ansible --connection=local ./prepare-client-packages.yml
 
       - name: Install dependencies
         run: brew install gnu-tar
