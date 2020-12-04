@@ -137,7 +137,7 @@ jobs:
           - os: macos-latest
             pkg_name: macOS package
             pkg_ext: pkg
-            pkg_install_cmd: installer -target / -pkg
+            pkg_install_cmd: sudo installer -target / -pkg
     steps:
       - name: Download package
         uses: actions/download-artifact@v2
