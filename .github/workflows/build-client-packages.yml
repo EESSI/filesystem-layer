@@ -101,7 +101,7 @@ jobs:
         run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
 
   release:
-    needs: build-packages,build-osx-package
+    needs: [build-packages, build-osx-package]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
