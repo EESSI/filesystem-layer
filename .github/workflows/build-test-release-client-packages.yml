@@ -195,7 +195,8 @@ jobs:
         run: echo "CVMFS_HTTP_PROXY=DIRECT" | tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
-        run: cvmfs_config setup
+        #run: cvmfs_config setup
+        run: mkdir -p /cvmfs/cvmfs-config.eessi-hpc.org && mount -t cvmfs cvmfs-config.eessi-hpc.org /cvmfs/cvmfs-config.eessi-hpc.org
 
       - name: Test repository access
         run: ls /cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
