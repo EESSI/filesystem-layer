@@ -157,7 +157,10 @@ jobs:
         run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" > /etc/cvmfs/default.local
+        run: sudo echo "CVMFS_HTTP_PROXY=DIRECT" > /etc/cvmfs/default.local
+
+      - name: CVMFS setup
+        run: sudo cvmfs_config setup
 
       - name: Test repository access
         run: ls /cvmfs/cvmfs-config.eessi-hpc.org/
