@@ -128,31 +128,35 @@ jobs:
           name: macOS package
           path: ${{ steps.find_filename.outputs.pkgfile }}
 
-  test-package:
-    needs: [build-packages, build-osx-package]
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: macos-latest
-            pkg_name: macOS package
-            pkg_ext: pkg
-            pkg_install_cmd: sudo installer -target / -pkg
+  test-package-osx:
+    needs: build-osx-package
     steps:
+      - name: Download CVMFS client
+        run: curl -o ~/Downloads/cvmfs-2.7.5.pkg https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.7.5/cvmfs-2.7.5.pkg
+
+      - name: Install CVMFS
+        run: sudo installer -target / -pkg cvmfs-2.7.5.pkg
+        
       - name: Download package
         uses: actions/download-artifact@v2
         with:
-          name: ${{ matrix.pkg_name }}
+          name: macOS package
 
       - name: Find filename of package
         id: find_filename
         shell: bash
         run: |
-          pkgfile="$(ls -1 *.${{ matrix.pkg_ext }})"
+          pkgfile="$(ls -1 *.pkg)"
           echo ::set-output name=pkgfile::${pkgfile}
 
       - name: Install package
-        run: ${{ matrix.pkg_install_cmd }} ./${{ steps.find_filename.outputs.pkgfile }} 
+        run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
+
+      - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
+        run: echo "CVMFS_HTTP_PROXY=DIRECT" >> /etc/cvmfs/default.local
+
+      - name: Test repository access
+        run: ls /cvmfs/cvmfs-config.eessi-hpc.org/
 
   release:
     needs: [build-packages, build-osx-package]
