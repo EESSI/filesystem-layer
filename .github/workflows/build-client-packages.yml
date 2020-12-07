@@ -135,6 +135,9 @@ jobs:
       - name: Download CVMFS client
         run: curl -o ~/Downloads/cvmfs-2.7.5.pkg https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.7.5/cvmfs-2.7.5.pkg
 
+      - name: Install OSXFUSE
+        run: brew install --cask osxfuse
+
       - name: Install CVMFS
         run: sudo installer -target / -pkg ~/Downloads/cvmfs-2.7.5.pkg
         
