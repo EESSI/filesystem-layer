@@ -62,8 +62,8 @@ jobs:
         id: find_filenames
         shell: bash
         run: |
-          rpmfile="$(ls -1 *.rpm)"
-          debfile="$(ls -1 *.deb)"
+          rpmfile="$(ls -1 cvmfs-config-eessi*.rpm)"
+          debfile="$(ls -1 cvmfs-config-eessi*.deb)"
           echo ::set-output name=rpmfile::${rpmfile}
           echo ::set-output name=debfile::${debfile}
 
@@ -119,7 +119,7 @@ jobs:
         id: find_filename
         shell: bash
         run: |
-          pkgfile="$(ls -1 *.pkg)"
+          pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
           echo ::set-output name=pkgfile::${pkgfile}
 
       - name: Upload macOS package as artifact
@@ -150,7 +150,7 @@ jobs:
         id: find_filename
         shell: bash
         run: |
-          pkgfile="$(ls -1 *.pkg)"
+          pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
           echo ::set-output name=pkgfile::${pkgfile}
 
       - name: Install package
@@ -189,9 +189,9 @@ jobs:
         id: find_filenames
         shell: bash
         run: |
-          rpmfile="$(ls -1 *.rpm)"
-          debfile="$(ls -1 *.deb)"
-          pkgfile="$(ls -1 *.pkg)"
+          rpmfile="$(ls -1 cvmfs-config-eessi*.rpm)"
+          debfile="$(ls -1 cvmfs-config-eessi*.deb)"
+          pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
           echo ::set-output name=rpmfile::${rpmfile}
           echo ::set-output name=debfile::${debfile}
           echo ::set-output name=pkgfile::${pkgfile}
