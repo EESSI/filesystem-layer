@@ -170,7 +170,7 @@ jobs:
     runs-on: ubuntu-latest
     container: 
       image: centos:centos7
-      options: --device /dev/fuse --cap-add SYS_ADMIN
+      options: --device /dev/fuse --privileged
 
     steps:
       - name: Download and install CVMFS client
