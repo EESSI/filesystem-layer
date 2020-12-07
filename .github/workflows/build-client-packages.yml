@@ -133,13 +133,13 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Download CVMFS client
-        run: curl -o ~/Downloads/cvmfs-2.7.5.pkg https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.7.5/cvmfs-2.7.5.pkg
+        run: curl -o cvmfs-2.7.5.pkg https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.7.5/cvmfs-2.7.5.pkg
 
       - name: Install OSXFUSE
         run: brew install --cask osxfuse
 
       - name: Install CVMFS
-        run: sudo installer -target / -pkg ~/Downloads/cvmfs-2.7.5.pkg
+        run: sudo installer -target / -pkg cvmfs-2.7.5.pkg
         
       - name: Download package
         uses: actions/download-artifact@v2
@@ -157,20 +157,13 @@ jobs:
         run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        #run: sudo echo "CVMFS_HTTP_PROXY=DIRECT" > /etc/cvmfs/default.local
-        run: ls -l /etc/cvmfs && ls -l /usr/local/etc/cvmfs
-
-      - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
         run: echo "CVMFS_HTTP_PROXY=DIRECT" | sudo tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
         run: sudo mkdir -p /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org && sudo mount -t cvmfs cvmfs-config.eessi-hpc.org /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org
 
-      #- name: CVMFS setup
-      #  run: sudo cvmfs_config setup
-
       - name: Test repository access
-        run: ls /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org/
+        run: ls /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
 
   release:
     needs: [build-packages, build-osx-package]
