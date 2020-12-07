@@ -136,7 +136,7 @@ jobs:
         run: curl -o ~/Downloads/cvmfs-2.7.5.pkg https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.7.5/cvmfs-2.7.5.pkg
 
       - name: Install CVMFS
-        run: sudo installer -target / -pkg cvmfs-2.7.5.pkg
+        run: sudo installer -target / -pkg ~/Downloads/cvmfs-2.7.5.pkg
         
       - name: Download package
         uses: actions/download-artifact@v2
@@ -154,7 +154,7 @@ jobs:
         run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" >> /etc/cvmfs/default.local
+        run: echo "CVMFS_HTTP_PROXY=DIRECT" > /etc/cvmfs/default.local
 
       - name: Test repository access
         run: ls /cvmfs/cvmfs-config.eessi-hpc.org/
