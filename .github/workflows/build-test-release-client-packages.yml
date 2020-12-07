@@ -168,7 +168,10 @@ jobs:
   test-rpm-package:
     needs: build-linux-packages
     runs-on: ubuntu-latest
-    container: centos:centos7
+    container: 
+      image: centos:centos7
+      options: --device /dev/fuse --cap-add SYS_ADMIN
+
     steps:
       - name: Download and install CVMFS client
         run: yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
