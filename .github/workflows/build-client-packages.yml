@@ -170,7 +170,7 @@ jobs:
         run: sudo cvmfs_config setup
 
       - name: Test repository access
-        run: ls /cvmfs/cvmfs-config.eessi-hpc.org/
+        run: ls /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org/
 
   release:
     needs: [build-packages, build-osx-package]
