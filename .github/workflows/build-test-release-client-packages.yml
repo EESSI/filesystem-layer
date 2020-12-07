@@ -129,7 +129,7 @@ jobs:
           path: ${{ steps.find_filename.outputs.pkgfile }}
 
   test-deb-package:
-    needs: build
+    needs: build-linux-packages
     runs-on: ubuntu-latest
     steps:
       - name: Install CVMFS dependencies
@@ -166,7 +166,7 @@ jobs:
         run: ls /cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
 
   test-rpm-package:
-    needs: build
+    needs: build-linux-packages
     runs-on: ubuntu-latest
     container: centos:centos7
     steps:
