@@ -163,11 +163,11 @@ jobs:
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
         run: echo "CVMFS_HTTP_PROXY=DIRECT" | sudo tee /etc/cvmfs/default.local
 
-      #- name: Mount the repositories
-      #  run: sudo mkdir -p /cvmfs/cvmfs-config.eessi-hpc.org && sudo mount -t cvmfs cvmfs-config.eessi-hpc.org /cvmfs/cvmfs-config.eessi-hpc.org
+      - name: Mount the repositories
+        run: sudo mkdir -p /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org && sudo mount -t cvmfs cvmfs-config.eessi-hpc.org /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org
 
-      - name: CVMFS setup
-        run: sudo cvmfs_config setup
+      #- name: CVMFS setup
+      #  run: sudo cvmfs_config setup
 
       - name: Test repository access
         run: ls /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org/
