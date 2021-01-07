@@ -13,14 +13,14 @@ Note: the `docker push` part of the script assumes your Docker Hub creditionals 
 (can be done via `docker login docker.io`, for example).
 
 ```shell
-export EESSI_PILOT_VERSION=2020.10
+export EESSI_PILOT_VERSION=2020.12
 ./docker_build_push.sh ${EESSI_PILOT_VERSION}
 ```
 
 ### Run (using Singularity)
 
 ```
-export EESSI_PILOT_VERSION=2020.10
+export EESSI_PILOT_VERSION=2020.12
 mkdir -p /tmp/$USER/{var-lib-cvmfs,var-run-cvmfs,home}
 export SINGULARITY_BIND="/tmp/$USER/var-run-cvmfs:/var/run/cvmfs,/tmp/$USER/var-lib-cvmfs:/var/lib/cvmfs"
 export SINGULARITY_HOME="/tmp/$USER/home:/home/$USER"
