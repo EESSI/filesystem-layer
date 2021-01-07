@@ -1,4 +1,4 @@
-FROM docker.io/library/centos:7.8.2003
+FROM docker.io/library/centos:7
 
 RUN yum install -y http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs-release-latest.noarch.rpm \
  && yum install -y cvmfs cvmfs-config-default cvmfs-fuse3 sudo vim openssh-clients \
