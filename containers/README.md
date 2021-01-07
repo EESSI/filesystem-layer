@@ -13,18 +13,17 @@ Note: the `docker push` part of the script assumes your Docker Hub creditionals 
 (can be done via `docker login docker.io`, for example).
 
 ```shell
-export EESSI_PILOT_VERSION=2020.12
-./docker_build_push.sh ${EESSI_PILOT_VERSION}
+./docker_build_push.sh
 ```
+This will build the container for the architecture of your host (e.g. `x86_64` or `aarch64`), and push the image to Docker Hub.
 
 ### Run (using Singularity)
 
 ```
-export EESSI_PILOT_VERSION=2020.12
 mkdir -p /tmp/$USER/{var-lib-cvmfs,var-run-cvmfs,home}
 export SINGULARITY_BIND="/tmp/$USER/var-run-cvmfs:/var/run/cvmfs,/tmp/$USER/var-lib-cvmfs:/var/lib/cvmfs"
 export SINGULARITY_HOME="/tmp/$USER/home:/home/$USER"
 export EESSI_CONFIG="container:cvmfs2 cvmfs-config.eessi-hpc.org /cvmfs/cvmfs-config.eessi-hpc.org"
 export EESSI_PILOT="container:cvmfs2 pilot.eessi-hpc.org /cvmfs/pilot.eessi-hpc.org"
-singularity shell --fusemount "$EESSI_CONFIG" --fusemount "$EESSI_PILOT" docker://eessi/client-pilot:centos7-$(uname -m)-${EESSI_PILOT_VERSION}
+singularity shell --fusemount "$EESSI_CONFIG" --fusemount "$EESSI_PILOT" docker://eessi/client-pilot:centos7-$(uname -m)
 ```
