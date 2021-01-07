@@ -7,10 +7,18 @@ on:
       - build_packages
     tags:
       - 'v*'
+    paths-ignore:
+      - "**.md"
+      - "**.example"
+      - "containers/**"
   pull_request:
     branches:
       - master
       - build_packages
+    paths-ignore:
+      - "**.md"
+      - "**.example"
+      - "containers/**"
 
 jobs:
 
