@@ -7,12 +7,14 @@ on:
     paths-ignore:
       - "**.md"
       - "**.example"
+      - "containers/**"
   pull_request:
     branches:
       - master
     paths-ignore:
       - "**.md"
       - "**.example"
+      - "containers/**"
 
 jobs:
   test-playbook:
