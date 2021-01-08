@@ -10,5 +10,5 @@ RUN pip3 install ansible
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
-VOLUME [ “/sys/fs/cgroup” ]
+VOLUME ["/sys/fs/cgroup"]
 CMD ["/lib/systemd/systemd"]

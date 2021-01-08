@@ -8,5 +8,5 @@ RUN yum install -y cronie
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
-VOLUME [ “/sys/fs/cgroup” ]
+VOLUME ["/sys/fs/cgroup"]
 CMD ["/usr/sbin/init"]
