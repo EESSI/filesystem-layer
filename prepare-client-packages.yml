@@ -18,7 +18,7 @@
       - "{{ package_source_dir }}/etc"
       - "{{ package_source_dir }}/etc/cvmfs"
       - "{{ package_source_dir }}/etc/cvmfs/keys"
-      - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_cvmfs_server_urls.domain }}"
+      - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_cvmfs_config_repo.domain }}"
       - "{{ package_source_dir }}/etc/cvmfs/default.d"
       - "{{ package_source_dir }}/etc/cvmfs/domain.d"
 
@@ -34,7 +34,7 @@
           CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(';') }}"
           CVMFS_KEYS_DIR="{{ eessi_cvmfs_repositories.key_dir }}"
           CVMFS_USE_GEOAPI="yes"
-        dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ eessi_cvmfs_server_urls.domain }}.conf"
+        dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ eessi_cvmfs_config_repo.domain }}.conf"
         mode: 0644
 
 #    - name: Make EESSI CVMFS default configuration file
