@@ -33,6 +33,7 @@
         content: |
           CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(';') }}"
           CVMFS_KEYS_DIR="{{ eessi_cvmfs_repositories.key_dir }}"
+          CVMFS_USE_GEOAPI="yes"
         dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ eessi_cvmfs_server_urls.domain }}.conf"
         mode: 0644
 
