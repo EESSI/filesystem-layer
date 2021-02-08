@@ -5,7 +5,7 @@
   vars:
     package_vendor: EESSI
     package_maintainer: EESSI <eessi@list.rug.nl>
-    package_description: CVMFS config repository package for EESSI.
+    package_description: CVMFS configuration package for EESSI.
     package_source_dir: "{{ lookup('env', 'GITHUB_WORKSPACE') | default('/tmp', True) }}/package"
   tasks:
     - name: Create directory structure for the CVMFS config
@@ -18,9 +18,9 @@
       - "{{ package_source_dir }}/etc"
       - "{{ package_source_dir }}/etc/cvmfs"
       - "{{ package_source_dir }}/etc/cvmfs/keys"
-      - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_cvmfs_config_repo.domain }}"
-      - "{{ package_source_dir }}/etc/cvmfs/config.d"
+      - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_cvmfs_server_urls.domain }}"
       - "{{ package_source_dir }}/etc/cvmfs/default.d"
+      - "{{ package_source_dir }}/etc/cvmfs/domain.d"
 
     - name: Make EESSI CVMFS public key file
       copy:
@@ -28,18 +28,18 @@
         dest: "{{ package_source_dir }}{{ eessi_cvmfs_config_repo.key.path }}"
         mode: 0644
 
-    - name: Make EESSI CVMFS configuration file
+    - name: Make EESSI CVMFS domain configuration file
       copy:
         content: |
           CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(';') }}"
-          CVMFS_PUBLIC_KEY="{{ eessi_cvmfs_config_repo.key.path }}"
-        dest: "{{ package_source_dir }}/etc/cvmfs/config.d/{{ eessi_cvmfs_config_repo.repository.repository }}.conf"
+          CVMFS_KEYS_DIR="{{ eessi_cvmfs_repositories.key_dir }}"
+        dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ eessi_cvmfs_server_urls.domain }}.conf"
         mode: 0644
 
-    - name: Make EESSI CVMFS default configuration file
-      copy:
-        content: |
-          CVMFS_CONFIG_REPOSITORY="{{ eessi_cvmfs_config_repo.repository.repository }}"
-          CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
-        dest: "{{ package_source_dir }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
-        mode: 0644
+#    - name: Make EESSI CVMFS default configuration file
+#      copy:
+#        content: |
+#          CVMFS_CONFIG_REPOSITORY="{{ eessi_cvmfs_config_repo.repository.repository }}"
+#          CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
+#        dest: "{{ package_source_dir }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
+#        mode: 0644
