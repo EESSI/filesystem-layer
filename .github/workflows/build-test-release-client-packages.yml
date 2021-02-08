@@ -4,13 +4,12 @@ on:
   push:
     branches:
       - master
-      - test_client_packages_ci
+      - remove_config_repo
     tags:
       - 'v*'
   pull_request:
     branches:
       - master
-      - test_client_packages_ci
 
 jobs:
 
