@@ -8,6 +8,15 @@
     package_description: CVMFS configuration package for EESSI.
     package_source_dir: "{{ lookup('env', 'GITHUB_WORKSPACE') | default('/tmp', True) }}/package"
   tasks:
+    - name: Check the number of defined domains (should be one!)
+      fail:
+        msg: "Cannot build a client package when eessi_cvmfs_server_urls contains different domains"
+      when: eessi_cvmfs_server_urls | selectattr('domain') | list | unique | count > 1
+
+    - name: Determine domain name
+      set_fact:
+        eessi_domain: "{{ eessi_cvmfs_server_urls[0].domain }}"
+
     - name: Create directory structure for the CVMFS config
       file:
        path: "{{ item }}"
@@ -18,29 +27,28 @@
       - "{{ package_source_dir }}/etc"
       - "{{ package_source_dir }}/etc/cvmfs"
       - "{{ package_source_dir }}/etc/cvmfs/keys"
-      - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_cvmfs_config_repo.domain }}"
-      - "{{ package_source_dir }}/etc/cvmfs/default.d"
+      - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_domain }}"
       - "{{ package_source_dir }}/etc/cvmfs/domain.d"
 
     - name: Make EESSI CVMFS public key file
       copy:
-        content: "{{ eessi_cvmfs_config_repo.key.key }}"
-        dest: "{{ package_source_dir }}{{ eessi_cvmfs_config_repo.key.path }}"
+        content: "{{ item.key }}"
+        dest: "{{ package_source_dir }}{{ item.path }}"
         mode: 0644
+      with_items: "{{ eessi_cvmfs_keys }}"
 
     - name: Make EESSI CVMFS domain configuration file
       copy:
         content: |
-          CVMFS_SERVER_URL="{{ eessi_cvmfs_config_repo.urls|join(';') }}"
-          CVMFS_KEYS_DIR="{{ eessi_cvmfs_repositories.key_dir }}"
-          CVMFS_USE_GEOAPI="yes"
-        dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ eessi_cvmfs_config_repo.domain }}.conf"
+          CVMFS_SERVER_URL="{{ item.urls|join(';') }}"
+          CVMFS_KEYS_DIR="/etc/cvmfs/keys/{{ item.domain }}"
+          CVMFS_USE_GEOAPI="{{ item.use_geoapi | ternary('yes', 'no') }}"
+          
+          if [ "$CVMFS_HTTP_PROXY" = "" ]; then
+              # For individual clients (laptops, clusters < 5 nodes), the default is to
+              # use a site proxy where possible and otherwise a direct stratum 1 connection
+              CVMFS_HTTP_PROXY="auto;DIRECT"
+          fi
+        dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ item.domain }}.conf"
         mode: 0644
-
-#    - name: Make EESSI CVMFS default configuration file
-#      copy:
-#        content: |
-#          CVMFS_CONFIG_REPOSITORY="{{ eessi_cvmfs_config_repo.repository.repository }}"
-#          CVMFS_DEFAULT_DOMAIN="{{ eessi_cvmfs_config_repo.domain }}"
-#        dest: "{{ package_source_dir }}/etc/cvmfs/default.d/80-eessi-cvmfs.conf"
-#        mode: 0644
+      with_items: "{{ eessi_cvmfs_server_urls }}"
