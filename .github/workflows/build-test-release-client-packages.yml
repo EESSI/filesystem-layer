@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - remove_config_repo
     tags:
       - 'v*'
   pull_request:
