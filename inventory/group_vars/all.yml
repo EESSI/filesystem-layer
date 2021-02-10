@@ -26,7 +26,7 @@ eessi_cvmfs_keys:
      +hCt494UsFs3tchmTebpK+x3pVRXybQ66Qm1mQiaz+2VbUJdQEov4RCC5PcOmOOk
      BwIDAQAB
      -----END PUBLIC KEY-----
-  - path: /etc/cvmfs/keys/eessi-hpc.org/cvmfs-config.eessi-hpc.org.pub
+  - path: /etc/cvmfs/keys/eessi-hpc.org/pilot.eessi-hpc.org.pub
     key: |
      -----BEGIN PUBLIC KEY-----
      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAommtaoqQ36Rb/cFnqUWg
