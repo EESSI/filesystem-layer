@@ -30,7 +30,7 @@
       - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_domain }}"
       - "{{ package_source_dir }}/etc/cvmfs/domain.d"
 
-    - name: Make EESSI CVMFS public key file
+    - name: Make EESSI CVMFS public key files
       copy:
         content: "{{ item.key }}"
         dest: "{{ package_source_dir }}{{ item.path }}"
