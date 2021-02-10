@@ -162,7 +162,7 @@ jobs:
         run: sudo cvmfs_config setup
 
       - name: Test repository access
-        run: ls /cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
+        run: ls /cvmfs/pilot.eessi-hpc.org/etc/cvmfs
 
   test-rpm-package:
     needs: build-linux-packages
@@ -198,10 +198,10 @@ jobs:
 
       - name: Mount the repositories
         #run: cvmfs_config setup
-        run: mkdir -p /cvmfs/cvmfs-config.eessi-hpc.org && mount -t cvmfs cvmfs-config.eessi-hpc.org /cvmfs/cvmfs-config.eessi-hpc.org
+        run: mkdir -p /cvmfs/pilot.eessi-hpc.org && mount -t cvmfs pilot.eessi-hpc.org /cvmfs/pilot.eessi-hpc.org
 
       - name: Test repository access
-        run: ls /cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
+        run: ls /cvmfs/pilot.eessi-hpc.org/etc/cvmfs
 
   test-macos-package:
     needs: build-macos-package
@@ -232,10 +232,10 @@ jobs:
         run: echo "CVMFS_HTTP_PROXY=DIRECT" | sudo tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
-        run: sudo mkdir -p /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org && sudo mount -t cvmfs cvmfs-config.eessi-hpc.org /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org
+        run: sudo mkdir -p /Users/Shared/cvmfs/pilot.eessi-hpc.org && sudo mount -t cvmfs pilot.eessi-hpc.org /Users/Shared/cvmfs/pilot.eessi-hpc.org
 
       - name: Test repository access
-        run: ls /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
+        run: ls /Users/Shared/cvmfs/pilot.eessi-hpc.org/etc/cvmfs
 
   release:
     needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package]
