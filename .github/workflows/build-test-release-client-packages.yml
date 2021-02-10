@@ -57,14 +57,23 @@ jobs:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
 
+      - name: Build tar package
+        id: build-tar
+        uses: bpicode/github-action-fpm@master
+        with:
+          fpm_args: "etc"
+          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
+
       - name: Find filenames of generated packages
         id: find_filenames
         shell: bash
         run: |
           rpmfile="$(ls -1 cvmfs-config-eessi*.rpm)"
           debfile="$(ls -1 cvmfs-config-eessi*.deb)"
+          tarfile="$(ls -1 cvmfs-config-eessi*.tar)"
           echo ::set-output name=rpmfile::${rpmfile}
           echo ::set-output name=debfile::${debfile}
+          echo ::set-output name=tarfile::${tarfile}
 
       - name: Upload Deb package as artifact
         uses: actions/upload-artifact@v2
@@ -77,6 +86,12 @@ jobs:
         with:
           name: RPM package
           path: ${{ steps.find_filenames.outputs.rpmfile }}
+
+      - name: Upload tar package as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Tar package
+          path: ${{ steps.find_filenames.outputs.tarfile }}
 
   build-macos-package:
     runs-on: macos-latest
@@ -252,6 +267,11 @@ jobs:
         with:
           name: RPM package
 
+      - name: Download tar package
+        uses: actions/download-artifact@v2
+        with:
+          name: Tar package
+
       - name: Download macOS package
         uses: actions/download-artifact@v2
         with:
@@ -264,9 +284,11 @@ jobs:
           rpmfile="$(ls -1 cvmfs-config-eessi*.rpm)"
           debfile="$(ls -1 cvmfs-config-eessi*.deb)"
           pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
+          tarfile="$(ls -1 cvmfs-config-eessi*.tar)"
           echo ::set-output name=rpmfile::${rpmfile}
           echo ::set-output name=debfile::${debfile}
           echo ::set-output name=pkgfile::${pkgfile}
+          echo ::set-output name=tarfile::${tarfile}
 
       - name: Create Release
         id: create_release
@@ -308,3 +330,13 @@ jobs:
           asset_path: ${{ steps.find_filenames.outputs.pkgfile }}
           asset_name: ${{ steps.find_filenames.outputs.pkgfile }}
           asset_content_type: application/x-newton-compatible-pkg
+
+      - name: Upload Tar as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_filenames.outputs.tarfile }}
+          asset_name: ${{ steps.find_filenames.outputs.tarfile }}
+          asset_content_type: application/x-tar
