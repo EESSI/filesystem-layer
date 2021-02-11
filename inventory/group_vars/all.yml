@@ -4,6 +4,11 @@
 # Automatically configure EESSI CVMFS repos.
 eessi_cvmfs_repos_enabled: true
 
+# Keep this for legacy reasons (and for the Stratum 1 CI)
+eessi_cvmfs_config_repo:
+  repository:
+    repository: cvmfs-config.eessi-hpc.org
+
 # Email address for the project, which will be put in the contact file on the config repo.
 eessi_email: eessi@list.rug.nl
 
