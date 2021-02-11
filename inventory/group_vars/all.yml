@@ -37,6 +37,17 @@ eessi_cvmfs_keys:
      HJN0HHOVdRIwNjjPkV2jIqhJoI85no89v8/V45SFPVo+A7N0Cj4QdQrQTezpnlby
      FQIDAQAB
      -----END PUBLIC KEY-----
+  - path: /etc/cvmfs/keys/eessi-hpc.org/ci.eessi-hpc.org.pub
+    key: |
+     -----BEGIN PUBLIC KEY-----
+     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAommtaoqQ36Rb/cFnqUWg
+     8FoYCOjJWVBMQ4sVZ87oFRWehOUbcfy/ah85D9055HQws7i/hLNGJJAa7Es3E2o8
+     v8LtSlRdfR1A7b7LA6p3213HHz6dNU6I1riwtE2OP7/w4Q3+Agj1iRtW535GwzGo
+     4ZbewL8T1kbyaEm4HyefoitHXJthoPyTlYAhvAegIil1VJPhJZW+q/NWxnsd9QGJ
+     uAtbSICQg6mBJI50KiCBYmKHOAjH2W8qEnLWc7JoPoNvAHuMx1ya6YerBM5T9Esm
+     HJN0HHOVdRIwNjjPkV2jIqhJoI85no89v8/V45SFPVo+A7N0Cj4QdQrQTezpnlby
+     FQIDAQAB
+     -----END PUBLIC KEY-----
 
 # URLs for all the Stratum 1 servers.
 eessi_cvmfs_server_urls:
