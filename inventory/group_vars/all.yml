@@ -4,33 +4,6 @@
 # Automatically configure EESSI CVMFS repos.
 eessi_cvmfs_repos_enabled: true
 
-# Keep this for legacy reasons (and for the Stratum 1 CI)
-# Rename this to ci.eessi-hpc.org later on?
-eessi_cvmfs_config_repo:
-  domain: eessi-hpc.org
-  key:
-    path: /etc/cvmfs/keys/eessi-hpc.org/cvmfs-config.eessi-hpc.org.pub
-    key: |
-     -----BEGIN PUBLIC KEY-----
-     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqoTBc/Eksr9ECEOoCzHA
-     F20UjePR7mJyWB13eTBXnjq7PLKKilfk2llLKetPIRMEmbvp97NiQ9ALe/tiGDzT
-     1Wg82Mf9oO4DNQYrTfE/MP5inIrMtSv1WnYJYV4Bgm24s8IhHXytIf1D4qt0x1v5
-     0yRui0dwaZrErWKRKufbJ6ehmEDHuVSEAujrORyig/jYFKVyTaCsXnmwFDJmX2Uw
-     RGCaf0M9ZLYs9t/SWA0s08rle5kH82hgBsIvUr7PLT7hbU407VK6+Y02tuxbI0JR
-     +hCt494UsFs3tchmTebpK+x3pVRXybQ66Qm1mQiaz+2VbUJdQEov4RCC5PcOmOOk
-     BwIDAQAB
-     -----END PUBLIC KEY-----
-  urls:
-    - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
-    - "http://cvmfs-s1-bgo.eessi-hpc.org/cvmfs/@fqrn@"
-  repository:
-    repository: cvmfs-config.eessi-hpc.org
-    stratum0: cvmfs-s0.eessi-hpc.org
-    owner: "{{ cvmfs_repo_owner | default('root') }}"
-    key_dir: /etc/cvmfs/keys/eessi-hpc.org
-    server_options: []
-    client_options: []
-
 # Email address for the project, which will be put in the contact file on the config repo.
 eessi_email: eessi@list.rug.nl
 
@@ -82,9 +55,19 @@ eessi_cvmfs_repositories:
     server_options:
       - CVMFS_AUTO_GC=false
       - CVMFS_GARBAGE_COLLECTION=true
-      - CVMFS_AUTO_GC=false
     client_options:
       - CVMFS_NFILES=4096
+    use_for_ci: no
+  - repository: ci.eessi-hpc.org
+    stratum0: cvmfs-s0.eessi-hpc.org
+    owner: "{{ cvmfs_repo_owner | default('root') }}"
+    key_dir: /etc/cvmfs/keys/eessi-hpc.org
+    server_options:
+      - CVMFS_AUTO_GC=false
+      - CVMFS_GARBAGE_COLLECTION=true
+    client_options:
+      - CVMFS_NFILES=4096
+    use_for_ci: yes
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.
