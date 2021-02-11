@@ -61,7 +61,7 @@ eessi_cvmfs_repositories:
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.
-galaxy_cvmfs_config_repo: "{{ eessi_cvmfs_config_repo }}"
+#galaxy_cvmfs_config_repo: "{{ eessi_cvmfs_config_repo }}"
 galaxy_cvmfs_keys: "{{ eessi_cvmfs_keys }}"
 galaxy_cvmfs_server_urls: "{{ eessi_cvmfs_server_urls }}"
 galaxy_cvmfs_repositories: "{{ eessi_cvmfs_repositories }}"
