@@ -19,7 +19,7 @@ export CVMFS_GEO_DB_FILE=NONE
 if [ $playbook == "stratum1.yml" ]
 then
 	cat >> inventory/local_site_specific_vars.yml <<-EOF
-		cvmfs_repositories: "{{ eessi_cvmfs_repositories | selectattr('use_for_ci', 'defined') | selectattr('use_for_ci', 'equalto', true) | map(attribute='repository') | list }}"
+		cvmfs_repositories: "{{ eessi_cvmfs_repositories | selectattr('use_for_ci', 'defined') | selectattr('use_for_ci', 'eq', true) | map(attribute='repository') | list }}"
 	EOF
 fi
 
