@@ -18,7 +18,7 @@ export CVMFS_GEO_DB_FILE=NONE
 # Only test the cvmfs-config repo on the Stratum 1, as the other ones may be very large.
 if [ $playbook == "stratum1.yml" ]
 then
-  echo 'cvmfs_repositories: "{{ eessi_cvmfs_repositories | selectattr('use_for_ci', 'defined') | selectattr('use_for_ci', 'equalto', true) | map(attribute='repository') | list }}"' >> inventory/local_site_specific_vars.yml
+  echo 'cvmfs_repositories: "{{ eessi_cvmfs_repositories | selectattr(\"use_for_ci\", \"defined\") | selectattr(\"use_for_ci\", \"equalto\", true) | map(attribute=\"repository\") | list }}"' >> inventory/local_site_specific_vars.yml
 fi
 
 # Install the Ansible dependencies.
