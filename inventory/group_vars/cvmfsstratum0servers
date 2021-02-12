@@ -1,3 +1,2 @@
 ---
 
-#cvmfs_repositories: "{{ eessi_cvmfs_repositories + [eessi_cvmfs_config_repo.repository] }}"
