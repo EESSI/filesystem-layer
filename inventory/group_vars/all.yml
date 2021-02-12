@@ -11,6 +11,9 @@ eessi_email: eessi@list.rug.nl
 # Defaults for eessi-hpc.org repos.
 #
 
+# We do not use a config repo anymore.
+eessi_cvmfs_config_repo: {}
+
 # Public keys for the repositories, which you can find on the Stratum 0 at:
 # /etc/cvmfs/keys/*.pub
 # Note: you first have to run the stratum0.yml playbook once to generate the repositories and keys.
@@ -68,8 +71,8 @@ eessi_cvmfs_repositories:
     server_options:
       - CVMFS_AUTO_GC=false
       - CVMFS_GARBAGE_COLLECTION=true
-    client_options:
-      - CVMFS_NFILES=4096
+    client_options: []
+#      - CVMFS_NFILES=4096
     use_for_ci: no
   - repository: ci.eessi-hpc.org
     stratum0: cvmfs-s0.eessi-hpc.org
@@ -78,13 +81,13 @@ eessi_cvmfs_repositories:
     server_options:
       - CVMFS_AUTO_GC=false
       - CVMFS_GARBAGE_COLLECTION=true
-    client_options:
-      - CVMFS_NFILES=4096
+    client_options: []
+#      - CVMFS_NFILES=4096
     use_for_ci: yes
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.
-#galaxy_cvmfs_config_repo: "{{ eessi_cvmfs_config_repo }}"
+galaxy_cvmfs_config_repo: "{{ eessi_cvmfs_config_repo }}"
 galaxy_cvmfs_keys: "{{ eessi_cvmfs_keys }}"
 galaxy_cvmfs_server_urls: "{{ eessi_cvmfs_server_urls }}"
 galaxy_cvmfs_repositories: "{{ eessi_cvmfs_repositories }}"
