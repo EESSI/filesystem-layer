@@ -170,7 +170,7 @@ jobs:
         run: sudo dpkg -i ./${{ steps.find_filename.outputs.debfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" | sudo tee /etc/cvmfs/default.local
+        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
         run: sudo cvmfs_config setup
@@ -208,7 +208,7 @@ jobs:
         run: rpm -i ./${{ steps.find_filename.outputs.rpmfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" | tee /etc/cvmfs/default.local
+        run: echo "CVMFS_CLIENT_PROFILE=single" | tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
         #run: cvmfs_config setup
@@ -246,7 +246,7 @@ jobs:
         run: sudo tar -C / -xf ./${{ steps.find_filename.outputs.tarfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" | sudo tee /etc/cvmfs/default.local
+        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
         run: sudo cvmfs_config setup
@@ -280,7 +280,7 @@ jobs:
         run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" | sudo tee /etc/cvmfs/default.local
+        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
         run: sudo mkdir -p /Users/Shared/cvmfs/pilot.eessi-hpc.org && sudo mount -t cvmfs pilot.eessi-hpc.org /Users/Shared/cvmfs/pilot.eessi-hpc.org
