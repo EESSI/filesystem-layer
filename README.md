@@ -166,8 +166,12 @@ Next, you need to make a file `/etc/cvmfs/default.local` manually; this file is 
 contains, for instance, the URL to your local proxy and the size of the local cache. As an example, you can put
 the following in this file, which corresponds to not using a proxy and setting the local quota limit to 40000MB:
 ```
-CVMFS_HTTP_PROXY=DIRECT
+CVMFS_CLIENT_PROFILE=single
 CVMFS_QUOTA_LIMIT=40000
+```
+If you do want to use your own proxy, replace the first line by:
+```
+CVMFS_HTTP_PROXY=<hostname of your proxy>:<port>
 ```
 For more details about configuring your client, see https://cvmfs.readthedocs.io/en/stable/cpt-configure.html.
 
