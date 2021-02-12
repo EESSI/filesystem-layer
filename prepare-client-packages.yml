@@ -40,15 +40,24 @@
     - name: Make EESSI CVMFS domain configuration file
       copy:
         content: |
+          # Stratum 1 servers for the eessi-hpc.org domain
           CVMFS_SERVER_URL="{{ item.urls|join(';') }}"
+
+          # Public keys for the eessi-hpc.org domain
           CVMFS_KEYS_DIR="/etc/cvmfs/keys/{{ item.domain }}"
+
+          # Ènable or disable the Geo API, based on the configuration file
           CVMFS_USE_GEOAPI="{{ item.use_geoapi | ternary('yes', 'no') }}"
 
-          if [ "$CVMFS_HTTP_PROXY" = "" ]; then
-              # For individual clients (laptops, clusters < 5 nodes), the default is to
-              # use a site proxy where possible and otherwise a direct stratum 1 connection
+          # The client profile is supposed to be set in /etc/cvmfs/default.local
+          if [ "$CVMFS_CLIENT_PROFILE" = "single" ]; then
+            if [ "$CVMFS_HTTP_PROXY" = "" ]; then
+              # For individual clients (laptops, clusters < 5 nodes), use a site proxy
+              # where possible and otherwise a direct stratum 1 connection
               CVMFS_HTTP_PROXY="auto;DIRECT"
+            fi
           fi
+
         dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ item.domain }}.conf"
         mode: 0644
       with_items: "{{ eessi_cvmfs_server_urls }}"
