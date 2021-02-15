@@ -4,7 +4,7 @@
 # Automatically configure EESSI CVMFS repos.
 eessi_cvmfs_repos_enabled: true
 
-# Email address for the project, which will be put in the contact file on the config repo.
+# Email address for the project.
 eessi_email: eessi@list.rug.nl
 
 #
