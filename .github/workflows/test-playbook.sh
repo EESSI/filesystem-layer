@@ -15,7 +15,7 @@ echo '  - 127.0.0.1' >> inventory/local_site_specific_vars.yml
 # Don't use the GEO API for the Stratum 1, since we do not have a key here.
 export CVMFS_GEO_DB_FILE=NONE
 
-# Only test the cvmfs-config repo on the Stratum 1, as the other ones may be very large.
+# Only test CI suitable repos on the Stratum 1, as the other ones may be very large.
 if [ $playbook == "stratum1.yml" ]
 then
 	cat >> inventory/local_site_specific_vars.yml <<-EOF
