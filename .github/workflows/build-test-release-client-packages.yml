@@ -47,21 +47,21 @@ jobs:
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
+          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build Deb package
         id: build-deb
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
+          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build tar package
         id: build-tar
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
+          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Find filenames of generated packages
         id: find_filenames
@@ -126,7 +126,7 @@ jobs:
         run: gem install --no-document fpm
 
       - name: Build package
-        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
+        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.' etc"
 
       - name: Find filename of generated package
         id: find_filename
