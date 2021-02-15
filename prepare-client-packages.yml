@@ -54,7 +54,7 @@
             if [ "$CVMFS_HTTP_PROXY" = "" ]; then
               # For individual clients (laptops, clusters < 5 nodes), use a site proxy
               # where possible and otherwise a direct stratum 1 connection
-              CVMFS_HTTP_PROXY="auto;DIRECT"
+              CVMFS_HTTP_PROXY="DIRECT"
             fi
           fi
 
