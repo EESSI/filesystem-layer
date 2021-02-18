@@ -3,14 +3,14 @@ name: Test Ansible Playbooks
 on:
   push:
     branches:
-      - master
+      - main
     paths-ignore:
       - "**.md"
       - "**.example"
       - "containers/**"
   pull_request:
     branches:
-      - master
+      - main
     paths-ignore:
       - "**.md"
       - "**.example"
