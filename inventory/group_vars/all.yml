@@ -69,8 +69,8 @@ eessi_cvmfs_repositories:
     key_dir: /etc/cvmfs/keys/eessi-hpc.org
     server_options:
       - CVMFS_AUTO_GC=false
+      - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
       - CVMFS_GARBAGE_COLLECTION=true
-      - CVMFS_AUTO_GC=false
     client_options:
       - CVMFS_NFILES=4096
 
