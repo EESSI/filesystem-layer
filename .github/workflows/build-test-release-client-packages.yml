@@ -4,13 +4,11 @@ on:
   push:
     branches:
       - main
-      - test_client_packages_ci
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
-      - test_client_packages_ci
 
 jobs:
 
@@ -49,14 +47,21 @@ jobs:
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
+          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build Deb package
         id: build-deb
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.'"
+          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
+
+      - name: Build tar package
+        id: build-tar
+        uses: bpicode/github-action-fpm@master
+        with:
+          fpm_args: "etc"
+          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Find filenames of generated packages
         id: find_filenames
@@ -64,8 +69,10 @@ jobs:
         run: |
           rpmfile="$(ls -1 cvmfs-config-eessi*.rpm)"
           debfile="$(ls -1 cvmfs-config-eessi*.deb)"
+          tarfile="$(ls -1 cvmfs-config-eessi*.tar)"
           echo ::set-output name=rpmfile::${rpmfile}
           echo ::set-output name=debfile::${debfile}
+          echo ::set-output name=tarfile::${tarfile}
 
       - name: Upload Deb package as artifact
         uses: actions/upload-artifact@v2
@@ -78,6 +85,12 @@ jobs:
         with:
           name: RPM package
           path: ${{ steps.find_filenames.outputs.rpmfile }}
+
+      - name: Upload tar package as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: Tar package
+          path: ${{ steps.find_filenames.outputs.tarfile }}
 
   build-macos-package:
     runs-on: macos-latest
@@ -113,7 +126,7 @@ jobs:
         run: gem install --no-document fpm
 
       - name: Build package
-        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS config repository package for EESSI.' etc"
+        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.' etc"
 
       - name: Find filename of generated package
         id: find_filename
@@ -157,13 +170,13 @@ jobs:
         run: sudo dpkg -i ./${{ steps.find_filename.outputs.debfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" | sudo tee /etc/cvmfs/default.local
+        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
         run: sudo cvmfs_config setup
 
       - name: Test repository access
-        run: ls /cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
+        run: ls /cvmfs/pilot.eessi-hpc.org/
 
   test-rpm-package:
     needs: build-linux-packages
@@ -195,14 +208,51 @@ jobs:
         run: rpm -i ./${{ steps.find_filename.outputs.rpmfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" | tee /etc/cvmfs/default.local
+        run: echo "CVMFS_CLIENT_PROFILE=single" | tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
         #run: cvmfs_config setup
-        run: mkdir -p /cvmfs/cvmfs-config.eessi-hpc.org && mount -t cvmfs cvmfs-config.eessi-hpc.org /cvmfs/cvmfs-config.eessi-hpc.org
+        run: mkdir -p /cvmfs/pilot.eessi-hpc.org && mount -t cvmfs pilot.eessi-hpc.org /cvmfs/pilot.eessi-hpc.org
 
       - name: Test repository access
-        run: ls /cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
+        run: ls /cvmfs/pilot.eessi-hpc.org/
+
+  test-tar-package:
+    needs: build-linux-packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install CVMFS dependencies
+        run: sudo apt-get install lsb-release
+
+      - name: Download and install CVMFS client
+        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb && sudo dpkg -i cvmfs-release-latest_all.deb
+
+      - name: Install CVMFS client
+        run: sudo apt-get update && sudo apt-get install cvmfs
+
+      - name: Download cvmfs-config-eessi package
+        uses: actions/download-artifact@v2
+        with:
+          name: Tar package
+
+      - name: Find filename of package
+        id: find_filename
+        shell: bash
+        run: |
+          tarfile="$(ls -1 cvmfs-config-eessi*.tar)"
+          echo ::set-output name=tarfile::${tarfile}
+
+      - name: Install package
+        run: sudo tar -C / -xf ./${{ steps.find_filename.outputs.tarfile }}
+
+      - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
+        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
+
+      - name: Mount the repositories
+        run: sudo cvmfs_config setup
+
+      - name: Test repository access
+        run: ls /cvmfs/pilot.eessi-hpc.org/
 
   test-macos-package:
     needs: build-macos-package
@@ -230,16 +280,16 @@ jobs:
         run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
 
       - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_HTTP_PROXY=DIRECT" | sudo tee /etc/cvmfs/default.local
+        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
-        run: sudo mkdir -p /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org && sudo mount -t cvmfs cvmfs-config.eessi-hpc.org /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org
+        run: sudo mkdir -p /Users/Shared/cvmfs/pilot.eessi-hpc.org && sudo mount -t cvmfs pilot.eessi-hpc.org /Users/Shared/cvmfs/pilot.eessi-hpc.org
 
       - name: Test repository access
-        run: ls /Users/Shared/cvmfs/cvmfs-config.eessi-hpc.org/etc/cvmfs
+        run: ls /Users/Shared/cvmfs/pilot.eessi-hpc.org/
 
   release:
-    needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package]
+    needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package, test-tar-package]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
@@ -253,6 +303,11 @@ jobs:
         with:
           name: RPM package
 
+      - name: Download tar package
+        uses: actions/download-artifact@v2
+        with:
+          name: Tar package
+
       - name: Download macOS package
         uses: actions/download-artifact@v2
         with:
@@ -265,9 +320,11 @@ jobs:
           rpmfile="$(ls -1 cvmfs-config-eessi*.rpm)"
           debfile="$(ls -1 cvmfs-config-eessi*.deb)"
           pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
+          tarfile="$(ls -1 cvmfs-config-eessi*.tar)"
           echo ::set-output name=rpmfile::${rpmfile}
           echo ::set-output name=debfile::${debfile}
           echo ::set-output name=pkgfile::${pkgfile}
+          echo ::set-output name=tarfile::${tarfile}
 
       - name: Create Release
         id: create_release
@@ -309,3 +366,13 @@ jobs:
           asset_path: ${{ steps.find_filenames.outputs.pkgfile }}
           asset_name: ${{ steps.find_filenames.outputs.pkgfile }}
           asset_content_type: application/x-newton-compatible-pkg
+
+      - name: Upload Tar as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_filenames.outputs.tarfile }}
+          asset_name: ${{ steps.find_filenames.outputs.tarfile }}
+          asset_content_type: application/x-tar
