@@ -381,5 +381,5 @@ jobs:
     needs: release
     steps:
       - name: Run latest-tag
-        uses: uses: EndBug/latest-tag@latest
+        uses: EndBug/latest-tag@latest
 
