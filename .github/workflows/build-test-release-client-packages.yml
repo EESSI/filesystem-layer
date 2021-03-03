@@ -61,7 +61,7 @@ jobs:
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
+          fpm_opts: "--debug -n cvmfs-config-eessi-${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Find filenames of generated packages
         id: find_filenames
