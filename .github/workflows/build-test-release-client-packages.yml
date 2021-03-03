@@ -376,3 +376,10 @@ jobs:
           asset_path: ${{ steps.find_filenames.outputs.tarfile }}
           asset_name: ${{ steps.find_filenames.outputs.tarfile }}
           asset_content_type: application/x-tar
+
+  moving_latest_tag:
+    needs: release
+    steps:
+      - name: Run latest-tag
+      - uses: uses: EndBug/latest-tag@latest
+
