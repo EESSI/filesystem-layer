@@ -6,7 +6,6 @@ on:
       - main
     tags:
       - 'v*'
-      - latest
   pull_request:
     branches:
       - main
@@ -378,13 +377,42 @@ jobs:
           asset_name: ${{ steps.find_filenames.outputs.tarfile }}
           asset_content_type: application/x-tar
 
-  moving_latest_tag:
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Upload RPM as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_filenames.outputs.rpmfile }}
+          asset_name: eessi-cvmfs-config-latest.rpm
+          asset_content_type: application/x-rpm
 
-      - name: Run latest-tag
-        uses: EndBug/latest-tag@latest
+      - name: Upload Deb as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_filenames.outputs.debfile }}
+          asset_name: eessi-cvmfs-config-latest.deb
+          asset_content_type: application/x-deb
 
+      - name: Upload Pkg as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_filenames.outputs.pkgfile }}
+          asset_name: eessi-cvmfs-config-latest.pkg
+          asset_content_type: application/x-newton-compatible-pkg
+
+      - name: Upload Tar as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.find_filenames.outputs.tarfile }}
+          asset_name: eessi-cvmfs-config-latest.tar
+          asset_content_type: application/x-tar
