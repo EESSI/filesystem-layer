@@ -2,8 +2,8 @@ name: Build, test, and release client packages
 
 on:
   push:
-    branches:
-      - main
+#    branches:
+#      - main
     tags:
       - 'v*'
   pull_request:
