@@ -355,28 +355,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run latest-tag
-        uses: EndBug/latest-tag@latest
-
-      - name: Create Release
-        id: create_latest_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: latest
-          release_name: Filesystem Layer latest release
-          draft: false
-          prerelease: false
-
       - name: Rename assets
+        id: rename_files
         run: |
           sudo apt-get install rename
           rename "s/([0-9]+.[0-9]+.[0-9]+)(-[0-9]+)?/latest/g" ./cvmfs-config-eessi*
+          echo ::set-output name=packages::$(ls -1 cvmfs-config-eessi*latest*)
 
-      - name: Upload all assets
-        uses: alexellis/upload-assets@0.2.2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - uses: meeDamian/github-release@2.0
         with:
-          asset_paths: '["./cvmfs-config-eessi*latest*"]'
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag: latest
+          name: Filesystem Layer latest release
+          body: >
+            This is a moving release that always points to the latest release.
+            It allows you to easily download the assets.
+          gzip: no
+          files: ${{ steps.rename_files.outputs.packages }}
