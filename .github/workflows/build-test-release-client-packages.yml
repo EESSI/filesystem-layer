@@ -340,8 +340,8 @@ jobs:
           draft: false
           prerelease: false
 
-      -name: ls
-       run: ls "./eessi-cvmfs-config*"
+      - name: ls
+        run: ls "./eessi-cvmfs-config*"
 
       - name: Upload all assets
         uses: alexellis/upload-assets@0.2.2
@@ -377,8 +377,8 @@ jobs:
           sudo apt-get install rename
           rename -n "s/([0-9]+.[0-9]+.[0-9]+)(-[0-9]+)?/latest/g" eessi-cvmfs-config*
 
-      -name: ls
-       run: ls "eessi-cvmfs-config*latest*"
+      - name: ls
+        run: ls "eessi-cvmfs-config*latest*"
 
       - name: Upload all assets
         uses: alexellis/upload-assets@0.2.2
