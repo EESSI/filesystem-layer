@@ -377,12 +377,23 @@ jobs:
           asset_name: ${{ steps.find_filenames.outputs.tarfile }}
           asset_content_type: application/x-tar
 
+      - name: Create Release
+        id: create_latest_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: latest
+          release_name: Filesystem Layer latest release
+          draft: true
+          prerelease: false
+
       - name: Upload RPM as release asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_latest_release.outputs.upload_url }}
           asset_path: ${{ steps.find_filenames.outputs.rpmfile }}
           asset_name: eessi-cvmfs-config-latest.rpm
           asset_content_type: application/x-rpm
@@ -392,7 +403,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_latest_release.outputs.upload_url }}
           asset_path: ${{ steps.find_filenames.outputs.debfile }}
           asset_name: eessi-cvmfs-config-latest.deb
           asset_content_type: application/x-deb
@@ -402,7 +413,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_latest_release.outputs.upload_url }}
           asset_path: ${{ steps.find_filenames.outputs.pkgfile }}
           asset_name: eessi-cvmfs-config-latest.pkg
           asset_content_type: application/x-newton-compatible-pkg
@@ -412,7 +423,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ steps.create_latest_release.outputs.upload_url }}
           asset_path: ${{ steps.find_filenames.outputs.tarfile }}
           asset_name: eessi-cvmfs-config-latest.tar
           asset_content_type: application/x-tar
