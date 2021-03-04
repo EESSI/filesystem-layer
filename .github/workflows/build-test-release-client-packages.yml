@@ -340,9 +340,6 @@ jobs:
           draft: false
           prerelease: false
 
-      - name: ls
-        run: ls
-
       - name: Upload all assets
         uses: alexellis/upload-assets@0.2.2
         env:
@@ -375,10 +372,7 @@ jobs:
       - name: Rename assets
         run: |
           sudo apt-get install rename
-          rename -n "s/([0-9]+.[0-9]+.[0-9]+)(-[0-9]+)?/latest/g" cvmfs-config-eessi*
-
-      - name: ls
-        run: ls
+          rename "s/([0-9]+.[0-9]+.[0-9]+)(-[0-9]+)?/latest/g" ./cvmfs-config-eessi*
 
       - name: Upload all assets
         uses: alexellis/upload-assets@0.2.2
