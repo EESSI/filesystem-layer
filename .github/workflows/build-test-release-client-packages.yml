@@ -341,7 +341,7 @@ jobs:
           prerelease: false
 
       - name: ls
-        run: ls "./cvmfs-config-eessi*"
+        run: ls
 
       - name: Upload all assets
         uses: alexellis/upload-assets@0.2.2
@@ -378,7 +378,7 @@ jobs:
           rename -n "s/([0-9]+.[0-9]+.[0-9]+)(-[0-9]+)?/latest/g" cvmfs-config-eessi*
 
       - name: ls
-        run: ls "cvmfs-config-eessi-*latest*"
+        run: ls
 
       - name: Upload all assets
         uses: alexellis/upload-assets@0.2.2
