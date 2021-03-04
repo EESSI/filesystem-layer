@@ -370,5 +370,5 @@ jobs:
           body: >
             This is a moving release that always points to the latest release.
             It allows you to easily download the assets.
-          gzip: no
+          gzip: false
           files: ${{ steps.rename_files.outputs.packages }}
