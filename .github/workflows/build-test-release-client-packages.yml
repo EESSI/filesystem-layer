@@ -244,13 +244,13 @@ jobs:
       - name: Download cvmfs-config-eessi package
         uses: actions/download-artifact@v2
         with:
-          name: macOS package
+          name: macos_package
 
       - name: Find filename of package
         id: find_filename
         shell: bash
         run: |
-          pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
+          pkgfile="$(find . -name cvmfs-config-eessi*.pkg)"
           echo ::set-output name=pkgfile::${pkgfile}
 
       - name: Install package
