@@ -311,6 +311,11 @@ jobs:
         with:
           path: ./build_artifacts
 
+      - name: Find release version in tag
+        id: find_version
+        run: |
+          echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+
       - name: Find filenames of downloaded packages and rename them to latest
         id: find_filenames
         shell: bash
@@ -334,11 +339,16 @@ jobs:
           tag: latest
           name: Filesystem Layer latest release
           body: >
-            This is a moving release that always points to the latest release.
+            Filesystem Layer release ${{ steps.find_version.outputs.version }}
+
+            This is a moving release that always contains the assets (the `cvmfs-config-eessi-*` packages) of the latest release.
             It allows you to easily download the latest version of the assets using, for instance:
-            https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi_latest_all.deb
-            https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi-latest-1.noarch.rpm
-            https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi-latest.pkg
-            https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi-latest.tar
+
+            - https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi_latest_all.deb
+            - https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi-latest.noarch.rpm
+            - https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi-latest.pkg
+            - https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi-latest.tar
+
+            Current version: https://github.com/${{github.repository}}/releases/tag/${{ steps.find_version.outputs.version }}
           files: ${{ steps.find_filenames.outputs.package_filenames }}
           gzip: false
