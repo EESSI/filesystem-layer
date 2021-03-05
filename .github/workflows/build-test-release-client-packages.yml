@@ -286,7 +286,7 @@ jobs:
         id: find_filenames
         shell: bash
         run: |
-          ls -1 -R ./build_artifacts
+          ls -1 -R .
           echo ::set-output name=package_filenames::$(find ./build_artifacts -name cvmfs-config-eessi*)
 
       - uses: meeDamian/github-release@2.0
@@ -297,14 +297,15 @@ jobs:
           body: >
             Filesystem Layer release ${{ steps.find_version.outputs.version }}
           files: ${{ steps.find_filenames.outputs.package_filenames }}
+          gzip: false
 
-      - name: Delete any previous tag/release named "latest"
-        uses: dev-drprasad/delete-tag-and-release@v0.1.3
-        with:
-          delete_release: true # default: false
-          tag_name: latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Delete any previous tag/release named "latest"
+#        uses: dev-drprasad/delete-tag-and-release@v0.1.3
+#        with:
+#          delete_release: true # default: false
+#          tag_name: latest
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rename assets
         id: rename_files
@@ -318,8 +319,10 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: latest
+          allow_override: true
           name: Filesystem Layer latest release
           body: >
             This is a moving release that always points to the latest release.
             It allows you to easily download the assets.
           files: ${{ steps.rename_files.outputs.package_filenames }}
+          gzip: false
