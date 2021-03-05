@@ -2,8 +2,8 @@ name: Build, test, and release client packages
 
 on:
   push:
-#    branches:
-#      - main
+    branches:
+      - main
     tags:
       - 'v*'
   pull_request:
@@ -43,21 +43,18 @@ jobs:
 # it will make debugging more annoying.
 
       - name: Build RPM package
-        id: build-rpm
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build Deb package
-        id: build-deb
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build tar package
-        id: build-tar
         uses: bpicode/github-action-fpm@master
         with:
           fpm_args: "etc"
