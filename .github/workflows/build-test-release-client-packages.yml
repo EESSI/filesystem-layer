@@ -273,6 +273,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Find release version in tag
+        id: find_version
+        run: |
+          echo ::set-output name=version::${GITHUB_REF#refs/tags/}
+
       - uses: actions/download-artifact@v2
         with:
           path: ./build_artifacts
@@ -287,10 +292,10 @@ jobs:
       - uses: meeDamian/github-release@2.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          name: Filesystem Layer ${{ github.ref }}
+          tag: ${{ steps.find_version.outputs.version }}
+          name: Filesystem Layer ${{ steps.find_version.outputs.version }}
           body: >
-            Filesystem Layer release ${{ github.ref }}
+            Filesystem Layer release ${{ steps.find_version.outputs.version }}
           files: ${{ steps.find_filenames.outputs.package_filenames }}
 
       - name: Delete any previous tag/release named "latest"
@@ -306,6 +311,7 @@ jobs:
         run: |
           sudo apt-get install rename
           rename "s/([0-9]+.[0-9]+.[0-9]+)(-[0-9]+)?/latest/g" ${{ steps.find_filenames.outputs.package_filenames }}
+          ls -1 -R ./build_artifacts
           echo ::set-output name=package_filenames::$(find ./build_artifacts -name cvmfs-config-eessi*latest*)
 
       - uses: meeDamian/github-release@2.0
@@ -316,5 +322,4 @@ jobs:
           body: >
             This is a moving release that always points to the latest release.
             It allows you to easily download the assets.
-          gzip: false
           files: ${{ steps.rename_files.outputs.package_filenames }}
