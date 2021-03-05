@@ -236,7 +236,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Install OSXFUSE
-        run: brew install --cask osxfuse
+        run: brew install --cask macfuse
 
       - name: Download and install CVMFS client
         run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-latest.pkg && sudo installer -target / -pkg cvmfs-latest.pkg
