@@ -303,7 +303,7 @@ jobs:
       - name: Find filenames of downloaded packages
         id: find_filenames
         shell: bash
-        run: echo ::set-output name=package_filenames::$(ls -1 -R ./build_artifacts/cvmfs-config-eessi*)
+        run: echo ::set-output name=package_filenames::$(find ./build_artifacts -name cvmfs-config-eessi*)
 
       - uses: meeDamian/github-release@2.0
         with:
@@ -327,7 +327,7 @@ jobs:
         run: |
           sudo apt-get install rename
           rename "s/([0-9]+.[0-9]+.[0-9]+)(-[0-9]+)?/latest/g" ${{ steps.find_filenames.outputs.package_filenames }}
-          echo ::set-output name=package_filenames::$(ls -1 -R ./build_artifacts/cvmfs-config-eessi*latest*)
+          echo ::set-output name=package_filenames::$(find ./build_artifacts -name cvmfs-config-eessi*latest*)
 
       - uses: meeDamian/github-release@2.0
         with:
