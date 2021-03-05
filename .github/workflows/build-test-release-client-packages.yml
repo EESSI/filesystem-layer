@@ -239,7 +239,7 @@ jobs:
         run: brew install --cask osxfuse
 
       - name: Download and install CVMFS client
-        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-2.7.5/cvmfs-2.7.5.pkg && sudo installer -target / -pkg cvmfs-2.7.5.pkg
+        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-latest.pkg && sudo installer -target / -pkg cvmfs-latest.pkg
         
       - name: Download cvmfs-config-eessi package
         uses: actions/download-artifact@v2
@@ -338,8 +338,8 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: latest
           name: Filesystem Layer latest release
-          body: >
-            Filesystem Layer release ${{ steps.find_version.outputs.version }}
+          body: |
+            Filesystem Layer release ${{ steps.find_version.outputs.version }} (see: https://github.com/${{github.repository}}/releases/tag/${{ steps.find_version.outputs.version }})
 
             This is a moving release that always contains the assets (the `cvmfs-config-eessi-*` packages) of the latest release.
             It allows you to easily download the latest version of the assets using, for instance:
@@ -349,6 +349,5 @@ jobs:
             - https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi-latest.pkg
             - https://github.com/${{github.repository}}/releases/download/latest/cvmfs-config-eessi-latest.tar
 
-            Current version: https://github.com/${{github.repository}}/releases/tag/${{ steps.find_version.outputs.version }}
           files: ${{ steps.find_filenames.outputs.package_filenames }}
           gzip: false
