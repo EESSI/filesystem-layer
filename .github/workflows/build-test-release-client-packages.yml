@@ -63,34 +63,11 @@ jobs:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi-${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
-      - name: Find filenames of generated packages
-        id: find_filenames
-        shell: bash
-        run: |
-          rpmfile="$(ls -1 cvmfs-config-eessi*.rpm)"
-          debfile="$(ls -1 cvmfs-config-eessi*.deb)"
-          tarfile="$(ls -1 cvmfs-config-eessi*.tar)"
-          echo ::set-output name=rpmfile::${rpmfile}
-          echo ::set-output name=debfile::${debfile}
-          echo ::set-output name=tarfile::${tarfile}
-
-      - name: Upload Deb package as artifact
+      - name: Upload packages as build artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: Deb package
-          path: ${{ steps.find_filenames.outputs.debfile }}
-
-      - name: Upload RPM package as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: RPM package
-          path: ${{ steps.find_filenames.outputs.rpmfile }}
-
-      - name: Upload tar package as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: Tar package
-          path: ${{ steps.find_filenames.outputs.tarfile }}
+          name: linux_packages
+          path: cvmfs-config-eessi*
 
   build-macos-package:
     runs-on: macos-latest
@@ -138,7 +115,7 @@ jobs:
       - name: Upload macOS package as artifact
         uses: actions/upload-artifact@v2
         with:
-          name: macOS package
+          name: macos_package
           path: ${{ steps.find_filename.outputs.pkgfile }}
 
   test-deb-package:
@@ -157,13 +134,13 @@ jobs:
       - name: Download cvmfs-config-eessi package
         uses: actions/download-artifact@v2
         with:
-          name: Deb package
+          name: linux_packages
 
       - name: Find filename of package
         id: find_filename
         shell: bash
         run: |
-          debfile="$(ls -1 cvmfs-config-eessi*.deb)"
+          debfile="$(find . -name cvmfs-config-eessi*.deb)"
           echo ::set-output name=debfile::${debfile}
 
       - name: Install package
@@ -195,13 +172,13 @@ jobs:
       - name: Download cvmfs-config-eessi package
         uses: actions/download-artifact@v2
         with:
-          name: RPM package
+          name: linux_packages
 
       - name: Find filename of package
         id: find_filename
         shell: bash
         run: |
-          rpmfile="$(ls -1 cvmfs-config-eessi*.rpm)"
+          rpmfile="$(find . -name cvmfs-config-eessi*.rpm)"
           echo ::set-output name=rpmfile::${rpmfile}
 
       - name: Install package
@@ -233,13 +210,13 @@ jobs:
       - name: Download cvmfs-config-eessi package
         uses: actions/download-artifact@v2
         with:
-          name: Tar package
+          name: linux_packages
 
       - name: Find filename of package
         id: find_filename
         shell: bash
         run: |
-          tarfile="$(ls -1 cvmfs-config-eessi*.tar)"
+          tarfile="$(find . -name cvmfs-config-eessi*.tar)"
           echo ::set-output name=tarfile::${tarfile}
 
       - name: Install package
