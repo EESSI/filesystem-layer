@@ -303,7 +303,9 @@ jobs:
       - name: Find filenames of downloaded packages
         id: find_filenames
         shell: bash
-        run: echo ::set-output name=package_filenames::$(find ./build_artifacts -name cvmfs-config-eessi*)
+        run: |
+          ls -1 -R ./build_artifacts
+          echo ::set-output name=package_filenames::$(find ./build_artifacts -name cvmfs-config-eessi*)
 
       - uses: meeDamian/github-release@2.0
         with:
