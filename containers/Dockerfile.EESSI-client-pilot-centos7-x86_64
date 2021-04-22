@@ -2,10 +2,10 @@ FROM docker.io/library/centos:7
 
 RUN yum install -y http://cvmrepo.web.cern.ch/cvmrepo/yum/cvmfs-release-latest.noarch.rpm \
  && yum install -y cvmfs cvmfs-config-default cvmfs-fuse3 sudo vim openssh-clients \
- && yum install -y https://github.com/EESSI/filesystem-layer/releases/download/v0.2.3/cvmfs-config-eessi-0.2.3-1.noarch.rpm
+ && yum install -y https://github.com/EESSI/filesystem-layer/releases/download/latest/cvmfs-config-eessi-latest.noarch.rpm
 
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
-  && echo 'CVMFS_HTTP_PROXY="DIRECT"' >> /etc/cvmfs/default.local
+  && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local
 
 RUN mkdir -p /cvmfs/{cvmfs-config.eessi-hpc.org,pilot.eessi-hpc.org}
 
