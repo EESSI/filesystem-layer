@@ -1,0 +1,26 @@
+ARG cvmfsversion=2.8.1
+
+
+FROM centos:7 AS prepare-rpm
+ARG cvmfsversion
+COPY ./containers/build-or-download-cvmfs-rpm.sh /build-or-download-cvmfs-rpm.sh
+RUN sh /build-or-download-cvmfs-rpm.sh ${cvmfsversion}
+
+
+FROM centos:7
+ARG cvmfsversion
+
+COPY --from=prepare-rpm /root/rpmbuild/RPMS /root/rpmbuild/RPMS
+
+RUN yum install -y sudo vim openssh-clients
+RUN yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.el7.$(uname -m).rpm \
+                   /root/rpmbuild/RPMS/$(uname -m)/cvmfs-fuse3-${cvmfsversion}-1.el7.$(uname -m).rpm \
+                   http://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-latest.noarch.rpm
+RUN yum install -y https://github.com/EESSI/filesystem-layer/releases/download/latest/cvmfs-config-eessi-latest.noarch.rpm
+
+RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
+  && echo 'CVMFS_HTTP_PROXY="DIRECT"' >> /etc/cvmfs/default.local
+
+RUN mkdir -p /cvmfs/{cvmfs-config.eessi-hpc.org,pilot.eessi-hpc.org}
+
+RUN useradd -ms /bin/bash eessi
