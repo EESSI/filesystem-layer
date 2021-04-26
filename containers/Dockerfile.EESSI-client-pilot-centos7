@@ -21,6 +21,6 @@ RUN yum install -y https://github.com/EESSI/filesystem-layer/releases/download/l
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
   && echo 'CVMFS_HTTP_PROXY="DIRECT"' >> /etc/cvmfs/default.local
 
-RUN mkdir -p /cvmfs/{cvmfs-config.eessi-hpc.org,pilot.eessi-hpc.org}
+RUN mkdir -p /cvmfs/pilot.eessi-hpc.org
 
 RUN useradd -ms /bin/bash eessi
