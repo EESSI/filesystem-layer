@@ -5,17 +5,10 @@ This directory contains recipes for containers that are useful in the scope of t
 ## Client container
 
 Container to provide easy access to EESSI pilot repository,
-see https://hub.docker.com/repository/docker/eessi/client-pilot and https://eessi.github.io/docs/pilot.
-
-### Build container + push to Docker Hub
-
-Note: the `docker push` part of the script assumes your Docker Hub creditionals are known
-(can be done via `docker login docker.io`, for example).
-
-```shell
-./docker_build_push.sh
-```
-This will build the container for the architecture of your host (e.g. `x86_64` or `aarch64`), and push the image to Docker Hub.
+see https://github.com/users/EESSI/packages/container/package/client-pilot and https://eessi.github.io/docs/pilot.
+This container image gets automatically built and pushed to the GitHub Container Registry when one of its
+source files (the Dockerfile or the script that generates the CernVM-FS RPMs) gets changed,
+or when a new version of the filesystem-layer repository is released.
 
 ### Run (using Singularity)
 
@@ -24,5 +17,5 @@ mkdir -p /tmp/$USER/{var-lib-cvmfs,var-run-cvmfs,home}
 export SINGULARITY_BIND="/tmp/$USER/var-run-cvmfs:/var/run/cvmfs,/tmp/$USER/var-lib-cvmfs:/var/lib/cvmfs"
 export SINGULARITY_HOME="/tmp/$USER/home:/home/$USER"
 export EESSI_PILOT="container:cvmfs2 pilot.eessi-hpc.org /cvmfs/pilot.eessi-hpc.org"
-singularity shell --fusemount "$EESSI_PILOT" docker://eessi/client-pilot:centos7-$(uname -m)
+singularity shell --fusemount "$EESSI_PILOT" docker://ghcr.io/EESSI/client-pilot:centos7
 ```
