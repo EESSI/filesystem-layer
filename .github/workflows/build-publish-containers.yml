@@ -6,7 +6,6 @@ on:
     paths:
       - containers/Dockerfile.EESSI-client*
       - containers/build-or-download-cvmfs-rpm.sh
-      - .github/workflows/build-publish-containers.yml
 
   pull_request:
     branches:
@@ -14,7 +13,6 @@ on:
     paths:
       - containers/Dockerfile.EESSI-client*
       - containers/build-or-download-cvmfs-rpm.sh
-      - .github/workflows/build-publish-containers.yml
 
   # also rebuild the containers for new releases of filesystem-layer:
   # this often means that we have a new CVMFS configuration package
