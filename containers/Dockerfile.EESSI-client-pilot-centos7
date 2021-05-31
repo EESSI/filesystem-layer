@@ -9,7 +9,7 @@ RUN sh /build-or-download-cvmfs-rpms.sh ${cvmfsversion}
 
 FROM centos:7 AS build-fuse-overlayfs
 ARG fuseoverlayfsversion
-RUN yum install -y wget fuse3-devel autoconf automake tar
+RUN yum install -y wget fuse3-devel autoconf automake gcc tar
 RUN wget https://github.com/containers/fuse-overlayfs/archive/refs/tags/v${fuseoverlayfsversion}.tar.gz \
   && tar xzf v${fuseoverlayfsversion}.tar.gz \
   && cd fuse-overlayfs-${fuseoverlayfsversion} \
