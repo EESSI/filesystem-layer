@@ -1,5 +1,5 @@
 ARG cvmfsversion=2.8.1
-
+ARG fuseoverlayfsversion=0.4.1
 
 FROM centos:7 AS prepare-rpm
 ARG cvmfsversion
@@ -7,10 +7,20 @@ COPY ./containers/build-or-download-cvmfs-rpms.sh /build-or-download-cvmfs-rpms.
 RUN sh /build-or-download-cvmfs-rpms.sh ${cvmfsversion}
 
 
+FROM centos:7 AS build-fuse-overlayfs
+ARG fuseoverlayfsversion
+RUN yum install -y wget fuse3-devel autoconf tar
+RUN wget https://github.com/containers/fuse-overlayfs/archive/refs/tags/v${fuseoverlayfsversion}.tar.gz \
+  && tar xzf v${fuseoverlayfsversion}.tar.gz \
+  && cd fuse-overlayfs-${fuseoverlayfsversion} \
+  && ./autogen.sh && ./configure && make && make install
+
+
 FROM centos:7
 ARG cvmfsversion
 
 COPY --from=prepare-rpm /root/rpmbuild/RPMS /root/rpmbuild/RPMS
+COPY --from=build-fuse-overlayfs /usr/local/bin/fuse-overlayfs /usr/local/bin/fuse-overlayfs
 
 RUN yum install -y sudo vim openssh-clients
 RUN yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.el7.$(uname -m).rpm \
