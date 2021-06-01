@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - use_latest_client_package
     paths:
       - containers/Dockerfile.EESSI-client*
       - containers/build-or-download-cvmfs-rpm.sh
