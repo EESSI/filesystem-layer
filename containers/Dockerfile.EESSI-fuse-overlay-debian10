@@ -13,7 +13,7 @@ ARG cvmfsversion
 COPY --from=prepare-deb /root/deb /root/deb
 
 RUN apt-get update
-RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3
+RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev
 RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian10_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian10_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-config-default_latest_all.deb \
