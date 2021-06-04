@@ -56,15 +56,17 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Convert and store repository owner in lowercase
+      - name: Convert and store repository owner in lowercase, replace colon in tag names by hyphen
         run: |
           echo REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+          tag=${{ matrix.tag }}
+          echo DOCKERFILE=Dockerfile.EESSI-${tag//:/-} >> $GITHUB_ENV
 
       - name: Build and push to GitHub Packages
         uses: docker/build-push-action@v2
         with:
           tags: ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}
-          file: "containers/Dockerfile.EESSI-${{ matrix.tag }}"
+          file: containers/${{ env.DOCKERFILE }}
           platforms: linux/amd64, linux/arm64, linux/ppc64le
           push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=local,src=/tmp/.buildx-cache
