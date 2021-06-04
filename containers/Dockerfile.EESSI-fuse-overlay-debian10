@@ -3,7 +3,7 @@ ARG fuseoverlayfsversion=0.4.1
 
 FROM debian:10.6 AS prepare-deb
 ARG cvmfsversion
-COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-rpms.sh
+COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
 RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 
 
