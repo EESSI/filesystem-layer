@@ -5,6 +5,7 @@ apt-get update
 apt-get install -y wget
 if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ]
 then
+    dpkg --add-architecture ${arch}
     apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools uuid-dev valgrind libz-dev lsb-release
     apt list lsb-release
     which lsb-release
