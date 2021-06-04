@@ -1,0 +1,26 @@
+ARG cvmfsversion=2.8.1
+ARG fuseoverlayfsversion=0.4.1
+
+FROM debian:10.6 AS prepare-deb
+ARG cvmfsversion
+COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-rpms.sh
+RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
+
+
+FROM debian:10.6
+ARG cvmfsversion
+
+COPY --from=prepare-deb /root/deb /root/deb
+
+RUN apt-get install -y sudo vim openssh-client gawk autofs fuse curl attr uuid fuse3
+RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian10_$(uname -m).deb \
+            /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian10_$(uname -m).deb \
+            /root/deb/cvmfs-config-eessi_latest_all.deb \
+            /root/deb/cvmfs-config-eessi_latest_all.deb
+
+RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
+  && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local
+
+RUN mkdir -p /cvmfs/pilot.eessi-hpc.org
+
+RUN useradd -ms /bin/bash eessi
