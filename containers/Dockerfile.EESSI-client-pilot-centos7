@@ -29,7 +29,7 @@ RUN yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.el7.$
 RUN yum install -y https://github.com/EESSI/filesystem-layer/releases/download/latest/cvmfs-config-eessi-latest.noarch.rpm
 
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
-  && echo 'CVMFS_HTTP_PROXY="DIRECT"' >> /etc/cvmfs/default.local
+  && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local
 
 RUN mkdir -p /cvmfs/pilot.eessi-hpc.org
 
