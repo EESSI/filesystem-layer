@@ -14,8 +14,8 @@ COPY --from=prepare-deb /root/deb /root/deb
 
 RUN apt-get update
 RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3
-RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian10_$(uname -m).deb \
-            /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian10_$(uname -m).deb \
+RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian10_$(dpkg --print-architecture).deb \
+            /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian10_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-config-eessi_latest_all.deb \
             /root/deb/cvmfs-config-eessi_latest_all.deb
 

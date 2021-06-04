@@ -1,9 +1,9 @@
 cvmfsversion=$1
-arch=$(uname -m)
+arch=$(dpkg --print-architecture)
 
 apt-get update
 apt-get install -y wget
-if [ "$arch" = "ppc64le" ] || [ "$arch" = "aarch64" ]
+if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ]
 then
     apt-get install devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools uuid-dev valgrind libz-dev
     cd /tmp
