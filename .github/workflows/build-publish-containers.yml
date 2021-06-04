@@ -1,11 +1,11 @@
-name: Build and publish EESSI client Docker image
+name: Build and publish EESSI container images
 on:
   push:
     branches:
       - main
     paths:
-      - containers/Dockerfile.EESSI-client*
-      - containers/build-or-download-cvmfs-rpm.sh
+      - containers/Dockerfile.EESSI-*
+      - containers/build-or-download-cvmfs-*.sh
 
   pull_request:
     branches:
@@ -28,7 +28,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        dockerfiles: [client-pilot:centos7, fuse-overlay:debian10]
+        dockerfiles: ['client-pilot:centos7', 'fuse-overlay:debian10']
 
     steps:
       - name: Check out the repo
