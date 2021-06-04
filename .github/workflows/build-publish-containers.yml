@@ -28,7 +28,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        dockerfiles: ['client-pilot:centos7', 'fuse-overlay:debian10']
+        tag: ['client-pilot:centos7', 'fuse-overlay:debian10']
 
     steps:
       - name: Check out the repo
