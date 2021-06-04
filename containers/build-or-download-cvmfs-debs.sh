@@ -1,6 +1,7 @@
 cvmfsversion=$1
 arch=$(uname -m)
 
+apt-get update
 apt-get install -y wget
 if [ "$arch" = "ppc64le" ] || [ "$arch" = "aarch64" ]
 then
