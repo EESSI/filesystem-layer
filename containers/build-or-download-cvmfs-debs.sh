@@ -1,10 +1,10 @@
 cvmfsversion=$1
 arch=$(uname -m)
 
-yum install -y wget
-if [ "$arch" = "ppc64le" || "$arch" = "aarch64" ]
+apt-get install -y wget
+if [ "$arch" = "ppc64le" ] || [ "$arch" = "aarch64" ]
 then
-    apt-get install -y wget devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools uuid-dev valgrind libz-dev
+    apt-get install devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools uuid-dev valgrind libz-dev
     cd /tmp
     wget http://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/source.tar.gz
     wget https://github.com/cvmfs/cvmfs/archive/refs/tags/cvmfs-${cvmfsversion}.tar.gz
