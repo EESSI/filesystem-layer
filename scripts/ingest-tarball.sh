@@ -3,6 +3,7 @@
 # Ingest a tarball containing software, a compatibility layer,
 # or init scripts to the EESSI CVMFS repository, and generate
 # nested catalogs in a separate transaction.
+# This script has to be run on a CVMFS publisher node.
 
 tar_file=$1
 repo=pilot.eessi-hpc.org
