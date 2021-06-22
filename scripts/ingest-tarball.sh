@@ -58,8 +58,24 @@ then
 fi
 
 # Ingest the tarball to the repository
-${decompress} "${tar_file}" | cvmfs_server ingest -t - -b "${version}" "${repo}" && echo_green "${tar_file} ingested to ${repo}"
+echo "Ingesting tarball ${tar_file} to ${repo}..."
+${decompress} "${tar_file}" | cvmfs_server ingest -t - -b "${version}" "${repo}"
+ec=$?
+if [ $ec -eq 0 ]
+then
+    echo_green "${tar_file} has been ingested to ${repo}."
+else
+    error "${tar_file} could not be ingested to ${repo}."
+fi
 
 # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
+echo "Generating the nested catalogs..."
 cvmfs_server transaction "${repo}"
 cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
+ec=$?
+if [ $ec -eq 0 ]
+then
+    echo_green "Nested catalogs for ${repo} have been created!"
+else
+    echo_red "failure when creating nested catalogs for ${repo}."
+fi
