@@ -5,7 +5,6 @@
 # nested catalogs in a separate transaction.
 # This script has to be run on a CVMFS publisher node.
 
-tar_file=$1
 repo=pilot.eessi-hpc.org
 decompress="gunzip -c"
 
@@ -25,6 +24,8 @@ function error() {
 if [ "$#" -ne 1 ]; then
     error "usage: $0 <gzipped tarball>"
 fi
+
+tar_file="$1"
 
 # Check if the given tarball exists
 if [ ! -f "${tar_file}" ]; then
