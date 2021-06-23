@@ -29,6 +29,7 @@ jobs:
     strategy:
       matrix:
         tag: ['client-pilot:centos7', 'fuse-overlay:debian10']
+        platform: [amd64, arm64, ppc64le]
 
     steps:
       - name: Check out the repo
@@ -44,9 +45,9 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ matrix.platform }}-${{ matrix.tag }}
           restore-keys: |
-            ${{ runner.os }}-buildx-
+            ${{ runner.os }}-buildx-${{ matrix.platform }}-${{ matrix.tag }}
 
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
@@ -65,9 +66,9 @@ jobs:
       - name: Build and push to GitHub Packages
         uses: docker/build-push-action@v2
         with:
-          tags: ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}
+          tags: ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-${{ matrix.platform }}
           file: containers/${{ env.DOCKERFILE }}
-          platforms: linux/amd64, linux/arm64, linux/ppc64le
+          platforms: linux/${{ matrix.platform }}
           push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
@@ -76,3 +77,31 @@ jobs:
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+  create_manifest:
+    name: Create the Docker manifest
+    needs: build_and_publish
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    strategy:
+      matrix:
+        tag: ['client-pilot:centos7', 'fuse-overlay:debian10']
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run docker manifest
+        run: |
+          export REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
+          docker manifest create \
+            ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }} \
+            --amend ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }}-amd64 \
+            --amend ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }}-arm64 \
+            --amend ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }}-ppc64le
+          docker manifest push ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }}
