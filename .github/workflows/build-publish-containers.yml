@@ -90,18 +90,25 @@ jobs:
         tag: ['client-pilot:centos7', 'fuse-overlay:debian10']
     steps:
       - name: Login to GitHub Container Registry
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v1
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Convert and store repository owner in lowercase
+        run: |
+          echo REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
+
       - name: Run docker manifest
         run: |
-          export REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
           docker manifest create \
-            ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }} \
-            --amend ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }}-amd64 \
-            --amend ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }}-arm64 \
-            --amend ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }}-ppc64le
-          docker manifest push ghcr.io/${REPOSITORY_OWNER}/${{ matrix.tag }}
+            ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
+            --amend ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \
+            --amend ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-arm64 \
+            --amend ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-ppc64le
+
+      - name: Push manifest
+        if: github.event_name != 'pull_request'
+        run: docker manifest push ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}
