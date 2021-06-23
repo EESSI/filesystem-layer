@@ -102,6 +102,7 @@ jobs:
           echo REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
 
       - name: Run docker manifest
+        if: github.event_name != 'pull_request'
         run: |
           docker manifest create \
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
