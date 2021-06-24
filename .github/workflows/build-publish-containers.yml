@@ -28,7 +28,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client-pilot:centos7', 'fuse-overlay:debian10']
+        tag: ['client-pilot:centos7', 'build-node:debian10']
         platform: [amd64, arm64, ppc64le]
 
     steps:
@@ -87,7 +87,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client-pilot:centos7', 'fuse-overlay:debian10']
+        tag: ['client-pilot:centos7', 'build-node:debian10']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
