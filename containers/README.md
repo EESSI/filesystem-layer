@@ -20,9 +20,9 @@ export EESSI_PILOT="container:cvmfs2 pilot.eessi-hpc.org /cvmfs/pilot.eessi-hpc.
 singularity shell --fusemount "$EESSI_PILOT" docker://ghcr.io/EESSI/client-pilot:centos7
 ```
 
-## Fuse-overlayfs container
+## Build node container
 
-Container that can be used to build and install software to /cvmfs by leveraging fuse-overlayfs for
+Container that can be used to build and install software to /cvmfs by leveraging `fuse-overlayfs` for
 providing a writable overlay.
 The container image is based on Debian 10.6, and gets automatically built and pushed to the GitHub Container Registry when one of its
 source files (the Dockerfile or the script that generates the CernVM-FS deb packages) gets changed,
