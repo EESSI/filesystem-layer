@@ -80,16 +80,28 @@ jobs:
 
       - name: Test containers
         run: |
-          CVMFS_VERSION_EXP=$(grep "ARG cvmfsversion=" containers/${{ env.DOCKERFILE }} | cut -d'=' -f2)
-          CVMFS_VERSION_FOUND=$(docker run ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-${{ matrix.platform }} cvmfs2 --version | head -n 1 | cut -d ' ' -f 3)
-          FUSEOVERLAYFS_VERSION_EXP=$(grep "ARG fuseoverlayfsversion=" containers/${{ env.DOCKERFILE }} | cut -d '=' -f 2)
-          FUSEOVERLAYFS_VERSION_FOUND=$(docker run ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-${{ matrix.platform }} fuse-overlayfs --version | grep "fuse-overlayfs" | cut -d ' ' -f 3)
-          if [ "${CVMFS_VERSION_EXP}" = "${CVMFS_VERSION_FOUND}" ] && [ "${FUSEOVERLAYFS_VERSION_EXP}" = "${FUSEOVERLAYFS_VERSION_FOUND}" ]
+          CVMFS_VERSION_EXP=$(
+              grep "ARG cvmfsversion=" containers/${{ env.DOCKERFILE }} | cut -d'=' -f2
+          )
+          CVMFS_VERSION_FOUND=$(
+              docker run ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-${{ matrix.platform }} cvmfs2 --version \
+              | head -n 1 | cut -d ' ' -f 3
+          )
+          FUSEOVERLAYFS_VERSION_EXP=$(
+              grep "ARG fuseoverlayfsversion=" containers/${{ env.DOCKERFILE }} | cut -d '=' -f 2
+          )
+          FUSEOVERLAYFS_VERSION_FOUND=$(
+              docker run ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-${{ matrix.platform }} fuse-overlayfs --version \
+              | grep "fuse-overlayfs" | cut -d ' ' -f 3
+          )
+          CONTAINER="ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-${{ matrix.platform }}"
+          if [ "${CVMFS_VERSION_EXP}" = "${CVMFS_VERSION_FOUND}" ] && \
+             [ "${FUSEOVERLAYFS_VERSION_EXP}" = "${FUSEOVERLAYFS_VERSION_FOUND}" ]
           then
-              echo "Containers contain the right versions of CVMFS and fuse-overlayfs!"
+              echo "Container ${CONTAINER} contains the right versions of CVMFS and fuse-overlayfs!"
               exit 0
           else
-              echo "Error for container ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-${{ matrix.platform }}!"
+              echo "Error for container ${CONTAINER}"
               echo "Expected: CVMFS ${CVMFS_VERSION_EXP} and fuse-overlayfs ${FUSEOVERLAYFS_VERSION_EXP}"
               echo "Found: CVMFS ${CVMFS_VERSION_FOUND} and fuse-overlayfs ${FUSEOVERLAYFS_VERSION_FOUND}"
               exit 1
