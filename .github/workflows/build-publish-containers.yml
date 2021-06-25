@@ -11,7 +11,7 @@ on:
     branches:
       - main
     paths:
-      - containers/Dockerfile.EESSI-client*
+      - containers/Dockerfile.EESSI-*
       - containers/build-or-download-cvmfs-rpm.sh
 
   # also rebuild the containers for new releases of filesystem-layer:
