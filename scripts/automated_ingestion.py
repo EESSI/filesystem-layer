@@ -2,9 +2,12 @@
 
 import boto3
 import botocore
+import fnmatch
 import github
 import logging
 import os
+import pathlib
+
 import subprocess
 import tarfile
 
@@ -42,7 +45,7 @@ Please review the contents of this tarball carefully.
 Merging this PR will lead to automatic ingestion of the tarball.
 
 <details>
-Directory structure inside the tarball:
+Overview of the contents of the tarball:
 
 ```
 {tar_overview}
@@ -86,7 +89,7 @@ class EessiTarball:
                 self.s3.download_file(STAGING_BUCKET, self.tarball, self.local_path)
             except:
                 logging.error(
-                    f'Failed to download tarball {self.tarball} from {STAGING_BUCKET} to {local_tarball_path}.'
+                    f'Failed to download tarball {self.tarball} from {STAGING_BUCKET} to {self.local_path}.'
                 )
                 self.local_path = None
         if not os.path.exists(self.local_metadata_path):
@@ -111,6 +114,38 @@ class EessiTarball:
         else:
             # if no state was found, we assume this is a new tarball that was ingested to the bucket
             return list(self.states.keys())[0]
+
+
+    def get_contents_overview(self):
+        """Return an overview of what is included in the tarball."""
+        tar = tarfile.open(self.local_path, 'r')
+        members = tar.getmembers()
+        prefix = os.path.commonprefix([member.path for member in members])
+
+        swdirs = [ # all directory names with the pattern: prefix/name/version
+            member.path
+            for member in members
+            if member.isdir() and pathlib.PurePath(member.path).match(os.path.join(prefix, 'software', '*', '*'))
+        ]
+        modfiles = [ # all filenames with the pattern: prefix/modules/category/name/version.lua
+            member.path
+            for member in members
+            if member.isfile() and pathlib.PurePath(member.path).match(os.path.join(prefix, 'modules', '*', '*', '*.lua'))
+        ]
+        other = [ # anything that is not in prefix/software nor prefix/modules
+            member.path
+            for member in members
+            if not pathlib.PurePath(os.path.join(prefix, 'software')) in pathlib.PurePath(member.path).parents
+            and not pathlib.PurePath(os.path.join(prefix, 'modules')) in pathlib.PurePath(member.path).parents
+            #if not fnmatch.fnmatch(member.path, os.path.join(prefix, 'software', '*'))
+            #and not fnmatch.fnmatch(member.path, os.path.join(prefix, 'modules', '*'))
+        ]
+        # TODO: how to handle compat layer tarballs?
+
+        overview = '\n'.join(sorted(swdirs + modfiles + other))
+        if len(overview) > 64000:
+            overview = overview[:64000] + '\n\nOutput truncated due to exceeding the maximum length.'
+        return overview
 
 
     def next_state(self, state):
@@ -194,9 +229,7 @@ class EessiTarball:
         tarball_metadata = self.git_repo.get_contents(file_path_staged)
         git_branch = filename + '_' + next_state
         self.download()
-        tar = tarfile.open(self.local_path, 'r')
-        tar_dirs = sorted([m.path for m in tar.getmembers() if m.isdir()])
-        pr_body = PR_BODY.format(tar_overview='\n'.join(tar_dirs))
+        pr_body = PR_BODY.format(tar_overview=self.get_contents_overview())
 
         main_branch = self.git_repo.get_branch('main')
         if git_branch in [branch.name for branch in self.git_repo.get_branches()]:
@@ -290,8 +323,8 @@ def main():
     git_repo = gh.get_repo(STAGING_REPO)
 
     #tarballs = find_tarballs()[-3:-2]
-    #tarballs = find_tarballs()[-4:-3]
-    tarballs = find_tarballs()
+    tarballs = find_tarballs()[-4:-3]
+    #tarballs = find_tarballs()
 
     for tarball in tarballs:
         print(tarball)
