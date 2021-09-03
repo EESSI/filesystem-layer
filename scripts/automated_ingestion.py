@@ -13,10 +13,9 @@ import os
 import subprocess
 import tarfile
 
-
 GITHUB_TOKEN_FILE = 'gh.txt'
 STAGING_BUCKET = 'eessi-staging'
-#STAGING_REPO = 'EESSI/staging'
+# STAGING_REPO = 'EESSI/staging'
 STAGING_REPO = 'bedroge/eessi-staging'
 METADATA_FILE_EXT = '.meta.txt'
 TARBALL_DIR = '/software/tarballs'
@@ -62,8 +61,8 @@ class EessiTarball:
         self.metadata_file = tarball + METADATA_FILE_EXT
         self.tarball = tarball
         self.s3 = boto3.client('s3')
-        #self.local_path = None
-        #self.local_metadata_path = None
+        # self.local_path = None
+        # self.local_metadata_path = None
         self.local_path = os.path.join(TARBALL_DIR, os.path.basename(self.tarball))
         self.local_metadata_path = self.local_path + METADATA_FILE_EXT
 
@@ -76,7 +75,6 @@ class EessiTarball:
         }
 
         self.state = self.find_state()
-
 
     def download(self):
         """
@@ -101,7 +99,6 @@ class EessiTarball:
                 )
                 self.local_metadata_path = None
 
-
     def find_state(self):
         """Find the state of this tarball by searching through the state directories."""
         for state in list(self.states.keys()):
@@ -114,7 +111,6 @@ class EessiTarball:
         else:
             # if no state was found, we assume this is a new tarball that was ingested to the bucket
             return list(self.states.keys())[0]
-
 
     def get_contents_overview(self):
         """Return an overview of what is included in the tarball."""
@@ -131,23 +127,23 @@ class EessiTarball:
             tar_members_desc = 'Summarized overview of the contents of the tarball:'
             prefix = os.path.commonprefix(paths)
             # TODO: this only works for software tarballs, how to handle compat layer tarballs?
-            swdirs = [ # all directory names with the pattern: <prefix>/software/<name>/<version>
+            swdirs = [  # all directory names with the pattern: <prefix>/software/<name>/<version>
                 m.path
                 for m in members
                 if m.isdir() and PurePosixPath(m.path).match(os.path.join(prefix, 'software', '*', '*'))
             ]
-            modfiles = [ # all filenames with the pattern: <prefix>/modules/<category>/<name>/*.lua
+            modfiles = [  # all filenames with the pattern: <prefix>/modules/<category>/<name>/*.lua
                 m.path
                 for m in members
                 if m.isfile() and PurePosixPath(m.path).match(os.path.join(prefix, 'modules', '*', '*', '*.lua'))
             ]
-            other = [ # anything that is not in <prefix>/software nor <prefix>/modules
+            other = [  # anything that is not in <prefix>/software nor <prefix>/modules
                 m.path
                 for m in members
                 if not PurePosixPath(prefix).joinpath('software') in PurePosixPath(m.path).parents
-                and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(m.path).parents
-                #if not fnmatch.fnmatch(m.path, os.path.join(prefix, 'software', '*'))
-                #and not fnmatch.fnmatch(m.path, os.path.join(prefix, 'modules', '*'))
+                   and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(m.path).parents
+                # if not fnmatch.fnmatch(m.path, os.path.join(prefix, 'software', '*'))
+                # and not fnmatch.fnmatch(m.path, os.path.join(prefix, 'modules', '*'))
             ]
             members_list = sorted(swdirs + modfiles + other)
 
@@ -162,7 +158,6 @@ class EessiTarball:
             overview = overview[:65000] + '\n\nWARNING: output exceeded the maximum length and was truncated!'
         return overview
 
-
     def next_state(self, state):
         """Find the next state for this tarball."""
         if state in self.states and 'next_state' in self.states[state]:
@@ -170,14 +165,12 @@ class EessiTarball:
         else:
             return None
 
-
     def run_handler(self):
         """Process this tarball by running the process function that corresponds to the current state."""
         if not self.state:
             self.state = self.find_state()
         handler = self.states[self.state]['handler']
         handler()
-
 
     def sha256sum(self):
         """Calculate the sha256 checksum of the tarball."""
@@ -187,7 +180,6 @@ class EessiTarball:
             for byte_block in iter(lambda: f.read(4096), b''):
                 sha256_hash.update(byte_block)
             return sha256_hash.hexdigest()
-
 
     def verify_checksum(self):
         """Verify the checksum of the downloaded tarball with the one in its metadata file."""
@@ -199,21 +191,21 @@ class EessiTarball:
         logging.debug(f'Checksum stored in metadata file: {meta_sha256}')
         return local_sha256 == meta_sha256
 
-
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
-        #TODO: add verify function that verifies the checksum before ingesting
+        # TODO: add verify function that verifies the checksum before ingesting
         self.download()
         if not self.verify_checksum():
             logging.error('Checksum of downloaded tarball does not match the one in its metadata file!')
         else:
             logging.debug(f'Checksum of {self.tarball} matches the one in its metadata file.')
-        ingest_cmd = subprocess.run(['echo', TARBALL_INGESTION_SCRIPT, self.local_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        ingest_cmd = subprocess.run(['echo', TARBALL_INGESTION_SCRIPT, self.local_path], stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE)
         if ingest_cmd.returncode == 0:
             next_state = self.next_state(self.state)
-            #self.move_metadata_file(self.state, next_state)
+            # self.move_metadata_file(self.state, next_state)
         else:
-            issue_title=f'Failed to ingest {self.tarball}'
+            issue_title = f'Failed to ingest {self.tarball}'
             issue_body = FAILED_INGESTION_ISSUE_BODY.format(
                 command=' '.join(ingest_cmd.args),
                 tarball=self.tarball,
@@ -226,11 +218,9 @@ class EessiTarball:
             else:
                 self.git_repo.create_issue(title=issue_title, body=issue_body)
 
-
     def print_ingested(self):
         """Process a tarball that has already been ingested."""
         print(f'{self.tarball} has already been ingested, skipping...')
-
 
     def mark_new_tarball_as_staged(self):
         """Process a new tarball that was added to the staging bucket."""
@@ -252,12 +242,10 @@ class EessiTarball:
         self.state = next_state
         self.run_handler()
 
-
     def print_rejected(self):
         """Process a (rejected) tarball for which the corresponding PR has been closed witout merging."""
         print("This tarball was rejected, so we're skipping it.")
         # Do we want to delete rejected tarballs at some point?
-
 
     def make_approval_request(self):
         """Process a staged tarball by opening a pull request for ingestion approval."""
@@ -311,7 +299,6 @@ class EessiTarball:
         # Open a PR to get approval for the ingestion
         self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
 
-
     def move_metadata_file(self, old_state, new_state, branch='main'):
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
         file_path_old = old_state + '/' + self.metadata_file
@@ -320,15 +307,14 @@ class EessiTarball:
         # Remove the metadata file from the old state's directory...
         self.git_repo.delete_file(file_path_old, 'remove from ' + old_state, sha=tarball_metadata.sha, branch=branch)
         # and move it to the new state's directory
-        self.git_repo.create_file(file_path_new, 'move to ' + new_state, tarball_metadata.decoded_content, branch=branch)
-
+        self.git_repo.create_file(file_path_new, 'move to ' + new_state, tarball_metadata.decoded_content,
+                                  branch=branch)
 
     def reject(self):
         """Reject a tarball for ingestion."""
         # Let's move the the tarball to the directory for rejected tarballs.
         next_state = 'rejected'
         self.move_metadata_file(self.state, next_state)
-
 
     def issue_exists(self, title, state='open'):
         """Check if an issue with the given title and state already exists."""
@@ -342,7 +328,7 @@ class EessiTarball:
 
 def read_github_token(filename):
     with open(filename, 'r') as tokenfile:
-            token = tokenfile.read().strip()
+        token = tokenfile.read().strip()
     return token
 
 
@@ -358,14 +344,14 @@ def find_tarballs():
 
 
 def main():
-    #logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+    # logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
     token = read_github_token(GITHUB_TOKEN_FILE)
     gh = github.Github(token)
     git_repo = gh.get_repo(STAGING_REPO)
 
-    #tarballs = find_tarballs()[-3:-2]
+    # tarballs = find_tarballs()[-3:-2]
     tarballs = find_tarballs()[-4:-3]
-    #tarballs = find_tarballs()
+    # tarballs = find_tarballs()
 
     for tarball in tarballs:
         print(tarball)
