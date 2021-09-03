@@ -38,14 +38,16 @@ def read_config(path):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, help='path to configuration file', default='automated_ingestion.cfg', dest='config')
+    parser.add_argument('-l', '--list', help='only list available tarballs', action='store_true', dest='list_only')
     args = parser.parse_args()
     return args
 
 
 def main():
-    # logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
     args = parse_args()
     config = read_config(args.config)
+    # TODO: check configuration: secrets, paths, permissions on dirs, etc
     gh_pat = config['secrets']['github_pat']
     gh = github.Github(gh_pat)
     s3 = boto3.client(
@@ -54,9 +56,12 @@ def main():
         aws_secret_access_key=config['secrets']['aws_secret_access_key'],
     )
 
-    # tarballs = find_tarballs()[-3:-2]
-    tarballs = find_tarballs(s3, config['aws']['staging_bucket'])[-4:-3]
-    # tarballs = find_tarballs()
+    tarballs = find_tarballs(s3, config['aws']['staging_bucket'])[-1:]
+    # tarballs = find_tarballs(s3, config['aws']['staging_bucket'])
+    if args.list_only:
+        for num, tarball in enumerate(tarballs):
+            print(f'{num}: {tarball}')
+        sys.exit(0)
 
     for tarball in tarballs:
         print(tarball)
