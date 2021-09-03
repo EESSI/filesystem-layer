@@ -1,0 +1,43 @@
+[secrets]
+aws_secret_access_key = XXX
+aws_access_key_id = XXX
+github_pat = XXX
+
+[paths]
+download_dir = /where/to/store/download/tarballs
+ingestion_script = /absolute/path/to/ingest-tarball.sh
+metadata_file_extension = .meta.txt
+
+[aws]
+staging_bucket = eessi-staging
+
+[github]
+staging_repo = EESSI/staging
+failed_ingestion_issue_body = Ingestion for tarball {tarball} has failed.
+    
+    Ingestion command:
+    ```
+    {command}
+    ```
+    
+    Return code:
+    {return_code}
+    
+    Stdout:
+    ```
+    {stdout}
+    ```
+    
+    Stderr:
+    ```
+    {stderr}
+    ```
+pr_body = A new tarball has been staged.
+    Please review the contents of this tarball carefully.
+    Merging this PR will lead to automatic ingestion of the tarball.
+    
+    <details>
+    
+    {tar_overview}
+    
+    </details>
