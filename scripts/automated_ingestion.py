@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
+
+from pathlib import PurePosixPath
+
 import boto3
 import botocore
-import fnmatch
 import github
+import hashlib
 import logging
+import json
 import os
-import pathlib
-
 import subprocess
 import tarfile
 
@@ -45,11 +47,8 @@ Please review the contents of this tarball carefully.
 Merging this PR will lead to automatic ingestion of the tarball.
 
 <details>
-Overview of the contents of the tarball:
 
-```
 {tar_overview}
-```
 
 </details>
 '''
@@ -63,8 +62,10 @@ class EessiTarball:
         self.metadata_file = tarball + METADATA_FILE_EXT
         self.tarball = tarball
         self.s3 = boto3.client('s3')
-        self.local_path = None
-        self.local_metadata_path = None
+        #self.local_path = None
+        #self.local_metadata_path = None
+        self.local_path = os.path.join(TARBALL_DIR, os.path.basename(self.tarball))
+        self.local_metadata_path = self.local_path + METADATA_FILE_EXT
 
         self.states = {
             'new': {'handler': self.mark_new_tarball_as_staged, 'next_state': 'staged'},
@@ -82,9 +83,8 @@ class EessiTarball:
         Download this tarball and its corresponding metadata file, if this hasn't been already done,
         and return a tuple containing the local paths to both files.
         """
-        self.local_path = os.path.join(TARBALL_DIR, os.path.basename(self.tarball))
-        self.local_metadata_path = self.local_path + METADATA_FILE_EXT
         if not os.path.exists(self.local_path):
+            print("DOWNLOAD")
             try:
                 self.s3.download_file(STAGING_BUCKET, self.tarball, self.local_path)
             except:
@@ -120,31 +120,46 @@ class EessiTarball:
         """Return an overview of what is included in the tarball."""
         tar = tarfile.open(self.local_path, 'r')
         members = tar.getmembers()
-        prefix = os.path.commonprefix([member.path for member in members])
+        tar_num_members = len(members)
+        paths = sorted([m.path for m in members])
 
-        swdirs = [ # all directory names with the pattern: prefix/name/version
-            member.path
-            for member in members
-            if member.isdir() and pathlib.PurePath(member.path).match(os.path.join(prefix, 'software', '*', '*'))
-        ]
-        modfiles = [ # all filenames with the pattern: prefix/modules/category/name/version.lua
-            member.path
-            for member in members
-            if member.isfile() and pathlib.PurePath(member.path).match(os.path.join(prefix, 'modules', '*', '*', '*.lua'))
-        ]
-        other = [ # anything that is not in prefix/software nor prefix/modules
-            member.path
-            for member in members
-            if not pathlib.PurePath(os.path.join(prefix, 'software')) in pathlib.PurePath(member.path).parents
-            and not pathlib.PurePath(os.path.join(prefix, 'modules')) in pathlib.PurePath(member.path).parents
-            #if not fnmatch.fnmatch(member.path, os.path.join(prefix, 'software', '*'))
-            #and not fnmatch.fnmatch(member.path, os.path.join(prefix, 'modules', '*'))
-        ]
-        # TODO: how to handle compat layer tarballs?
+        if tar_num_members < 100:
+            tar_members_desc = 'Full listing of the contents of the tarball:'
+            members_list = paths
 
-        overview = '\n'.join(sorted(swdirs + modfiles + other))
-        if len(overview) > 64000:
-            overview = overview[:64000] + '\n\nOutput truncated due to exceeding the maximum length.'
+        else:
+            tar_members_desc = 'Summarized overview of the contents of the tarball:'
+            prefix = os.path.commonprefix(paths)
+            # TODO: this only works for software tarballs, how to handle compat layer tarballs?
+            swdirs = [ # all directory names with the pattern: <prefix>/software/<name>/<version>
+                m.path
+                for m in members
+                if m.isdir() and PurePosixPath(m.path).match(os.path.join(prefix, 'software', '*', '*'))
+            ]
+            modfiles = [ # all filenames with the pattern: <prefix>/modules/<category>/<name>/*.lua
+                m.path
+                for m in members
+                if m.isfile() and PurePosixPath(m.path).match(os.path.join(prefix, 'modules', '*', '*', '*.lua'))
+            ]
+            other = [ # anything that is not in <prefix>/software nor <prefix>/modules
+                m.path
+                for m in members
+                if not PurePosixPath(prefix).joinpath('software') in PurePosixPath(m.path).parents
+                and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(m.path).parents
+                #if not fnmatch.fnmatch(m.path, os.path.join(prefix, 'software', '*'))
+                #and not fnmatch.fnmatch(m.path, os.path.join(prefix, 'modules', '*'))
+            ]
+            members_list = sorted(swdirs + modfiles + other)
+
+        # Construct the overview.
+        tar_members = '\n'.join(members_list)
+        overview = f'Total number of items in the tarball: {tar_num_members}'
+        overview += f'\n{tar_members_desc}\n'
+        overview += f'```\n{tar_members}\n```'
+
+        # Make sure that the overview does not exceed Github's maximum length (65536 characters).
+        if len(overview) > 65000:
+            overview = overview[:65000] + '\n\nWARNING: output exceeded the maximum length and was truncated!'
         return overview
 
 
@@ -164,14 +179,39 @@ class EessiTarball:
         handler()
 
 
+    def sha256sum(self):
+        """Calculate the sha256 checksum of the tarball."""
+        sha256_hash = hashlib.sha256()
+        with open(self.local_path, 'rb') as f:
+            # Read and update hash string value in blocks of 4K
+            for byte_block in iter(lambda: f.read(4096), b''):
+                sha256_hash.update(byte_block)
+            return sha256_hash.hexdigest()
+
+
+    def verify_checksum(self):
+        """Verify the checksum of the downloaded tarball with the one in its metadata file."""
+        local_sha256 = self.sha256sum()
+        meta_sha256 = None
+        with open(self.local_metadata_path, 'r') as meta:
+            meta_sha256 = json.load(meta)['payload']['sha256sum']
+        logging.debug(f'Checksum of downloaded tarball: {local_sha256}')
+        logging.debug(f'Checksum stored in metadata file: {meta_sha256}')
+        return local_sha256 == meta_sha256
+
+
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
-        tarball_path = self.download()
         #TODO: add verify function that verifies the checksum before ingesting
-        ingest_cmd = subprocess.run(['echo', TARBALL_INGESTION_SCRIPT, tarball_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        self.download()
+        if not self.verify_checksum():
+            logging.error('Checksum of downloaded tarball does not match the one in its metadata file!')
+        else:
+            logging.debug(f'Checksum of {self.tarball} matches the one in its metadata file.')
+        ingest_cmd = subprocess.run(['echo', TARBALL_INGESTION_SCRIPT, self.local_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if ingest_cmd.returncode == 0:
             next_state = self.next_state(self.state)
-            self.move_metadata_file(self.state, next_state)
+            #self.move_metadata_file(self.state, next_state)
         else:
             issue_title=f'Failed to ingest {self.tarball}'
             issue_body = FAILED_INGESTION_ISSUE_BODY.format(
@@ -318,6 +358,7 @@ def find_tarballs():
 
 
 def main():
+    #logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
     token = read_github_token(GITHUB_TOKEN_FILE)
     gh = github.Github(token)
     git_repo = gh.get_repo(STAGING_REPO)
