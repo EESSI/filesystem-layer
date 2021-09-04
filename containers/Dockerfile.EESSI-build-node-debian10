@@ -25,3 +25,13 @@ RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
 RUN mkdir -p /cvmfs/pilot.eessi-hpc.org
 
 RUN useradd -ms /bin/bash eessi
+
+# see https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html#cliv2-linux-install
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m)-2.2.35.zip" -o awscliv2.zip \
+  && unzip awscliv2.zip \
+  && ./aws/install \
+  && rm -r aws
+
+RUN curl -OL https://raw.githubusercontent.com/EESSI/infrastructure/main/eessi-upload-to-staging \
+  && mv eessi-upload-to-staging /usr/bin \
+  && chmod a+x /usr/bin/eessi-upload-to-staging
