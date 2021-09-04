@@ -13,7 +13,7 @@ ARG cvmfsversion
 COPY --from=prepare-deb /root/deb /root/deb
 
 RUN apt-get update
-RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev
+RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev unzip
 RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian10_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian10_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-config-default_latest_all.deb \
@@ -27,7 +27,7 @@ RUN mkdir -p /cvmfs/pilot.eessi-hpc.org
 RUN useradd -ms /bin/bash eessi
 
 # see https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html#cliv2-linux-install
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m)-2.2.35.zip" -o awscliv2.zip \
+RUN curl https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m)-2.2.35.zip -o awscliv2.zip \
   && unzip awscliv2.zip \
   && ./aws/install \
   && rm -r aws
