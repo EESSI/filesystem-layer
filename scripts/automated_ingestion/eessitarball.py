@@ -1,8 +1,9 @@
+from utils import send_slack_message, sha256sum
+
 from pathlib import PurePosixPath
 
 import boto3
 import github
-import hashlib
 import json
 import logging
 import os
@@ -133,18 +134,10 @@ class EessiTarball:
         handler = self.states[self.state]['handler']
         handler()
 
-    def sha256sum(self):
-        """Calculate the sha256 checksum of the tarball."""
-        sha256_hash = hashlib.sha256()
-        with open(self.local_path, 'rb') as f:
-            # Read and update hash string value in blocks of 4K
-            for byte_block in iter(lambda: f.read(4096), b''):
-                sha256_hash.update(byte_block)
-            return sha256_hash.hexdigest()
 
     def verify_checksum(self):
         """Verify the checksum of the downloaded tarball with the one in its metadata file."""
-        local_sha256 = self.sha256sum()
+        local_sha256 = sha256sum(self.local_path)
         meta_sha256 = None
         with open(self.local_metadata_path, 'r') as meta:
             meta_sha256 = json.load(meta)['payload']['sha256sum']
@@ -164,13 +157,20 @@ class EessiTarball:
         else:
             logging.debug(f'Checksum of {self.tarball} matches the one in its metadata file.')
         script = self.config['paths']['ingestion_script']
+        sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
         logging.info(f'Running the ingestion script for {self.tarball}...')
-        # TODO: make configuration item for sudo requirement
-        ingest_cmd = subprocess.run(['sudo', script, self.local_path], stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE)
+        ingest_cmd = subprocess.run(
+            sudo + [script, self.local_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
         if ingest_cmd.returncode == 0:
             next_state = self.next_state(self.state)
             self.move_metadata_file(self.state, next_state)
+            if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
+                send_slack_message(
+                    self.config['secrets']['slack_webhook'],
+                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.tarball))
+                )
         else:
             issue_title = f'Failed to ingest {self.tarball}'
             issue_body = self.config['github']['failed_ingestion_issue_body'].format(
