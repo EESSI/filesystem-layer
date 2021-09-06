@@ -154,7 +154,9 @@ class EessiTarball:
 
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
+        logging.info(f'Tarball {self.tarball} is ready to be ingested.')
         self.download()
+        logging.info('Verifying its checksum...')
         if not self.verify_checksum():
             logging.error('Checksum of downloaded tarball does not match the one in its metadata file!')
             # Open issue?
@@ -162,6 +164,7 @@ class EessiTarball:
         else:
             logging.debug(f'Checksum of {self.tarball} matches the one in its metadata file.')
         script = self.config['paths']['ingestion_script']
+        logging.info(f'Running the ingestion script for {self.tarball}...')
         # TODO: make configuration item for sudo requirement
         ingest_cmd = subprocess.run(['sudo', script, self.local_path], stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE)
@@ -189,6 +192,7 @@ class EessiTarball:
     def mark_new_tarball_as_staged(self):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
+        logging.info(f'Found new tarball {self.tarball}, downloading it...')
         # Download the tarball and its metadata file.
         self.download()
         if not self.local_path or not self.local_metadata_path:
@@ -199,6 +203,7 @@ class EessiTarball:
         with open(self.local_metadata_path, 'r') as meta:
             contents = meta.read()
 
+        logging.info(f'Adding tarball\'s metadata to the "{next_state}" folder of the git repository.')
         file_path_staged = next_state + '/' + self.metadata_file
         new_file = self.git_repo.create_file(file_path_staged, 'new tarball', contents, branch='main')
 
@@ -227,7 +232,7 @@ class EessiTarball:
             # Try to find out if there's already a PR as well...
             logging.info("Branch already exists for " + self.tarball)
             find_pr = list(self.git_repo.get_pulls(head=git_branch, state='all'))
-            logging.debug('Found PRs: ' + find_pr)
+            logging.debug('Found PRs: ' + str(find_pr))
             if find_pr:
                 # So, we have a branch and a PR for this tarball (if there are more, pick the first one)...
                 pr = find_pr.pop(0)
@@ -251,7 +256,7 @@ class EessiTarball:
                 logging.info(f'Removing existing branch...')
                 ref = self.git_repo.get_git_ref(f'heads/{git_branch}')
                 ref.delete()
-
+        logging.info(f'Making pull request to get ingestion approval for {self.tarball}.')
         # Create a new branch
         self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
         # Move the file to the directory of the next stage in this branch
@@ -264,6 +269,7 @@ class EessiTarball:
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
         file_path_old = old_state + '/' + self.metadata_file
         file_path_new = new_state + '/' + self.metadata_file
+        logging.debug(f'Moving metadata file {self.metadata_file} from {file_path_old} to {file_path_new}.')
         tarball_metadata = self.git_repo.get_contents(file_path_old)
         # Remove the metadata file from the old state's directory...
         self.git_repo.delete_file(file_path_old, 'remove from ' + old_state, sha=tarball_metadata.sha, branch=branch)
@@ -274,6 +280,7 @@ class EessiTarball:
     def reject(self):
         """Reject a tarball for ingestion."""
         # Let's move the the tarball to the directory for rejected tarballs.
+        logging.info(f'Marking tarball {self.tarball} as rejected...')
         next_state = 'rejected'
         self.move_metadata_file(self.state, next_state)
 
