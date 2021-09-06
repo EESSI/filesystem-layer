@@ -17,7 +17,7 @@ mkdir -p /tmp/$USER/{var-lib-cvmfs,var-run-cvmfs,home}
 export SINGULARITY_BIND="/tmp/$USER/var-run-cvmfs:/var/run/cvmfs,/tmp/$USER/var-lib-cvmfs:/var/lib/cvmfs"
 export SINGULARITY_HOME="/tmp/$USER/home:/home/$USER"
 export EESSI_PILOT="container:cvmfs2 pilot.eessi-hpc.org /cvmfs/pilot.eessi-hpc.org"
-singularity shell --fusemount "$EESSI_PILOT" docker://ghcr.io/EESSI/client-pilot:centos7
+singularity shell --fusemount "$EESSI_PILOT" docker://ghcr.io/eessi/client-pilot:centos7
 ```
 
 ## Build node container
@@ -39,7 +39,7 @@ export SINGULARITY_BIND="$EESSI_TMPDIR/var-run-cvmfs:/var/run/cvmfs,$EESSI_TMPDI
 export SINGULARITY_HOME="$EESSI_TMPDIR/home:/home/$USER"
 export EESSI_PILOT_READONLY="container:cvmfs2 pilot.eessi-hpc.org /cvmfs_ro/pilot.eessi-hpc.org"
 export EESSI_PILOT_WRITABLE_OVERLAY="container:fuse-overlayfs -o lowerdir=/cvmfs_ro/pilot.eessi-hpc.org -o upperdir=$EESSI_TMPDIR/overlay-upper -o workdir=$EESSI_TMPDIR/overlay-work /cvmfs/pilot.eessi-hpc.org"
-singularity shell --fusemount "$EESSI_PILOT_READONLY" --fusemount "$EESSI_PILOT_WRITABLE_OVERLAY" docker://eessi/fuse-overlay:debian10-$(uname -m)
+singularity shell --fusemount "$EESSI_PILOT_READONLY" --fusemount "$EESSI_PILOT_WRITABLE_OVERLAY" docker://ghcr.io/eessi/build-node:debian10
 ```
 
 For more details about building software, see: https://eessi.github.io/docs/software_layer/build_nodes/

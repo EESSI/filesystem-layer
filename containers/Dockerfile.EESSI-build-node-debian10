@@ -1,5 +1,4 @@
 ARG cvmfsversion=2.8.1
-ARG fuseoverlayfsversion=0.4.1
 ARG awscliversion=2.2.35
 
 FROM debian:10.6 AS prepare-deb
@@ -20,6 +19,7 @@ RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian10_$(dpkg --print-architectu
             /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian10_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-config-default_latest_all.deb \
             /root/deb/cvmfs-config-eessi_latest_all.deb
+RUN apt-get install -y fuse-overlayfs
 
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
   && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local
