@@ -23,13 +23,35 @@ def error(msg, code=1):
     logging.error(msg)
     sys.exit(code)
 
-
-def find_tarballs(s3, bucket, extension='.tar.gz'):
+def find_tarballs(s3, bucket, extension='.meta.txt'):
+    files = [
+        object['Key']
+        for object in s3.list_objects_v2(Bucket=bucket)['Contents']
+    ]
     tarballs = [
+        file
+        for file in files
+        if file.endswith('.tar.gz')
+            and file + '.meta.txt' in files
+    ]
+    return tarballs
+
+
+def find_tarballs_old(s3, bucket, extension='.meta.txt'):
+    # TODO: list_objects_v2 only returns up to 1000 objects
+    metadata_files = [
         object['Key']
         for object in s3.list_objects_v2(Bucket=bucket)['Contents']
         if object['Key'].endswith(extension)
     ]
+    tarballs = []
+    for mf in metadata_files:
+        try:
+            tarball = mf.partition(extension)[0]
+            s3.head_object(Bucket=bucket, Key=tarball)
+            tarballs.append(tarball)
+        except botocore.exceptions.ClientError:
+            continue
     return tarballs
 
 
@@ -70,15 +92,14 @@ def main():
         aws_secret_access_key=config['secrets']['aws_secret_access_key'],
     )
 
-    tarballs = find_tarballs(s3, config['aws']['staging_bucket'])[-1:]
-    # tarballs = find_tarballs(s3, config['aws']['staging_bucket'])
+    # tarballs = find_tarballs(s3, config['aws']['staging_bucket'])[-1:]
+    tarballs = find_tarballs(s3, config['aws']['staging_bucket'])
     if args.list_only:
         for num, tarball in enumerate(tarballs):
             print(f'{num}: {tarball}')
         sys.exit(0)
 
     for tarball in tarballs:
-        print(tarball)
         tar = EessiTarball(tarball, config, gh, s3)
         tar.run_handler()
 
