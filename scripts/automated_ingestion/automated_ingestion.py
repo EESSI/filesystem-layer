@@ -11,7 +11,6 @@ import logging
 import os
 import sys
 
-
 REQUIRED_CONFIG = {
     'secrets': ['aws_secret_access_key', 'aws_access_key_id', 'github_pat'],
     'paths': ['download_dir', 'ingestion_script', 'metadata_file_extension'],
@@ -25,6 +24,7 @@ def error(msg, code=1):
     logging.error(msg)
     sys.exit(code)
 
+
 def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt'):
     """Return a list of all tarballs in an S3 bucket that have a metadata file with the given extension (and same filename)."""
     # TODO: list_objects_v2 only returns up to 1000 objects
@@ -36,7 +36,7 @@ def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt
         file
         for file in files
         if file.endswith(extension)
-            and file + metadata_extension in files
+           and file + metadata_extension in files
     ]
     return tarballs
 
@@ -62,7 +62,8 @@ def parse_config(path):
 def parse_args():
     """Parse the command-line arguments."""
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, help='path to configuration file', default='automated_ingestion.cfg', dest='config')
+    parser.add_argument('-c', '--config', type=str, help='path to configuration file',
+                        default='automated_ingestion.cfg', dest='config')
     parser.add_argument('-l', '--list', help='only list available tarballs', action='store_true', dest='list_only')
     args = parser.parse_args()
     return args

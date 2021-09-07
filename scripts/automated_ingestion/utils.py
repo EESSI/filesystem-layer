@@ -2,6 +2,7 @@ import hashlib
 import json
 import requests
 
+
 def send_slack_message(webhook, msg):
     """Send a Slack message."""
     slack_data = {'text': msg}
@@ -24,4 +25,3 @@ def sha256sum(path):
         for byte_block in iter(lambda: f.read(8192), b''):
             sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
-

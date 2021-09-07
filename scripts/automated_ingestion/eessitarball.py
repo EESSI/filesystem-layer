@@ -134,7 +134,6 @@ class EessiTarball:
         handler = self.states[self.state]['handler']
         handler()
 
-
     def verify_checksum(self):
         """Verify the checksum of the downloaded tarball with the one in its metadata file."""
         local_sha256 = sha256sum(self.local_path)
@@ -292,4 +291,3 @@ class EessiTarball:
                 return True
         else:
             return False
-
