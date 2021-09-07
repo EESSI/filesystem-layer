@@ -11,6 +11,7 @@ import logging
 import os
 import sys
 
+
 REQUIRED_CONFIG = {
     'secrets': ['aws_secret_access_key', 'aws_access_key_id', 'github_pat'],
     'paths': ['download_dir', 'ingestion_script', 'metadata_file_extension'],
@@ -20,10 +21,13 @@ REQUIRED_CONFIG = {
 
 
 def error(msg, code=1):
+    """Print an error and exit."""
     logging.error(msg)
     sys.exit(code)
 
-def find_tarballs(s3, bucket, extension='.meta.txt'):
+def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt'):
+    """Return a list of all tarballs in an S3 bucket that have a metadata file with the given extension (and same filename)."""
+    # TODO: list_objects_v2 only returns up to 1000 objects
     files = [
         object['Key']
         for object in s3.list_objects_v2(Bucket=bucket)['Contents']
@@ -31,37 +35,21 @@ def find_tarballs(s3, bucket, extension='.meta.txt'):
     tarballs = [
         file
         for file in files
-        if file.endswith('.tar.gz')
-            and file + '.meta.txt' in files
+        if file.endswith(extension)
+            and file + metadata_extension in files
     ]
-    return tarballs
-
-
-def find_tarballs_old(s3, bucket, extension='.meta.txt'):
-    # TODO: list_objects_v2 only returns up to 1000 objects
-    metadata_files = [
-        object['Key']
-        for object in s3.list_objects_v2(Bucket=bucket)['Contents']
-        if object['Key'].endswith(extension)
-    ]
-    tarballs = []
-    for mf in metadata_files:
-        try:
-            tarball = mf.partition(extension)[0]
-            s3.head_object(Bucket=bucket, Key=tarball)
-            tarballs.append(tarball)
-        except botocore.exceptions.ClientError:
-            continue
     return tarballs
 
 
 def parse_config(path):
+    """Parse the configuration file."""
     config = configparser.ConfigParser()
     try:
         config.read(path)
     except:
         error(f'Unable to read configuration file {path}!')
 
+    # Check if all required configuration parameters/sections can be found.
     for section in REQUIRED_CONFIG.keys():
         if not section in config:
             error(f'Missing section "{section}" in configuration file {path}.')
@@ -72,6 +60,7 @@ def parse_config(path):
 
 
 def parse_args():
+    """Parse the command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, help='path to configuration file', default='automated_ingestion.cfg', dest='config')
     parser.add_argument('-l', '--list', help='only list available tarballs', action='store_true', dest='list_only')
@@ -80,6 +69,7 @@ def parse_args():
 
 
 def main():
+    """Main function."""
     logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
     args = parse_args()
     config = parse_config(args.config)
@@ -92,7 +82,6 @@ def main():
         aws_secret_access_key=config['secrets']['aws_secret_access_key'],
     )
 
-    # tarballs = find_tarballs(s3, config['aws']['staging_bucket'])[-1:]
     tarballs = find_tarballs(s3, config['aws']['staging_bucket'])
     if args.list_only:
         for num, tarball in enumerate(tarballs):

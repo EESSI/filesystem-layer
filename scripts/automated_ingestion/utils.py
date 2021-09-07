@@ -15,6 +15,7 @@ def send_slack_message(webhook, msg):
             % (response.status_code, response.text)
         )
 
+
 def sha256sum(path):
     """Calculate the sha256 checksum of a given file."""
     sha256_hash = hashlib.sha256()
