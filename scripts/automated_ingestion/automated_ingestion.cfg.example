@@ -2,6 +2,7 @@
 aws_secret_access_key = XXX
 aws_access_key_id = XXX
 github_pat = XXX
+slack_webhook = https://hooks.slack.com/services/XXX/YYY/ZZZ
 
 [paths]
 download_dir = /where/to/store/download/tarballs
@@ -10,6 +11,9 @@ metadata_file_extension = .meta.txt
 
 [aws]
 staging_bucket = eessi-staging
+
+[cvmfs]
+ingest_as_root = yes
 
 [github]
 staging_repo = EESSI/staging
@@ -41,3 +45,7 @@ pr_body = A new tarball has been staged.
     {tar_overview}
     
     </details>
+
+[slack]
+ingestion_notification = yes
+ingestion_message = Tarball {tarball} has been ingested into the CVMFS repository.

@@ -20,7 +20,8 @@ It uses the following workflow:
 ## Configuration
 - Create a GitHub token at https://github.com/settings/tokens/new. It needs to have the `repo` scope.
 - Create access keys (`AWS_SECRET_ACCESS_KEY` and `AWS_ACCESS_KEY_ID`) for the AWS account that you want to use for access to the S3 bucket.
-- Make a configuration file based on `automated_ingestion.cfg.example`. Add the Github token and AWS access keys to the `secrets` section, and adjust the other sections to your needs.
+- If you want to receive Slack notifications, set up a Slack App and create a Webhook URL for an Incoming Webhook.
+- Make a configuration file based on `automated_ingestion.cfg.example`, and adjust it to your needs.
 
 ## Run
-Run the script manually using `python3 automated_ingestion.py`, or set up a cronjob to run it regularly.
+Make sure that your virtual environment is activated, and run the script manually using `python3 automated_ingestion.py`, or set up a cronjob to run it regularly.
