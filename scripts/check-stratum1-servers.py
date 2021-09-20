@@ -7,6 +7,15 @@ import urllib.error
 import urllib.request
 import yaml
 
+# Default location for EESSI's Ansible group vars file containing the CVMFS settings.
+DEFAULT_ANSIBLE_GROUP_VARS_LOCATION = 'https://raw.githubusercontent.com/EESSI/filesystem-layer/main/inventory/group_vars/all.yml'
+# Default fully qualified CVMFS repository name
+DEFAULT_CVMFS_FQRN = 'pilot.eessi-hpc.org'
+# Maximum amount of time (in minutes) that a Stratum 1 is allowed to not having performed a snapshot.
+DEFAULT_MAX_SNAPSHOT_DELAY = 30
+# Maximum amount of time (in minutes) allowed between the snapshots of any two Stratum 1 servers.
+DEFAULT_MAX_SNAPSHOT_DIFF = 30
+# Filename of the last snapshot timestamp.
 LAST_SNAPSHOT_FILE = '.cvmfs_last_snapshot'
 
 
@@ -30,7 +39,7 @@ def find_stratum1_urls(vars_file):
     return urls
 
 
-def check_out_of_sync(s1_urls, fqrn, max_snapshot_delay=30, max_snapshot_diff=30):
+def check_out_of_sync(s1_urls, fqrn, max_snapshot_delay=DEFAULT_MAX_SNAPSHOT_DELAY, max_snapshot_diff=DEFAULT_MAX_SNAPSHOT_DIFF):
     """Check if all the Stratum 1 servers are in sync."""
     errors = []
     last_snapshots = {}
@@ -67,11 +76,11 @@ def parse_args():
     parser.add_argument(
         '-v', '--vars', type=str,
         help='URI to the Ansible group vars file that contains the EESSI CVMFS configuration (file:// or http[s]://)',
-        default='https://raw.githubusercontent.com/EESSI/filesystem-layer/main/inventory/group_vars/all.yml',
+        default=DEFAULT_ANSIBLE_GROUP_VARS_LOCATION,
         dest='vars_file'
     )
     parser.add_argument(
-        '-r', '--fqrn', help='fully qualified CVMFS repository name', default='pilot.eessi-hpc.org', dest='fqrn'
+        '-r', '--fqrn', help='fully qualified CVMFS repository name', default=DEFAULT_CVMFS_FQRN, dest='fqrn'
     )
     args = parser.parse_args()
     return args
