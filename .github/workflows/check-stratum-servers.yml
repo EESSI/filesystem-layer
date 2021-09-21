@@ -21,7 +21,7 @@ jobs:
         id: check
         run: |
             echo "STRATUM_ERRORS<<EOF" >> $GITHUB_ENV
-            scripts/check-stratum-servers.py --s0 2>&1 >> $GITHUB_ENV
+            scripts/check-stratum-servers.py --s0 &>> $GITHUB_ENV
             echo "EOF" >> $GITHUB_ENV
 
       - name: send Slack message if there was an error
