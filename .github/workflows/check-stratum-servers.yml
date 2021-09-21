@@ -19,6 +19,7 @@ jobs:
 
       - name: run check_stratums.py
         id: check
+        shell: bash {0}
         run: |
             scripts/check-stratum-servers.py --s0 >& stratum.log
             echo 'STRATUM_ERRORS<<EOF' >> $GITHUB_ENV
