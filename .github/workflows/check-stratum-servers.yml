@@ -20,6 +20,7 @@ jobs:
       - name: run check_stratums.py
         id: check
         shell: bash {0}
+        continue-on-error: true
         run: |
             scripts/check-stratum-servers.py --s0 >& stratum.log
             EC=$?
