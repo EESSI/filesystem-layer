@@ -19,7 +19,7 @@ jobs:
 
       - name: run check_stratums.py
         id: check
-        shell: bash {0}
+        continue-on-error: true
         run: |
             scripts/check-stratum-servers.py --s0 >& stratum.log
             echo 'STRATUM_ERRORS<<EOF' >> $GITHUB_ENV
@@ -28,7 +28,8 @@ jobs:
 
       - name: send Slack message if there was an error
         uses: rtCamp/action-slack-notify@v2
-        if: ${{ failure() }}
+        if: steps.check.outcome != 'success'
+        #${{ env.STRATUM_CHECK_EXITCODE != 0 }}
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: ${{ env.STRATUM_ERRORS }}
