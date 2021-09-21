@@ -95,7 +95,7 @@ def check_snapshots(s1_urls, fqrn, max_snapshot_delay=DEFAULT_MAX_SNAPSHOT_DELAY
             # so let's check if it is not too far behind.
             if now - last_snapshot_time > datetime.timedelta(minutes=max_snapshot_delay):
                 errors.append(
-                    f'Stratum 1 {s1} has made its last snapshot {(now - last_snapshot_time).minutes} minutes ago!')
+                    f'Stratum 1 {s1} has made its last snapshot {(now - last_snapshot_time).seconds / 60:.0f} minutes ago!')
         except urllib.error.HTTPError as e:
             errors.append(f'Could not connect to {s1_json}!')
 
