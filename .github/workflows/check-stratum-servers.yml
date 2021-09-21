@@ -26,6 +26,11 @@ jobs:
             cat stratum.log >> $GITHUB_ENV
             echo 'EOF' >> $GITHUB_ENV
 
+      - name: debug
+        run: |
+            echo ${{ env.STRATUM_ERRORS }}
+            cat $GITHUB_ENV
+
       - name: send Slack message if there was an error
         uses: rtCamp/action-slack-notify@v2
         if: steps.check.outcome != 'success'
