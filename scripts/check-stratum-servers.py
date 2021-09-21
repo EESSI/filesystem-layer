@@ -37,9 +37,10 @@ def find_stratum_urls(vars_file, fqrn):
     try:
         group_vars_yaml = yaml.safe_load(group_vars)
         s1_urls = group_vars_yaml['eessi_cvmfs_server_urls'][0]['urls']
+        s1_urls = [url.replace('@fqrn@', fqrn) for url in s1_urls]
         for repo in group_vars_yaml['eessi_cvmfs_repositories']:
             if repo['repository'] == fqrn:
-                s0_url = 'http://' + repo['stratum0'] + '/cvmfs/@fqrn@'
+                s0_url = 'http://' + repo['stratum0'] + '/cvmfs/' + fqrn
                 break
         else:
             error(f'Could not find Stratum 0 URL in {vars_file}!')
@@ -54,7 +55,7 @@ def check_revisions(stratum_urls, fqrn):
     revisions = {}
     for stratum in stratum_urls:
         # Get a URL for the CVMFS manifest file.
-        manifest_file = stratum.replace('@fqrn@', fqrn) + '/' + REPO_MANIFEST_FILE
+        manifest_file = stratum + '/' + REPO_MANIFEST_FILE
         try:
             manifest = urllib.request.urlopen(manifest_file).read()
             # Find the revision number.
