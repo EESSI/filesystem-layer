@@ -1,0 +1,21 @@
+name: Check Stratum servers
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '30 5 * * *'
+
+jobs:
+  check-stratums:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: run check_stratums.py
+        run: scripts/check_stratum_servers.py --s0
