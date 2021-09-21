@@ -20,9 +20,9 @@ jobs:
       - name: run check_stratums.py
         id: check
         run: |
-            echo "STRATUM_ERRORS<<EOF" >> $GITHUB_ENV
+            echo 'STRATUM_ERRORS<<EOF' >> $GITHUB_ENV
             scripts/check-stratum-servers.py --s0 &>> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
+            echo 'EOF' >> $GITHUB_ENV
 
       - name: send Slack message if there was an error
         uses: rtCamp/action-slack-notify@v2
