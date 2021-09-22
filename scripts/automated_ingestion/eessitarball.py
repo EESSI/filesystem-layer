@@ -27,6 +27,7 @@ class EessiTarball:
         self.s3 = s3
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(self.tarball))
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
+        self.url = f'https://{config["aws"]["staging_bucket"]}.s3.amazonaws.com/{tarball}'
 
         self.states = {
             'new': {'handler': self.mark_new_tarball_as_staged, 'next_state': 'staged'},
@@ -112,6 +113,7 @@ class EessiTarball:
         # Construct the overview.
         tar_members = '\n'.join(members_list)
         overview = f'Total number of items in the tarball: {tar_num_members}'
+        overview += f'URL to the tarball: {self.url}'
         overview += f'\n{tar_members_desc}\n'
         overview += f'```\n{tar_members}\n```'
 
