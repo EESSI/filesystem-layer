@@ -17,17 +17,17 @@ class EessiTarball:
     and has several functions to handle the different states of such a tarball in the ingestion process.
     """
 
-    def __init__(self, tarball, config, github, s3):
+    def __init__(self, object_name, config, github, s3):
         """Initialize the tarball object."""
         self.config = config
         self.github = github
         self.git_repo = github.get_repo(config['github']['staging_repo'])
         self.metadata_file = tarball + config['paths']['metadata_file_extension']
-        self.tarball = tarball
+        self.object = object_name
         self.s3 = s3
-        self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(self.tarball))
+        self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
-        self.url = f'https://{config["aws"]["staging_bucket"]}.s3.amazonaws.com/{tarball}'
+        self.url = f'https://{config["aws"]["staging_bucket"]}.s3.amazonaws.com/{object_name}'
 
         self.states = {
             'new': {'handler': self.mark_new_tarball_as_staged, 'next_state': 'staged'},
@@ -47,10 +47,10 @@ class EessiTarball:
         if not os.path.exists(self.local_path):
             bucket = self.config['aws']['staging_bucket']
             try:
-                self.s3.download_file(bucket, self.tarball, self.local_path)
+                self.s3.download_file(bucket, self.object, self.local_path)
             except:
                 logging.error(
-                    f'Failed to download tarball {self.tarball} from {bucket} to {self.local_path}.'
+                    f'Failed to download tarball {self.object} from {bucket} to {self.local_path}.'
                 )
                 self.local_path = None
         if not os.path.exists(self.local_metadata_path):
@@ -148,7 +148,7 @@ class EessiTarball:
 
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
-        logging.info(f'Tarball {self.tarball} is ready to be ingested.')
+        logging.info(f'Tarball {self.object} is ready to be ingested.')
         self.download()
         logging.info('Verifying its checksum...')
         if not self.verify_checksum():
@@ -156,10 +156,10 @@ class EessiTarball:
             # Open issue?
             return
         else:
-            logging.debug(f'Checksum of {self.tarball} matches the one in its metadata file.')
+            logging.debug(f'Checksum of {self.object} matches the one in its metadata file.')
         script = self.config['paths']['ingestion_script']
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
-        logging.info(f'Running the ingestion script for {self.tarball}...')
+        logging.info(f'Running the ingestion script for {self.object}...')
         ingest_cmd = subprocess.run(
             sudo + [script, self.local_path],
             stdout=subprocess.PIPE,
@@ -170,30 +170,30 @@ class EessiTarball:
             if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
                 send_slack_message(
                     self.config['secrets']['slack_webhook'],
-                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.tarball))
+                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.object))
                 )
         else:
-            issue_title = f'Failed to ingest {self.tarball}'
+            issue_title = f'Failed to ingest {self.object}'
             issue_body = self.config['github']['failed_ingestion_issue_body'].format(
                 command=' '.join(ingest_cmd.args),
-                tarball=self.tarball,
+                tarball=self.object,
                 return_code=ingest_cmd.returncode,
                 stdout=ingest_cmd.stdout.decode('UTF-8'),
                 stderr=ingest_cmd.stderr.decode('UTF-8'),
             )
             if self.issue_exists(issue_title, state='open'):
-                logging.info(f'Failed to ingest {self.tarball}, but an open issue already exists, skipping...')
+                logging.info(f'Failed to ingest {self.object}, but an open issue already exists, skipping...')
             else:
                 self.git_repo.create_issue(title=issue_title, body=issue_body)
 
     def print_ingested(self):
         """Process a tarball that has already been ingested."""
-        logging.info(f'{self.tarball} has already been ingested, skipping...')
+        logging.info(f'{self.object} has already been ingested, skipping...')
 
     def mark_new_tarball_as_staged(self):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
-        logging.info(f'Found new tarball {self.tarball}, downloading it...')
+        logging.info(f'Found new tarball {self.object}, downloading it...')
         # Download the tarball and its metadata file.
         self.download()
         if not self.local_path or not self.local_metadata_path:
@@ -222,7 +222,7 @@ class EessiTarball:
         file_path_staged = self.state + '/' + self.metadata_file
         file_path_to_ingest = next_state + '/' + self.metadata_file
 
-        filename = os.path.basename(self.tarball)
+        filename = os.path.basename(self.object)
         tarball_metadata = self.git_repo.get_contents(file_path_staged)
         git_branch = filename + '_' + next_state
         self.download()
@@ -231,13 +231,13 @@ class EessiTarball:
         if git_branch in [branch.name for branch in self.git_repo.get_branches()]:
             # Existing branch found for this tarball, so we've run this step before.
             # Try to find out if there's already a PR as well...
-            logging.info("Branch already exists for " + self.tarball)
+            logging.info("Branch already exists for " + self.object)
             find_pr = list(self.git_repo.get_pulls(head=git_branch, state='all'))
             logging.debug('Found PRs: ' + str(find_pr))
             if find_pr:
                 # So, we have a branch and a PR for this tarball (if there are more, pick the first one)...
                 pr = find_pr.pop(0)
-                logging.info(f'PR {pr.number} found for {self.tarball}')
+                logging.info(f'PR {pr.number} found for {self.object}')
                 if pr.state == 'open':
                     # The PR is still open, so it hasn't been reviewed yet: ignore this tarball.
                     logging.info('PR is still open, skipping this tarball...')
@@ -253,11 +253,11 @@ class EessiTarball:
             else:
                 # There is a branch, but no PR for this tarball.
                 # This is weird, so let's remove the branch and reprocess the tarball.
-                logging.info(f'Tarball {self.tarball} has a branch, but no PR.')
+                logging.info(f'Tarball {self.object} has a branch, but no PR.')
                 logging.info(f'Removing existing branch...')
                 ref = self.git_repo.get_git_ref(f'heads/{git_branch}')
                 ref.delete()
-        logging.info(f'Making pull request to get ingestion approval for {self.tarball}.')
+        logging.info(f'Making pull request to get ingestion approval for {self.object}.')
         # Create a new branch
         self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
         # Move the file to the directory of the next stage in this branch
@@ -281,7 +281,7 @@ class EessiTarball:
     def reject(self):
         """Reject a tarball for ingestion."""
         # Let's move the the tarball to the directory for rejected tarballs.
-        logging.info(f'Marking tarball {self.tarball} as rejected...')
+        logging.info(f'Marking tarball {self.object} as rejected...')
         next_state = 'rejected'
         self.move_metadata_file(self.state, next_state)
 
