@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from eessitarball import EessiTarball
+from pid.decorator import pidfile
+from pid import PidFileError
 
 import argparse
 import boto3
@@ -9,6 +11,7 @@ import configparser
 import github
 import logging
 import os
+import pid
 import sys
 
 REQUIRED_CONFIG = {
@@ -78,8 +81,11 @@ def parse_args():
     return args
 
 
+@pid.decorator.pidfile('automated_ingestion.pid')
 def main():
     """Main function."""
+    import time
+    time.sleep(15)
     args = parse_args()
     config = parse_config(args.config)
     log_format = config['logging'].get('format', '%(levelname)s:%(message)s')
@@ -107,4 +113,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except PidFileError:
+        error('Another instance of this script is already running!')
