@@ -84,14 +84,13 @@ def parse_args():
 @pid.decorator.pidfile('automated_ingestion.pid')
 def main():
     """Main function."""
-    import time
-    time.sleep(15)
     args = parse_args()
     config = parse_config(args.config)
+    log_file = config['logging'].get('filename', None)
     log_format = config['logging'].get('format', '%(levelname)s:%(message)s')
     log_level = LOG_LEVELS.get(config['logging'].get('level', 'INFO').upper(), logging.WARN)
     log_level = logging.DEBUG if args.debug else log_level
-    logging.basicConfig(format=log_format, level=log_level)
+    logging.basicConfig(filename=log_file, format=log_format, level=log_level)
     # TODO: check configuration: secrets, paths, permissions on dirs, etc
     gh_pat = config['secrets']['github_pat']
     gh = github.Github(gh_pat)

@@ -53,3 +53,5 @@ ingestion_message = Tarball `{tarball}` has been ingested into the CVMFS reposit
 [logging]
 level = WARN
 format = %%(levelname)s:%%(message)s
+# Use filename = None or remove the line for logging to stdout
+filename = automated_ingestion.log
