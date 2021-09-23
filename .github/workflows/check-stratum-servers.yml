@@ -22,7 +22,7 @@ jobs:
         shell: bash {0}
         continue-on-error: true
         run: |
-            scripts/check-stratum-servers.py --s0 >& stratum.log
+            scripts/check-stratum-servers.py --s0 2>&1 | tee stratum.log
             EC=$?
             echo 'STRATUM_ERRORS<<EOF' >> $GITHUB_ENV
             cat stratum.log >> $GITHUB_ENV
