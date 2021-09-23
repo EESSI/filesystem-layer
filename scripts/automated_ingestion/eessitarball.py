@@ -13,8 +13,10 @@ import tarfile
 
 class EessiTarball:
     """
-    Class that represents a EESSI tarball containing software installation or a compatibility layer,
-    and has several functions to handle the different states of such a tarball in the ingestion process.
+    Class that represents an EESSI tarball containing software installations or a compatibility layer,
+    and which is stored in an S3 bucket.
+    It has several functions to handle the different states of such a tarball in the actual ingestion process,
+    for which it interfaces with the S3 bucket, GitHub, and CVMFS.
     """
 
     def __init__(self, object_name, config, github, s3):
