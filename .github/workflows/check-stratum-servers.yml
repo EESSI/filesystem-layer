@@ -31,7 +31,7 @@ jobs:
 
       - name: send Slack message if there was an error
         uses: rtCamp/action-slack-notify@v2
-        if: steps.check.outcome != 'success' and github.event_name != 'pull_request'
+        if: steps.check.outcome != 'success' && github.event_name != 'pull_request'
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: ${{ env.STRATUM_ERRORS }}
