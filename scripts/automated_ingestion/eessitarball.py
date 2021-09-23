@@ -24,7 +24,7 @@ class EessiTarball:
         self.config = config
         self.github = github
         self.git_repo = github.get_repo(config['github']['staging_repo'])
-        self.metadata_file = tarball + config['paths']['metadata_file_extension']
+        self.metadata_file = object_name + config['paths']['metadata_file_extension']
         self.object = object_name
         self.s3 = s3
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
