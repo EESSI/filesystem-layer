@@ -138,13 +138,16 @@ def main():
     """Main function."""
     args = parse_args()
     s0_url, s1_urls = find_stratum_urls(args.vars_file, args.fqrn)
+    stratum_urls = [s0_url] + s1_urls if args.s0 else s1_urls
     errors = []
     errors.extend(check_snapshots(s1_urls, args.fqrn))
-    errors.extend(check_revisions([s0_url] + s1_urls if args.s0 else s1_urls, args.fqrn))
+    errors.extend(check_revisions(stratum_urls, args.fqrn))
     if errors:
         error('\n'.join(errors))
         sys.exit(1)
     else:
+        print('Checked the following Stratum servers, and they are all okay!')
+        print('\n'.join(stratum_urls))
         sys.exit(0)
 
 
