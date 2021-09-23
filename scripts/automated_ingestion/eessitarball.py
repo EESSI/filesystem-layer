@@ -115,7 +115,7 @@ class EessiTarball:
         # Construct the overview.
         tar_members = '\n'.join(members_list)
         overview = f'Total number of items in the tarball: {tar_num_members}'
-        overview += f'URL to the tarball: {self.url}'
+        overview += f'\nURL to the tarball: {self.url}'
         overview += f'\n{tar_members_desc}\n'
         overview += f'```\n{tar_members}\n```'
 
