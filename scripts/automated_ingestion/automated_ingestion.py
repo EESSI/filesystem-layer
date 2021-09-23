@@ -18,6 +18,14 @@ REQUIRED_CONFIG = {
     'github': ['staging_repo', 'failed_ingestion_issue_body', 'pr_body'],
 }
 
+LOG_LEVELS = {
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL
+}
+
 
 def error(msg, code=1):
     """Print an error and exit."""
@@ -64,6 +72,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, help='path to configuration file',
                         default='automated_ingestion.cfg', dest='config')
+    parser.add_argument('-d', '--debug', help='enable debug mode', action='store_true', dest='debug')
     parser.add_argument('-l', '--list', help='only list available tarballs', action='store_true', dest='list_only')
     args = parser.parse_args()
     return args
@@ -71,9 +80,12 @@ def parse_args():
 
 def main():
     """Main function."""
-    logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
     args = parse_args()
     config = parse_config(args.config)
+    log_format = config['logging'].get('format', '%(levelname)s:%(message)s')
+    log_level = LOG_LEVELS.get(config['logging'].get('level', 'INFO').upper(), logging.WARN)
+    log_level = logging.DEBUG if args.debug else log_level
+    logging.basicConfig(format=log_format, level=log_level)
     # TODO: check configuration: secrets, paths, permissions on dirs, etc
     gh_pat = config['secrets']['github_pat']
     gh = github.Github(gh_pat)
