@@ -23,6 +23,7 @@ jobs:
   build_and_publish:
     name: Build and publish image
     runs-on: ubuntu-latest
+    timeout-minutes: 720
     permissions:
       packages: write
       contents: read
