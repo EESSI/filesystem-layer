@@ -1,4 +1,4 @@
-ARG cvmfsversion=2.8.1
+ARG cvmfsversion=2.8.2
 # Stick to old version of fuse-overlayfs due to issues with newer versions
 # (cfr. https://github.com/containers/fuse-overlayfs/issues/232)
 ARG fuseoverlayfsversion=0.3
@@ -24,7 +24,7 @@ ARG cvmfsversion
 COPY --from=prepare-rpm /root/rpmbuild/RPMS /root/rpmbuild/RPMS
 COPY --from=build-fuse-overlayfs /usr/local/bin/fuse-overlayfs /usr/local/bin/fuse-overlayfs
 
-RUN yum install -y sudo vim openssh-clients
+RUN yum install -y sudo vim openssh-clients lsof
 RUN yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.el7.$(uname -m).rpm \
                    /root/rpmbuild/RPMS/$(uname -m)/cvmfs-fuse3-${cvmfsversion}-1.el7.$(uname -m).rpm \
                    http://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-latest.noarch.rpm
