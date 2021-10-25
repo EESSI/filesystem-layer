@@ -78,8 +78,7 @@ class EessiTarball:
             except github.GithubException:
                 # if there was some other (e.g. connection) issue, abort the search for this tarball
                 logging.warning(f'Unable to determine the state of {self.object}!')
-                return None
-                #break
+                return "unknown"
         else:
             # if no state was found, we assume this is a new tarball that was ingested to the bucket
             return "new"
