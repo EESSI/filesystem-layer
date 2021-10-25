@@ -37,6 +37,7 @@ class EessiTarball:
             'approved': {'handler': self.ingest, 'next_state': 'ingested'},
             'ingested': {'handler': self.print_ingested},
             'rejected': {'handler': self.print_rejected},
+            'unknown': {'handler': self.print_unknown},
         }
 
         # Find the initial state of this tarball.
@@ -71,8 +72,14 @@ class EessiTarball:
             try:
                 self.git_repo.get_contents(state + '/' + self.metadata_file)
                 return state
-            except github.GithubException:
+            except github.UnknownObjectException:
+                # no metadata file found in this state's directory, so keep searching...
                 continue
+            except github.GithubException:
+                # if there was some other (e.g. connection) issue, abort the search for this tarball
+                logging.warning(f'Unable to determine the state of {self.object}!')
+                return None
+                #break
         else:
             # if no state was found, we assume this is a new tarball that was ingested to the bucket
             return "new"
@@ -150,6 +157,7 @@ class EessiTarball:
 
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
+        #TODO: check if there is an open issue for this tarball, and if there is, skip it.
         logging.info(f'Tarball {self.object} is ready to be ingested.')
         self.download()
         logging.info('Verifying its checksum...')
@@ -217,6 +225,10 @@ class EessiTarball:
         """Process a (rejected) tarball for which the corresponding PR has been closed witout merging."""
         logging.info("This tarball was rejected, so we're skipping it.")
         # Do we want to delete rejected tarballs at some point?
+
+    def print_unknown(self):
+        """Process a tarball which has an unknown state."""
+        logging.info("The state of this tarball could not be determined, so we're skipping it.")
 
     def make_approval_request(self):
         """Process a staged tarball by opening a pull request for ingestion approval."""
