@@ -59,7 +59,7 @@ fi
 
 # Ingest the tarball to the repository
 echo "Ingesting tarball ${tar_file} to ${repo}..."
-${decompress} "${tar_file}" | cvmfs_server ingest -t - -b "${version}" "${repo}"
+${decompress} "${tar_file}" | cvmfs_server ingest -t - -b versions/"${version}" "${repo}"
 ec=$?
 if [ $ec -eq 0 ]
 then
