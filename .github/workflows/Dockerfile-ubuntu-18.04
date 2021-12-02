@@ -5,6 +5,7 @@ USER root
 RUN apt-get update
 RUN apt-get install -y cron gpg python3-pip systemd
 
+RUN pip3 install --upgrade pip
 RUN pip3 install 'ansible<5'
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
