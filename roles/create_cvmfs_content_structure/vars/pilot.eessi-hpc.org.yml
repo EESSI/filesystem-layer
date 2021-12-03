@@ -1,20 +1,23 @@
+---
 files:
-  .cvmfsdirtab: |
-    # Compatibility layer paths:
-    # /<version>/compat/{linux,macos}/{aarch64,ppc64le,x86_64}
-    /*/compat/*/*
-    /*/compat/*/*/var
-    /*/compat/*/*/var/db/repos
+  - path: .cvmfsdirtab
+    mode: 0644
+    content: |
+      # Compatibility layer paths:
+      # /<version>/compat/{linux,macos}/{aarch64,ppc64le,x86_64}
+      /*/compat/*/*
+      /*/compat/*/*/var
+      /*/compat/*/*/var/db/repos
 
-    # Software layer paths:
-    # /<version>/software/{linux,macos}/{aarch64,ppc64le,x86_64}/<vendor>/<microarchitecture>/software
-    /*/software/*/*/*/*/software
-    /*/software/*/*/*/*/software/*/*
-    /*/software/*/*/*/*/modules
-    # generic and graviton2 are one level less deep
-    /*/software/*/*/*/software
-    /*/software/*/*/*/software/*/*
-    /*/software/*/*/*/modules
+      # Software layer paths:
+      # /<version>/software/{linux,macos}/{aarch64,ppc64le,x86_64}/<vendor>/<microarchitecture>/software
+      /*/software/*/*/*/*/software
+      /*/software/*/*/*/*/software/*/*
+      /*/software/*/*/*/*/modules
+      # generic and graviton2 are one level less deep
+      /*/software/*/*/*/software
+      /*/software/*/*/*/software/*/*
+      /*/software/*/*/*/modules
 
 symlinks:
   latest: 2021.06

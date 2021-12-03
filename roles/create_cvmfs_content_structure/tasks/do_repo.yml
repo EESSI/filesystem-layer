@@ -20,8 +20,9 @@
 
   - name: "Create files"
     copy:
-      dest: "/cvmfs/{{ cvmfs_repo }}/{{ item }}"
-      content: "{{ files[item] }}"
+      dest: "/cvmfs/{{ cvmfs_repo }}/{{ item.path }}"
+      content: "{{ item.content }}"
+      mode: "{{ item.mode }}"
     with_items: "{{ files }}"
 
   - name: Publish transaction
