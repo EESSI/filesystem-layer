@@ -1,4 +1,4 @@
-# Create symlinks in the CVMFS repository. 
+# Create specified files and symlinks in the CVMFS repository {{ cvmfs_repo }}. 
 ---
 
 - name: "Include the vars file for {{ cvmfs_repo }}"

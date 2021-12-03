@@ -1,5 +1,4 @@
-# Main task which:
-# -
+# Main task which runs do_repo.yml for every CVMFS repo with a vars file.
 ---
 
 - name: "Find which repositories have a vars file..."
@@ -8,10 +7,6 @@
     path: "{{ role_path }}/vars/{{ item.repository }}.yml"
   with_items: "{{ eessi_cvmfs_repositories }}"
   register: repo_vars_file
-
-- name: Debug
-  debug:
-    msg: "{{ repo_vars_file }}"
 
 - name: "Apply do_repo for each repository with a vars file"
   include_tasks: do_repo.yml
