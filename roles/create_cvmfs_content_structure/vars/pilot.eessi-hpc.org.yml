@@ -1,3 +1,5 @@
+# Specifications of files and symlinks for the pilot.eessi-hpc.org CVMFS repository.
+# Paths for files and symlinks should be relative to the root of the repository.
 ---
 files:
   - path: .cvmfsdirtab
