@@ -1,0 +1,38 @@
+# Create symlinks in the CVMFS repository. 
+---
+
+- name: "Include the vars file for {{ cvmfs_repo }}"
+  include_vars: "{{ cvmfs_repo }}.yml"
+
+- name: Start transaction
+  command: "cvmfs_server transaction {{ cvmfs_repo }}"
+  when: cvmfs_start_transaction
+
+- block:
+
+  - name: "Create symlinks"
+    file:
+      path: "/cvmfs/{{ cvmfs_repo }}/{{ item }}"
+      src: "{{ symlinks[item] }}"
+      state: link
+      force: yes
+    with_items: "{{ symlinks }}"
+
+  - name: "Create files"
+    copy:
+      dest: "/cvmfs/{{ cvmfs_repo }}/{{ item }}"
+      content: "{{ files[item] }}"
+    with_items: "{{ files }}"
+
+  - name: Publish transaction
+    command: "cvmfs_server publish {{ cvmfs_repo }}"
+    when: cvmfs_start_transaction and cvmfs_publish_transaction
+
+  rescue:
+    - name: Abort transaction
+      command: "cvmfs_server abort {{ cvmfs_repo }}"
+      when: cvmfs_start_transaction and cvmfs_abort_transaction_on_failures
+
+    - name: Exit because of failure
+      fail:
+        msg: "Task {{ ansible_failed_task }} failed, with result {{ ansible_failed_result }}."
