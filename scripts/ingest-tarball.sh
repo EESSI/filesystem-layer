@@ -28,6 +28,7 @@ function error() {
     echo_red "ERROR: $1" >&2
     exit 1
 }
+
 # Check if a tarball has been specified
 if [ "$#" -ne 1 ]; then
     error "usage: $0 <gzipped tarball>"
@@ -86,7 +87,7 @@ fi
 # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
 echo "Generating the nested catalogs..."
 cvmfs_server transaction "${repo}"
-cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
+cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" to "${repo}"
 ec=$?
 if [ $ec -eq 0 ]
 then
