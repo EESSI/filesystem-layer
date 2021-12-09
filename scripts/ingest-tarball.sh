@@ -48,7 +48,7 @@ tar_top_level_dir=$(tar tf "${tar_file}" | head -n 1 | cut -d/ -f1)
 tar_contents_type_dir=$(tar tf "${tar_file}" | head -n 2 | tail -n 1 | cut -d/ -f2)
 
 # Check if the EESSI version number encoded in the filename
-# is a valid, i.e. matches the format YYYY.DD
+# is valid, i.e. matches the format YYYY.DD
 if ! echo "${version}" | egrep -q '^20[0-9][0-9]\.(0[0-9]|1[0-2])$'
 then
     error "${version} is not a valid EESSI version."
