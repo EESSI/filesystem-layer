@@ -87,7 +87,7 @@ fi
 # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
 echo "Generating the nested catalogs..."
 cvmfs_server transaction "${repo}"
-cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" to "${repo}"
+cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
 ec=$?
 if [ $ec -eq 0 ]
 then
