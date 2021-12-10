@@ -27,7 +27,12 @@ function create_tarball() {
 
 # Create a fake cvmfs_server executable, and prepend it to $PATH
 cat << EOF > ${tstdir}/cvmfs_server
-  echo "Calling: cvmfs_server \$@"
+#!/bin/bash
+if [ \$# -lt 2 ]; then
+  echo "cvmfs_server expects at least two arguments!"
+  exit 1
+fi
+echo "Calling: cvmfs_server \$@"
 EOF
 chmod +x ${tstdir}/cvmfs_server
 export PATH=${tstdir}:$PATH
@@ -62,8 +67,7 @@ tarballs_fail=(
 )
 
 # Run the tests that should succeed
-for ((i = 0; i < ${#tarballs_success[@]}; i++))
-do
+for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
     ./ingest-tarball.sh $t > /dev/null
     if [ ! $? -eq 0 ]; then
@@ -75,8 +79,7 @@ do
 done
 
 # Run the tests that should fail
-for ((i = 0; i < ${#tarballs_fail[@]}; i++))
-do
+for ((i = 0; i < ${#tarballs_fail[@]}; i++)); do
     t=$(create_tarball ${tarballs_fail[$i]})
     ./ingest-tarball.sh $t >& /dev/null
     if [ ! $? -eq 1 ]; then
