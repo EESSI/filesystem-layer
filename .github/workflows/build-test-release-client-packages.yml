@@ -34,7 +34,7 @@ jobs:
         run: ln -s inventory/group_vars
 
       - name: Prepare package source
-        uses: roles-ansible/check-ansible-debian-stretch-action@master
+        uses: roles-ansible/check-ansible-debian-stable-action@master
         with:
           targets: "./prepare-client-packages.yml"
           hosts: "localhost"
