@@ -18,10 +18,10 @@
       force: yes
     with_items: "{{ symlinks }}"
 
-  - name: "Create files"
+  - name: "Copy files"
     copy:
-      dest: "/cvmfs/{{ cvmfs_repo }}/{{ item.path }}"
-      content: "{{ item.content }}"
+      src: "{{ item.name }}"
+      dest: "/cvmfs/{{ cvmfs_repo }}/{{ item.dest }}"
       mode: "{{ item.mode }}"
     with_items: "{{ files }}"
 

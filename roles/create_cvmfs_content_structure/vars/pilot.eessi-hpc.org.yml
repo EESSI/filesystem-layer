@@ -2,26 +2,11 @@
 # Paths for files and symlinks should be relative to the root of the repository.
 ---
 files:
-  - path: .cvmfsdirtab
-    mode: 0644
-    content: |
-      # Compatibility layer paths:
-      # /<version>/compat/{linux,macos}/{aarch64,ppc64le,x86_64}
-      /*/compat/*/*
-      /*/compat/*/*/var
-      /*/compat/*/*/var/db/repos
-
-      # Software layer paths:
-      # /<version>/software/{linux,macos}/{aarch64,ppc64le,x86_64}/<vendor>/<microarchitecture>/software
-      /*/software/*/*/*/*/software
-      /*/software/*/*/*/*/software/*/*
-      /*/software/*/*/*/*/modules
-      # generic and graviton2 are one level less deep
-      /*/software/*/*/*/software
-      /*/software/*/*/*/software/*/*
-      /*/software/*/*/*/modules
+  - name: .cvmfsdirtab
+    dest: ''
+    mode: '644'
 
 symlinks:
   latest: 2021.06
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
-  versions/2021.06: 2021.06
+  versions/2021.06: ../2021.06
