@@ -1,5 +1,7 @@
 #!/bin/bash
 
+INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
+
 # Temporary base dir for the tests
 tstdir=$(mktemp -d)
 
@@ -11,22 +13,22 @@ num_tests_succeeded=0
 function create_tarball() {
   # Create a tarball with a given name, version directory,
   # and contents type directory
-  tarball=$1
-  version_dir=$2
-  type_dir=$3
+  tarball="$1"
+  version_dir="$2"
+  type_dir="$3"
 
   # Create a temporary directory with the dummy contents of the tarball
-  tartmpdir=$(mktemp -d -p ${tstdir})
-  mkdir -p $tartmpdir/$version_dir/$type_dir
-  touch $tartmpdir/$version_dir/$type_dir/somefile
+  tartmpdir=$(mktemp -d -p "${tstdir}")
+  mkdir -p "$tartmpdir/$version_dir/$type_dir"
+  touch "$tartmpdir/$version_dir/$type_dir/somefile"
 
-  tar czf $tarball -C $tartmpdir $version_dir
-  rm -rf ${tartmpdir}
-  echo $tarball
+  tar czf "$tarball" -C "$tartmpdir" "$version_dir"
+  rm -rf "${tartmpdir}"
+  echo "$tarball"
 }
 
 # Create a fake cvmfs_server executable, and prepend it to $PATH
-cat << EOF > ${tstdir}/cvmfs_server
+cat << EOF > "${tstdir}/cvmfs_server"
 #!/bin/bash
 if [ \$# -lt 2 ]; then
   echo "cvmfs_server expects at least two arguments!"
@@ -34,8 +36,8 @@ if [ \$# -lt 2 ]; then
 fi
 echo "Calling: cvmfs_server \$@"
 EOF
-chmod +x ${tstdir}/cvmfs_server
-export PATH=${tstdir}:$PATH
+chmod +x "${tstdir}/cvmfs_server"
+export PATH="${tstdir}:$PATH"
 
 # Tests that should succeed
 tarballs_success=(
@@ -69,7 +71,7 @@ tarballs_fail=(
 # Run the tests that should succeed
 for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
-    ./ingest-tarball.sh $t > /dev/null
+    "${INGEST_SCRIPT}" "$t" > /dev/null
     if [ ! $? -eq 0 ]; then
         num_tests_failed=$((num_tests_failed + 1))
     else
@@ -81,7 +83,7 @@ done
 # Run the tests that should fail
 for ((i = 0; i < ${#tarballs_fail[@]}; i++)); do
     t=$(create_tarball ${tarballs_fail[$i]})
-    ./ingest-tarball.sh $t >& /dev/null
+    "${INGEST_SCRIPT}" "$t" >& /dev/null
     if [ ! $? -eq 1 ]; then
         num_tests_failed=$((num_tests_failed + 1))
     else
@@ -91,7 +93,7 @@ for ((i = 0; i < ${#tarballs_fail[@]}; i++)); do
 done
 
 # Clean up
-rm -rf ${tstdir}
+rm -rf "${tstdir}"
 
 # Print some statistics, and exit with a return code based on whether tests have failed
 echo "Ran ${num_tests} tests, ${num_tests_succeeded} succeeded, ${num_tests_failed} failed."
