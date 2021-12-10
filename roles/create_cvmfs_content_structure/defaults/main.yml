@@ -1,3 +1,3 @@
 cvmfs_start_transaction: yes
-cvmfs_publish_transaction: no
+cvmfs_publish_transaction: yes
 cvmfs_abort_transaction_on_failures: yes
