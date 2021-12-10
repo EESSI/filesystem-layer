@@ -1,0 +1,22 @@
+# Main task which runs do_repo.yml for every CVMFS repo with a vars file.
+---
+
+- name: "Find which repositories have a vars file..."
+  delegate_to: localhost
+  stat:
+    path: "{{ role_path }}/vars/{{ item.repository }}.yml"
+  with_items: "{{ eessi_cvmfs_repositories }}"
+  register: repo_vars_file
+
+- name: "Apply do_repo for each repository with a vars file"
+  include_tasks: do_repo.yml
+  vars:
+    cvmfs_repo: "{{ repo_vars_file.item.repository }}"
+  when: repo_vars_file.stat.exists
+  with_items: "{{ repo_vars_file.results }}"
+  loop_control:
+    loop_var: repo_vars_file
+  args:
+    apply:
+      become: "{{ 'yes' if repo_vars_file.item.owner == 'root' else 'no' }}"
+

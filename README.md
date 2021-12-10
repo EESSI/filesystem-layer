@@ -89,13 +89,17 @@ First install the Stratum 0 server:
 ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml stratum0.yml
 ```
 
-Then install the files for the configuration repository:
-```
-ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml stratum0-deploy-cvmfs-config.yml
-```
-
 Note that there can be only one Stratum 0, so you should only run this playbook
 for testing purposes or in case we need to move or redeploy the current Stratum 0 server.
+
+An additional playbook `create_cvmfs_content_structure.yml`, which runs the Ansible role `roles/create_cvmfs_content_structure`,
+can be used to automatically deploy certain files and symlinks to the EESSI CVMFS repositories.
+The list of files and symlinks can be defined in `roles/create_cvmfs_content_structure/vars`,
+where you can add files `<name of the CVMFS repo>.yml`.
+A cron job can be used on the Stratum 0 or a publisher node to periodically check for changes in these files, 
+and to push updates to your repo.
+In order to do this, clone this `filesystem-layer` repository, and let your cron job do a `git pull` followed by
+a run of the playbook (e.g. `ansible-playbook --connection=local create_cvmfs_content_structure.yml`).
 
 ### Stratum 1
 Installing a Stratum 1 requires a GEO API license key, which will be used to find
