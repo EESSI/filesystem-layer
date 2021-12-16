@@ -294,7 +294,7 @@ class EessiTarball:
                 tarball=self.object,
                 error=err
             )
-            if len([i for i in self.git_repo.get_issues() if i.title == issue_title]) == 0:
+            if len([i for i in self.git_repo.get_issues(state='open') if i.title == issue_title]) == 0:
                 self.git_repo.create_issue(title=issue_title, body=issue_body)
             else:
                 logging.info(f'Failed to create tarball overview, but an issue already exists.')
