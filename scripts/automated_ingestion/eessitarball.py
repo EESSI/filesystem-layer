@@ -276,10 +276,17 @@ class EessiTarball:
         self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
         # Move the file to the directory of the next stage in this branch
         self.move_metadata_file(self.state, next_state, branch=git_branch)
+        # Get metadata file contents
+        metadata = ''
+        with open(self.local_metadata_path, 'r') as meta:
+            metadata = meta.read()
         # Try to get the tarball contents and open a PR to get approval for the ingestion
         try:
             tarball_contents = self.get_contents_overview()
-            pr_body = self.config['github']['pr_body'].format(tar_overview=self.get_contents_overview())
+            pr_body = self.config['github']['pr_body'].format(
+                tar_overview=self.get_contents_overview(),
+                metadata=metadata,
+            )
             self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
         except Exception as err:
             issue_title = f'Failed to get contents of {self.object}'
