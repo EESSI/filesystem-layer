@@ -47,6 +47,14 @@ pr_body = A new tarball has been staged.
     Merging this PR will lead to automatic ingestion of the tarball.
     
     <details>
+    <summary>Metadata of tarball</summary>
+    
+    {metadata}
+    
+    </details>
+
+    <details>
+    <summary>Overview of tarball contents</summary>
     
     {tar_overview}
     
