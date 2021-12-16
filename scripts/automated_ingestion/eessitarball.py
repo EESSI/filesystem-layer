@@ -283,8 +283,10 @@ class EessiTarball:
             self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
         except Exception as err:
             issue_title = f'Failed to get contents of {self.object}'
-            issue_body = f'An error occurred while trying to get the contents of {self.object}:\n'
-            issue_body += f'```\n{err}\n```'
+            issue_body = self.config['github']['failed_tarball_overview_issue_body'].format(
+                tarball=self.object,
+                error=err
+            )
             self.git_repo.create_issue(title=issue_title, body=issue_body)
 
     def move_metadata_file(self, old_state, new_state, branch='main'):
