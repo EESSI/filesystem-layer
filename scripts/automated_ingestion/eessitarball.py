@@ -47,8 +47,8 @@ class EessiTarball:
         """
         Download this tarball and its corresponding metadata file, if this hasn't been already done.
         """
+        bucket = self.config['aws']['staging_bucket']
         if force or not os.path.exists(self.local_path):
-            bucket = self.config['aws']['staging_bucket']
             try:
                 self.s3.download_file(bucket, self.object, self.local_path)
             except:
