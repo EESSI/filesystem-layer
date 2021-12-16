@@ -276,9 +276,16 @@ class EessiTarball:
         self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
         # Move the file to the directory of the next stage in this branch
         self.move_metadata_file(self.state, next_state, branch=git_branch)
-        # Open a PR to get approval for the ingestion
-        pr_body = self.config['github']['pr_body'].format(tar_overview=self.get_contents_overview())
-        self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
+        # Try to get the tarball contents and open a PR to get approval for the ingestion
+        try:
+            tarball_contents = self.get_contents_overview()
+            pr_body = self.config['github']['pr_body'].format(tar_overview=self.get_contents_overview())
+            self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
+        except Exception as err:
+            issue_title = f'Failed to get contents of {self.object}'
+            issue_body = f'An error occurred while trying to get the contents of {self.object}:\n'
+            issue_body += '```\nerr\n```'
+            self.git_repo.create_issue(title=issue_title, body=issue_body)
 
     def move_metadata_file(self, old_state, new_state, branch='main'):
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
