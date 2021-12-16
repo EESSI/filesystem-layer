@@ -17,7 +17,7 @@ ingest_as_root = yes
 
 [github]
 staging_repo = EESSI/staging
-failed_ingestion_issue_body = Ingestion for tarball {tarball} has failed.
+failed_ingestion_issue_body = Ingestion for tarball `{tarball}` has failed.
     
     Ingestion command:
     ```
@@ -36,7 +36,8 @@ failed_ingestion_issue_body = Ingestion for tarball {tarball} has failed.
     ```
     {stderr}
     ```
-failed_tarball_overview_issue_body = An error occurred while trying to get the contents of {tarball}.
+failed_tarball_overview_issue_body = An error occurred while trying to get the contents of `{tarball}`.
+    
     Error message:
     ```
     {error}
