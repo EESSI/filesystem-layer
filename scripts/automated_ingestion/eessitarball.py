@@ -294,7 +294,10 @@ class EessiTarball:
                 tarball=self.object,
                 error=err
             )
-            self.git_repo.create_issue(title=issue_title, body=issue_body)
+            if len([i for i in self.git_repo.get_issues() if i.title == issue_title]) == 0:
+                self.git_repo.create_issue(title=issue_title, body=issue_body)
+            else:
+                logging.info(f'Failed to create tarball overview, but an issue already exists.')
 
     def move_metadata_file(self, old_state, new_state, branch='main'):
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
