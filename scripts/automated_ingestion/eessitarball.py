@@ -261,7 +261,7 @@ class EessiTarball:
                     self.reject()
                     return
                 else:
-                    logging.warn('Warning, tarball {tarball} is in a weird state:')
+                    logging.warn(f'Warning, tarball {self.object} is in a weird state:')
                     logging.warn(f'Branch: {git_branch}\nPR: {pr}\nPR state: {pr.state}\nPR merged: {pr.merged}')
             else:
                 # There is a branch, but no PR for this tarball.
