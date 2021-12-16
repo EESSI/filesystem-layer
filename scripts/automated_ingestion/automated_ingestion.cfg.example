@@ -49,7 +49,9 @@ pr_body = A new tarball has been staged.
     <details>
     <summary>Metadata of tarball</summary>
     
+    ```
     {metadata}
+    ```
     
     </details>
 
