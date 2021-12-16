@@ -36,6 +36,9 @@ failed_ingestion_issue_body = Ingestion for tarball {tarball} has failed.
     ```
     {stderr}
     ```
+failed_tarball_overview_issue_body = Generating a contents overview for tarball {tarball} has failed.
+    Error message:
+    {error}
 pr_body = A new tarball has been staged.
     Please review the contents of this tarball carefully.
     Merging this PR will lead to automatic ingestion of the tarball.
