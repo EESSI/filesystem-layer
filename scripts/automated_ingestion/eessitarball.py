@@ -246,7 +246,7 @@ class EessiTarball:
             # Try to find out if there's already a PR as well...
             logging.info("Branch already exists for " + self.object)
             # Filtering with only head=<branch name> returns all prs if there's no match, so double-check
-            find_pr = [pr for pr in self.git_repo.get_pulls(head=git_branch, state='all') if pr.base.ref == git_branch]
+            find_pr = [pr for pr in self.git_repo.get_pulls(head=git_branch, state='all') if pr.head.ref == git_branch]
             logging.debug('Found PRs: ' + str(find_pr))
             if find_pr:
                 # So, we have a branch and a PR for this tarball (if there are more, pick the first one)...
