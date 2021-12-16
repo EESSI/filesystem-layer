@@ -43,11 +43,11 @@ class EessiTarball:
         # Find the initial state of this tarball.
         self.state = self.find_state()
 
-    def download(self):
+    def download(self, force=False):
         """
         Download this tarball and its corresponding metadata file, if this hasn't been already done.
         """
-        if not os.path.exists(self.local_path):
+        if force or not os.path.exists(self.local_path):
             bucket = self.config['aws']['staging_bucket']
             try:
                 self.s3.download_file(bucket, self.object, self.local_path)
@@ -56,7 +56,7 @@ class EessiTarball:
                     f'Failed to download tarball {self.object} from {bucket} to {self.local_path}.'
                 )
                 self.local_path = None
-        if not os.path.exists(self.local_metadata_path):
+        if force or not os.path.exists(self.local_metadata_path):
             try:
                 self.s3.download_file(bucket, self.metadata_file, self.local_metadata_path)
             except:
@@ -204,7 +204,8 @@ class EessiTarball:
         next_state = self.next_state(self.state)
         logging.info(f'Found new tarball {self.object}, downloading it...')
         # Download the tarball and its metadata file.
-        self.download()
+        # Use force as it may be a new attempt for an existing tarball that failed before.
+        self.download(force=True)
         if not self.local_path or not self.local_metadata_path:
             logging.warn('Skipping this tarball...')
             return
