@@ -12,7 +12,6 @@ ARG cvmfsversion
 ARG fuseoverlayfsversion
 
 COPY --from=prepare-rpm /root/rpmbuild/RPMS /root/rpmbuild/RPMS
-COPY --from=build-fuse-overlayfs /usr/local/bin/fuse-overlayfs /usr/local/bin/fuse-overlayfs
 
 RUN yum install -y sudo vim openssh-clients lsof
 RUN yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.el7.$(uname -m).rpm \
