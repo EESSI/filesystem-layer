@@ -1,4 +1,4 @@
-ARG cvmfsversion=2.8.2
+ARG cvmfsversion=2.9.1
 ARG fuseoverlayfsversion=1.8
 
 FROM centos:7 AS prepare-rpm
