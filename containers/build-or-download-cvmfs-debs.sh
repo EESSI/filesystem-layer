@@ -5,7 +5,7 @@ apt-get update
 apt-get install -y wget
 if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ]
 then
-    apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools uuid-dev valgrind libz-dev lsb-release
+    apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools python3-setuptools uuid-dev valgrind libz-dev lsb-release
     cd /tmp
     wget https://github.com/cvmfs/cvmfs/archive/refs/tags/cvmfs-${cvmfsversion}.tar.gz
     tar xzf cvmfs-${cvmfsversion}.tar.gz
