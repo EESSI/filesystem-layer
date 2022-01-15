@@ -127,7 +127,7 @@ class EessiTarball:
 
         # Make sure that the overview does not exceed Github's maximum length (65536 characters).
         if len(overview) > 65000:
-            overview = overview[:65000] + '\n\nWARNING: output exceeded the maximum length and was truncated!'
+            overview = overview[:65000] + '\n\nWARNING: output exceeded the maximum length and was truncated!\n\n'
         return overview
 
     def next_state(self, state):
