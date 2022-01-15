@@ -21,7 +21,7 @@ RUN wget https://github.com/containers/fuse-overlayfs/archive/refs/tags/v${fuseo
 FROM centos:7
 ARG cvmfsversion
 
-OPY --from=prepare-rpm /root/rpmbuild/RPMS /root/rpmbuild/RPMS
+COPY --from=prepare-rpm /root/rpmbuild/RPMS /root/rpmbuild/RPMS
 COPY --from=build-fuse-overlayfs /usr/local/bin/fuse-overlayfs /usr/local/bin/fuse-overlayfs
 
 RUN yum install -y sudo vim openssh-clients lsof
