@@ -1,6 +1,5 @@
 ARG cvmfsversion=2.9.0
 ARG awscliversion=1.22.33
-ARG fuseoverlayfsversion=1.8
 
 FROM debian:10.11 AS prepare-deb
 ARG cvmfsversion
@@ -11,7 +10,6 @@ RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 FROM debian:10.11
 ARG cvmfsversion
 ARG awscliversion
-ARG fuseoverlayfsversion
 
 COPY --from=prepare-deb /root/deb /root/deb
 
@@ -25,8 +23,11 @@ RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian10_$(dpkg --print-architectu
             /root/deb/cvmfs-config-eessi_latest_all.deb
 
 # download binary for specific version of fuse-overlayfs
-RUN curl -L -o /usr/local/bin/fuse-overlayfs https://github.com/containers/fuse-overlayfs/releases/download/v${fuseoverlayfsversion}/fuse-overlayfs-$(uname -m) \
-  && chmod +x /usr/local/bin/fuse-overlayfs
+# RUN curl -L -o /usr/local/bin/fuse-overlayfs https://github.com/containers/fuse-overlayfs/releases/download/v${fuseoverlayfsversion}/fuse-overlayfs-$(uname -m) \
+#   && chmod +x /usr/local/bin/fuse-overlayfs
+# Stick to old version of fuse-overlayfs due to issues with newer versions
+# (cfr. https://github.com/containers/fuse-overlayfs/issues/232)
+RUN apt-get install -y fuse-overlayfs
 
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
   && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local
