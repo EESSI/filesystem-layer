@@ -230,7 +230,7 @@ jobs:
 
   test-macos-package:
     needs: build-macos-package
-    runs-on: macos-latest
+    runs-on: macos-10.15
     steps:
       - name: Install OSXFUSE
         run: brew install --cask macfuse
