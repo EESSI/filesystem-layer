@@ -17,6 +17,7 @@
       state: link
       force: yes
     with_items: "{{ symlinks }}"
+    register: create_symlinks
 
   - name: "Copy files"
     copy:
@@ -24,10 +25,20 @@
       dest: "/cvmfs/{{ cvmfs_repo }}/{{ item.dest }}"
       mode: "{{ item.mode }}"
     with_items: "{{ files }}"
+    register: create_files
 
   - name: Publish transaction
     command: "cvmfs_server publish {{ cvmfs_repo }}"
-    when: cvmfs_start_transaction and cvmfs_publish_transaction
+    when:
+      - cvmfs_start_transaction
+      - cvmfs_publish_transaction
+      - create_symlinks.changed
+      - create_files.changed
+    register: publish
+
+  - name: Abort transaction
+    command: "cvmfs_server abort {{ cvmfs_repo }}"
+    when: publish is skipped
 
   rescue:
     - name: Abort transaction
