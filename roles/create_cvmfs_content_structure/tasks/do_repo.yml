@@ -32,7 +32,7 @@
     when:
       - cvmfs_start_transaction
       - cvmfs_publish_transaction
-      - (create_symlinks.changed) or (create_files.changed)
+      - create_symlinks.changed or create_files.changed
     register: publish
 
   - name: Abort transaction
