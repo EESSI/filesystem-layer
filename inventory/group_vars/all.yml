@@ -82,9 +82,20 @@ eessi_cvmfs_repositories:
     key_dir: /etc/cvmfs/keys/eessi-hpc.org
     server_options:
       - CVMFS_AUTO_GC=false
+      - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
     use_for_ci: yes
+  - repository: cvmfs-config.eessi-hpc.org
+    stratum0: cvmfs-s0.eessi-hpc.org
+    owner: "{{ cvmfs_repo_owner | default('root') }}"
+    key_dir: /etc/cvmfs/keys/eessi-hpc.org
+    server_options:
+      - CVMFS_AUTO_GC=false
+      - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
+      - CVMFS_GARBAGE_COLLECTION=true
+    client_options: []
+    use_for_ci: no
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.
