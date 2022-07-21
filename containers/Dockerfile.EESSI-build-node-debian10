@@ -1,4 +1,4 @@
-ARG cvmfsversion=2.9.0
+ARG cvmfsversion=2.9.4
 ARG awscliversion=1.22.33
 
 FROM debian:10.11 AS prepare-deb
