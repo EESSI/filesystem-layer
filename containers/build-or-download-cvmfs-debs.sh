@@ -6,7 +6,7 @@ apt-get install -y wget
 if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ]
 then
     apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools python3-dev python3-setuptools uuid-dev valgrind libz-dev lsb-release
-    # Set Python 3 as default Python
+    # Set Python 2 as default Python
     update-alternatives --install /usr/bin/python python /usr/bin/python2 1
     update-alternatives --install /usr/bin/python python /usr/bin/python3 2
     cd /tmp
