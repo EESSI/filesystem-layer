@@ -126,8 +126,8 @@ class EessiTarball:
         overview += f'```\n{tar_members}\n```'
 
         # Make sure that the overview does not exceed Github's maximum length (65536 characters).
-        if len(overview) > 65000:
-            overview = overview[:65000] + '\n\nWARNING: output exceeded the maximum length and was truncated!\n```'
+        if len(overview) > 60000:
+            overview = overview[:60000] + '\n\nWARNING: output exceeded the maximum length and was truncated!\n```'
         return overview
 
     def next_state(self, state):
