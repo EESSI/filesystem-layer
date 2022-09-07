@@ -41,6 +41,16 @@ function error() {
 }
 
 function check_version() {
+    if [ -z "${version}" ]
+    then
+        error "EESSI version cannot be derived from the filename."
+    fi
+
+    if [ -z "${tar_top_level_dir}" ]
+    then
+        error "no top level directory can be found in the tarball."
+    fi
+
     # Check if the EESSI version number encoded in the filename
     # is valid, i.e. matches the format YYYY.DD
     if ! echo "${version}" | egrep -q '^20[0-9][0-9]\.(0[0-9]|1[0-2])$'
@@ -69,19 +79,7 @@ function check_contents_type() {
     fi
 }
 
-function cvmfs_ingest_tarball() {
-    # Do a regular "cvmfs_server ingest" for a given tarball,
-    # followed by regenerating the nested catalog
-    echo "Ingesting tarball ${tar_file} to ${repo}..."
-    ${decompress} "${tar_file}" | cvmfs_server ingest -t - -b "${basedir}" "${repo}"
-    ec=$?
-    if [ $ec -eq 0 ]
-    then
-        echo_green "${tar_file} has been ingested to ${repo}."
-    else
-        error "${tar_file} could not be ingested to ${repo}."
-    fi
-
+function cvmfs_regenerate_nested_catalogs() {
     # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
     # ("cvmfs_server ingest" doesn't do this automatically)
     echo "Generating the nested catalogs..."
@@ -96,16 +94,32 @@ function cvmfs_ingest_tarball() {
     fi
 }
 
+function cvmfs_ingest_tarball() {
+    # Do a regular "cvmfs_server ingest" for a given tarball,
+    # followed by regenerating the nested catalog
+    echo "Ingesting tarball ${tar_file} to ${repo}..."
+    ${decompress} "${tar_file}" | cvmfs_server ingest -t - -b "${basedir}" "${repo}"
+    ec=$?
+    if [ $ec -eq 0 ]
+    then
+        echo_green "${tar_file} has been ingested to ${repo}."
+    else
+        error "${tar_file} could not be ingested to ${repo}."
+    fi
+
+    cvmfs_regenerate_nested_catalogs
+}
+
 function check_os() {
     # Check if the operating system directory is correctly set for the contents of the tarball
     os=$(echo "${tar_first_file}" | cut -d / -f 3)
     if [ -z "${os}" ]
     then
-        error "No operating system directory found in the tarball!"
+        error "no operating system directory found in the tarball!"
     fi
     if [ ! -v oss[${os}] ]
     then
-        error "The operating system directory in the tarball is ${os}, which is not a valid operating system!"
+        error "the operating system directory in the tarball is ${os}, which is not a valid operating system!"
     fi
 }
 
@@ -114,11 +128,11 @@ function check_arch() {
     arch=$(echo "${tar_first_file}" | cut -d / -f 4)
     if [ -z "${arch}" ]
     then
-        error "No architecture directory found in the tarball!"
+        error "no architecture directory found in the tarball!"
     fi
     if [ ! -v archs[${arch}] ]
     then
-        error "The architecture directory in the tarball is ${arch}, which is not a valid architecture!"
+        error "the architecture directory in the tarball is ${arch}, which is not a valid architecture!"
     fi
 }
 
@@ -153,7 +167,7 @@ function ingest_compat_tarball() {
             echo_green "Successfully ingested the new compatibility layer!"
         else
             cvmfs_server abort "${repo}"
-            error "Error while updating the compatibility layer, transaction aborted."
+            error "error while updating the compatibility layer, transaction aborted."
         fi
     else
         cvmfs_ingest_tarball
