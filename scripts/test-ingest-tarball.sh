@@ -22,7 +22,7 @@ function create_tarball() {
   mkdir -p "$tartmpdir/$version_dir/$type_dir"
   touch "$tartmpdir/$version_dir/$type_dir/somefile"
 
-  tar czf "$tarball" -C "$tartmpdir" "$version_dir"
+  tar czf "$tarball" -C "$tartmpdir" "$version_dir/$type_dir"
   rm -rf "${tartmpdir}"
   echo "$tarball"
 }
@@ -41,31 +41,41 @@ export PATH="${tstdir}:$PATH"
 
 # Tests that should succeed
 tarballs_success=(
-  "$tstdir/eessi-2021.12-compat-123456.tar.gz 2021.12 compat"
-  "$tstdir/eessi-2021.12-init-123456.tar.gz 2021.12 init"
-  "$tstdir/eessi-2021.12-software-123456.tar.gz 2021.12 software"
+  "$tstdir/eessi-2000.01-compat-linux-x86_64-123456.tar.gz 2000.01 compat/linux/x86_64"
+  "$tstdir/eessi-2000.01-compat-linux-aarch64-123456.tar.gz 2000.01 compat/linux/aarch64"
+  "$tstdir/eessi-2000.01-compat-linux-riscv64-123456.tar.gz 2000.01 compat/linux/riscv64"
+  "$tstdir/eessi-2000.01-compat-linux-ppc64le-123456.tar.gz 2000.01 compat/linux/ppc64le"
+  "$tstdir/eessi-2000.01-compat-macos-x86_64-123456.tar.gz 2000.01 compat/macos/x86_64"
+  "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 init"
+  "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 software/linux/x86_64/intel/haswell"
 )
 
 # Test that should return an error
 tarballs_fail=(
   # Non-matching type dirs
-  "$tstdir/eessi-2021.12-compat-123456.tar.gz 2021.12 init"
-  "$tstdir/eessi-2021.12-init-123456.tar.gz 2021.12 initt"
-  "$tstdir/eessi-2021.12-software-123456.tar.gz 2021.12 soft"
+  "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 init"
+  "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 initt"
+  "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 soft"
   # Non-matching versions
-  "$tstdir/eessi-2021.12-compat-123456.tar.gz 2021.11 compat"
-  "$tstdir/eessi-2021.12-init-123456.tar.gz 2021.11 init"
-  "$tstdir/eessi-2021.12-software-123456.tar.gz 2021.11 software"
+  "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.12 compat"
+  "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.12 init"
+  "$tstdir/eessi-2000.01-software-123456.tar.gz 20.12 software"
   # Invalid contents type
-  "$tstdir/eessi-2021.12-something-123456.tar.gz 2021.12 software"
+  "$tstdir/eessi-2000.01-something-123456.tar.gz 2000.01 software"
   # Invalid version number
-  "$tstdir/eessi-2021.13-software-123456.tar.gz 2021.13 software"
+  "$tstdir/eessi-2000.13-software-123456.tar.gz 2000.13 software"
   # Missing version in filename
-  "$tstdir/eessi-software-123456.tar.gz 2021.12 software"
+  "$tstdir/eessi-software-123456.tar.gz 2000.01 software"
   # Missing version directory in tarball contents
-  "$tstdir/eessi-2021.12-compat-123456.tar.gz compat linux"
-  "$tstdir/eessi-2021.12-init-123456.tar.gz init Magic_Castle"
-  "$tstdir/eessi-2021.12-software-123456.tar.gz software linux"
+  "$tstdir/eessi-2000.01-compat-123456.tar.gz compat linux"
+  "$tstdir/eessi-2000.01-init-123456.tar.gz init Magic_Castle"
+  "$tstdir/eessi-2000.01-software-123456.tar.gz software linux"
+  # Invalid operating system
+  "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat/windows/x86_64"
+  "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat/windows"
+  # Invalid architecture
+  "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat/linux/sparc"
+  "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat"
 )
 
 # Run the tests that should succeed
