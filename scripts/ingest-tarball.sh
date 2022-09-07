@@ -24,6 +24,10 @@ function echo_red() {
     echo -e "\e[31m$1\e[0m"
 }
 
+function echo_yellow() {
+    echo -e "\e[33m$1\e[0m"
+}
+
 function error() {
     echo_red "ERROR: $1" >&2
     exit 1
@@ -73,7 +77,36 @@ then
     error "the contents type in the filename (${contents_type_dir}) does not match the contents type in the tarball (${tar_contents_type_dir})."
 fi
 
-# Ingest the tarball to the repository, use "versions" as base dir for the ingestion
+# If this is a compat layer tarball, we need to check if it's an update, and if so, use a special procedure
+if [ "${tar_contents_type_dir}" = "compat" ]
+then
+    tar_first_file="$(tar tf "${tar_file}" | head -n 1)"
+    # Get OS and architecture from path, which should look like: <version>/compat/<os>/<arch>
+    compat_os=$(echo "${tar_first_file}" | cut -d / -f 3)
+    compat_arch=$(echo "${tar_first_file}" | cut -d / -f 4)
+    # Assume that we already had a compat layer in place if there is a startprefix script in the corresponding CVMFS directory
+    if [ -f "/cvmfs/${repo}/${basedir}/${version}/compat/${compat_os}/${compat_arch}/startprefix" ];
+    then
+        echo_yellow "Compatibility layer for version ${version}, OS ${compat_os}, and architecture ${compat_arch} already exists!"
+        echo_yellow "Removing the existing layer, and adding the new one from the tarball..."
+        cvmfs_server transaction "${repo}"
+        rm -rf "/cvmfs/${repo}/${basedir}/${version}/compat/${compat_os}/${compat_arch}/"
+        tar -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
+        cvmfs_server publish -m "update compat layer for ${version}, ${compat_os}, ${compat_arch}" "${repo}"
+        ec=$?
+        if [ $ec -eq 0]
+        then
+            echo_green "Successfully ingested the new compatibility layer!"
+            # As the publish operation already created new nested catalogs, we can just exit now
+            exit 0
+        else
+            cvmfs_server abort "${repo}"
+            error "Error while updating the compatibility layer, transaction aborted."
+        fi
+    fi
+fi
+
+# For other tarballs, just ingest them using the "cvmfs_server ingest" command
 echo "Ingesting tarball ${tar_file} to ${repo}..."
 ${decompress} "${tar_file}" | cvmfs_server ingest -t - -b "${basedir}" "${repo}"
 ec=$?
@@ -85,6 +118,7 @@ else
 fi
 
 # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
+# ("cvmfs_server ingest" doesn't do this automatically)
 echo "Generating the nested catalogs..."
 cvmfs_server transaction "${repo}"
 cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
