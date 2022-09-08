@@ -40,6 +40,18 @@ function error() {
     exit 1
 }
 
+function check_repo_vars() {
+    if [ -z "${repo}" ]
+    then
+        error "the 'repo' variable has to be set to the name of the CVMFS repository."
+    fi
+
+    if [ -z "${basedir}" ] || [ "${basedir}" == "/" ]
+    then
+        error "the 'basedir' variable has to be set to a subdirectory of the CVMFS repository."
+    fi
+}
+
 function check_version() {
     if [ -z "${version}" ]
     then
@@ -66,6 +78,16 @@ function check_version() {
 }
 
 function check_contents_type() {
+    if [ -z "${contents_type_dir}" ]
+    then
+        error: "could not derive the content type of the tarball from the filename."
+    fi
+
+    if [ -z "${tar_contents_type_dir}" ]
+    then
+        error: "could not derive the content type of the tarball from the first file in the tarball."
+    fi
+
     # Check if the name of the second-level dir in the tarball matches to what is specified in the filename
     if [ "${contents_type_dir}" != "${tar_contents_type_dir}" ]
     then
@@ -197,6 +219,7 @@ tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 tar_contents_type_dir=$(echo "${tar_first_file}" | head -n 2 | tail -n 1 | cut -d/ -f2)
 
 # Do some checks, and ingest the tarball
+check_repo_vars
 check_version
 check_contents_type
 ingest_${tar_contents_type_dir}_tarball
