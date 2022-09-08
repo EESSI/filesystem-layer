@@ -185,7 +185,7 @@ function ingest_compat_tarball() {
         tar -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
         cvmfs_server publish -m "update compat layer for ${version}, ${os}, ${arch}" "${repo}"
         ec=$?
-        if [ $ec -eq 0]
+        if [ $ec -eq 0 ]
         then
             echo_green "Successfully ingested the new compatibility layer!"
         else
