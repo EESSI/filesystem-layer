@@ -1,5 +1,5 @@
 ARG cvmfsversion=2.9.4
-ARG awscliversion=1.22.33
+ARG awscliversion=1.25.69
 
 FROM debian:10.11 AS prepare-deb
 ARG cvmfsversion
@@ -38,7 +38,7 @@ RUN mkdir -p /cvmfs/pilot.eessi-hpc.org
 RUN useradd -ms /bin/bash eessi
 
 # stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
-RUN pip3 install awscli==${awscliversion}
+RUN pip3 install archspec awscli==${awscliversion}
 
 RUN curl -OL https://raw.githubusercontent.com/EESSI/infrastructure/main/eessi-upload-to-staging \
   && mv eessi-upload-to-staging /usr/bin \
