@@ -103,7 +103,6 @@ function check_contents_type() {
 
 function cvmfs_regenerate_nested_catalogs() {
     # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
-    # ("cvmfs_server ingest" doesn't do this automatically)
     echo "Generating the nested catalogs..."
     cvmfs_server transaction "${repo}"
     cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
@@ -129,6 +128,8 @@ function cvmfs_ingest_tarball() {
         error "${tar_file} could not be ingested to ${repo}."
     fi
 
+    # "cvmfs_server ingest" doesn't automatically rebuild the nested catalogs,
+    # so we do that forcefully by doing an empty transaction
     cvmfs_regenerate_nested_catalogs
 }
 
