@@ -228,42 +228,43 @@ jobs:
       - name: Test repository access
         run: ls /cvmfs/pilot.eessi-hpc.org/
 
-  test-macos-package:
-    needs: build-macos-package
-    runs-on: macos-latest
-    steps:
-      - name: Install OSXFUSE
-        run: brew install --cask macfuse
-
-      - name: Download and install CVMFS client
-        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-latest.pkg && sudo installer -target / -pkg cvmfs-latest.pkg
-        
-      - name: Download cvmfs-config-eessi package
-        uses: actions/download-artifact@v2
-        with:
-          name: macos_package
-
-      - name: Find filename of package
-        id: find_filename
-        shell: bash
-        run: |
-          pkgfile="$(find . -name cvmfs-config-eessi*.pkg)"
-          echo ::set-output name=pkgfile::${pkgfile}
-
-      - name: Install package
-        run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
-
-      - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
-
-      - name: Mount the repositories
-        run: sudo mkdir -p /Users/Shared/cvmfs/pilot.eessi-hpc.org && sudo mount -t cvmfs pilot.eessi-hpc.org /Users/Shared/cvmfs/pilot.eessi-hpc.org
-
-      - name: Test repository access
-        run: ls /Users/Shared/cvmfs/pilot.eessi-hpc.org/
+#  test-macos-package:
+#    needs: build-macos-package
+#    runs-on: macos-10.15
+#    steps:
+#      - name: Install OSXFUSE
+#        run: brew install --cask macfuse
+#
+#      - name: Download and install CVMFS client
+#        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-latest.pkg && sudo installer -target / -pkg cvmfs-latest.pkg
+#
+#      - name: Download cvmfs-config-eessi package
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: macos_package
+#
+#      - name: Find filename of package
+#        id: find_filename
+#        shell: bash
+#        run: |
+#          pkgfile="$(find . -name cvmfs-config-eessi*.pkg)"
+#          echo ::set-output name=pkgfile::${pkgfile}
+#
+#      - name: Install package
+#        run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
+#
+#      - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
+#        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
+#
+#      - name: Mount the repositories
+#        run: sudo mkdir -p /Users/Shared/cvmfs/pilot.eessi-hpc.org && sudo mount -t cvmfs pilot.eessi-hpc.org /Users/Shared/cvmfs/pilot.eessi-hpc.org
+#
+#      - name: Test repository access
+#        run: ls /Users/Shared/cvmfs/pilot.eessi-hpc.org/
 
   release:
-    needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package, test-tar-package]
+    #needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package, test-tar-package]
+    needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-tar-package]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:

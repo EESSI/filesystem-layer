@@ -75,7 +75,7 @@ eessi_cvmfs_repositories:
       - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
-    use_for_ci: no
+    use_for_ci: false
   - repository: ci.eessi-hpc.org
     stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
@@ -84,7 +84,7 @@ eessi_cvmfs_repositories:
       - CVMFS_AUTO_GC=false
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
-    use_for_ci: yes
+    use_for_ci: true
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.

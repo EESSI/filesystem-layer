@@ -4,7 +4,8 @@
 roles:
 
   - name: galaxyproject.cvmfs
-    version: 0.2.14
+    src: https://github.com/galaxyproject/ansible-cvmfs
+    version: 78b2e03
 
   - name: geerlingguy.repo-epel
     version: 3.0.0

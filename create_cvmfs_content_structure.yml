@@ -1,0 +1,6 @@
+# Sync files to CVMFS repositories on a publisher node.
+---
+- name: Sync files to CVMFS repositories
+  hosts: cvmfsstratum0servers
+  roles:
+    - create_cvmfs_content_structure

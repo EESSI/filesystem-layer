@@ -1,10 +1,11 @@
-FROM centos:centos8
+FROM rockylinux:8
 
 USER root
 
 RUN yum install -y epel-release
 RUN yum install -y ansible
 RUN yum install -y cronie
+RUN yum install -y git
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 

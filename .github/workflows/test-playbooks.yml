@@ -23,13 +23,13 @@ jobs:
       fail-fast: false
       matrix:
         component: [stratum0, stratum1, localproxy, client]
-        os: [centos-7, centos-8, ubuntu-18.04, ubuntu-20.04]
+        os: [centos-7, rockylinux-8, ubuntu-20.04, ubuntu-22.04]
     steps:
       - uses: actions/checkout@v2
       - name: Make temporary directory for /srv
         run: mkdir ${GITHUB_WORKSPACE}/srv
       - name: Build the Docker image
-        run: docker build . --file ./.github/workflows/Dockerfile-${{ matrix.os }} --tag "docker.pkg.github.com/$(echo $GITHUB_REPOSITORY | tr '[A-Z]' '[a-z]')/${{ matrix.os }}"
+        run: docker build --file ./.github/workflows/Dockerfile-${{ matrix.os }} --tag "docker.pkg.github.com/$(echo $GITHUB_REPOSITORY | tr '[A-Z]' '[a-z]')/${{ matrix.os }}" .
       - name: Run the container
         run: docker run -d --workdir /github/workspace --rm -e INPUT_PLAYBOOK -e HOME -e GITHUB_JOB -e GITHUB_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_REPOSITORY_OWNER -e GITHUB_RUN_ID -e GITHUB_RUN_NUMBER -e GITHUB_RETENTION_DAYS -e GITHUB_ACTOR -e GITHUB_WORKFLOW -e GITHUB_HEAD_REF -e GITHUB_BASE_REF -e GITHUB_EVENT_NAME -e GITHUB_SERVER_URL -e GITHUB_API_URL -e GITHUB_GRAPHQL_URL -e GITHUB_WORKSPACE -e GITHUB_ACTION -e GITHUB_EVENT_PATH -e GITHUB_PATH -e GITHUB_ENV -e RUNNER_OS -e RUNNER_TOOL_CACHE -e RUNNER_TEMP -e RUNNER_WORKSPACE -e ACTIONS_RUNTIME_URL -e ACTIONS_RUNTIME_TOKEN -e ACTIONS_CACHE_URL -e GITHUB_ACTIONS=true -e CI=true -v "/var/run/docker.sock":"/var/run/docker.sock" -v $HOME:"/github/home" -v "$HOME/work/_temp/_github_workflow":"/github/workflow" -v "/home/runner/work/_temp/_runner_file_commands":"/github/file_commands" -v "$GITHUB_WORKSPACE":"/github/workspace" -v /sys/fs/cgroup:/sys/fs/cgroup --privileged --device /dev/fuse --mount type=bind,source=${GITHUB_WORKSPACE}/srv,target=/srv --mount type=bind,source=${GITHUB_WORKSPACE}/srv,target=/var/spool/cvmfs --name ${{ matrix.component }}-${{ matrix.os }} docker.pkg.github.com/$(echo $GITHUB_REPOSITORY | tr '[A-Z]' '[a-z]')/${{ matrix.os }}
       - name: Execute the playbook
