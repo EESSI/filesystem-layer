@@ -9,6 +9,7 @@
           stratum1:
             - apache2
             - libapache2-mod-wsgi
+            - "{{ 'libapache2-mod-wsgi-py3' if ansible_distribution_release in ('bookworm', 'jammy') else 'libapache2-mod-wsgi' }}"
             - squid
             - cvmfs-server
             - cvmfs-config-default
