@@ -10,8 +10,8 @@ RUN yum install -y cronie
 RUN yum install -y git
 RUN yum install -y python3 python3-pip
 
-pip3 install --upgrade pip
-python3 -m pip install ansible
+RUN pip3 install --upgrade pip
+RUN python3 -m pip install ansible
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 
