@@ -2,7 +2,7 @@ cvmfsversion=$1
 arch=$(uname -m)
 
 yum install -y wget
-if [ "$arch" = "ppc64le" ]
+if [ "$arch" = "ppc64le" ] || [ "$arch" = "riscv64" ]
 then
     yum install -y epel-release
     yum install -y rpm-build checkpolicy cmake fuse-devel fuse3-devel gcc gcc-c++ golang libattr-devel libcap-devel libuuid-devel openssl-devel python-devel python-setuptools python3-devel python3-setuptools selinux-policy-devel valgrind-devel hardlink selinux-policy-targeted
