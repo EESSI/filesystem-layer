@@ -3,7 +3,7 @@ arch=$(dpkg --print-architecture)
 
 apt-get update
 apt-get install -y wget
-if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ]
+if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ] || [ "$arch" = "riscv64" ]
 then
     apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools python3-dev python3-setuptools uuid-dev valgrind libz-dev lsb-release
     # Set Python 2 as default Python
@@ -14,7 +14,7 @@ then
     tar xzf cvmfs-${cvmfsversion}.tar.gz
     cd cvmfs-cvmfs-${cvmfsversion}/ci/cvmfs
     mkdir /root/deb
-    sed -i 's/Architecture: i386 amd64 armhf arm64/Architecture: i386 amd64 armhf arm64 ppc64el/' ../../packaging/debian/cvmfs/control.in
+    sed -i 's/Architecture: i386 amd64 armhf arm64/Architecture: i386 amd64 armhf arm64 ppc64el riscv64/' ../../packaging/debian/cvmfs/control.in
     ./deb.sh /tmp/cvmfs-cvmfs-${cvmfsversion} /root/deb
 else
     mkdir -p /root/deb
