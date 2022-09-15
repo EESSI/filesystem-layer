@@ -18,7 +18,7 @@ on:
   # this often means that we have a new CVMFS configuration package
   release:
     types: [published]
- 
+
 jobs:
   build_and_publish:
     name: Build and publish image
@@ -30,7 +30,7 @@ jobs:
     strategy:
       matrix:
         tag: ['client-pilot:centos7', 'build-node:debian10']
-        platform: [amd64, arm64, ppc64le]
+        platform: [amd64, arm64, ppc64le, riscv64]
 
     steps:
       - name: Check out the repo
@@ -109,7 +109,8 @@ jobs:
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
             --amend ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \
             --amend ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-arm64 \
-            --amend ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-ppc64le
+            --amend ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-ppc64le \
+            --amend ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-riscv64
 
       - name: Push manifest
         if: github.event_name != 'pull_request'
