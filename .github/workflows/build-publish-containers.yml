@@ -12,7 +12,7 @@ on:
       - main
     paths:
       - containers/Dockerfile.EESSI-*
-      - containers/build-or-download-cvmfs-rpm.sh
+      - containers/build-or-download-cvmfs-*.sh
 
   # also rebuild the containers for new releases of filesystem-layer:
   # this often means that we have a new CVMFS configuration package
