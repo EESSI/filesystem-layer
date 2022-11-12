@@ -66,54 +66,54 @@ jobs:
           name: linux_packages
           path: cvmfs-config-eessi*
 
-  build-macos-package:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Get the version number for the packages
-        id: get_version
-        # If this is a tag, use the tag name (e.g. v1.2.3) without v as version number.
-        # Otherwise, just use 0.0.
-        run: |
-          VERSION=0.0
-          REF_NAME=${{ github.ref }}
-          [[ $REF_NAME == refs/tags/v* ]] && VERSION=${REF_NAME/refs\/tags\/v/}
-          echo ::set-output name=version::${VERSION}
-
-      # The next step uses a custom Ansible inventory, and due to that it cannot find
-      # the group_vars folder inside the inventory folder. This symlink fixes that.
-      - name: Make symlink to group_vars
-        run: ln -s inventory/group_vars
-
-      - name: Install Ansible
-        run: pip3 install ansible
-
-      - name: Prepare package source
-        run: ansible-playbook --connection=local ./prepare-client-packages.yml
-
-      - name: Install dependencies
-        run: brew install gnu-tar
-
-      - name: Install fpm
-        run: gem install --no-document fpm
-
-      - name: Build package
-        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.' etc"
-
-      - name: Find filename of generated package
-        id: find_filename
-        shell: bash
-        run: |
-          pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
-          echo ::set-output name=pkgfile::${pkgfile}
-
-      - name: Upload macOS package as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: macos_package
-          path: ${{ steps.find_filename.outputs.pkgfile }}
+#  build-macos-package:
+#    runs-on: macos-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - name: Get the version number for the packages
+#        id: get_version
+#        # If this is a tag, use the tag name (e.g. v1.2.3) without v as version number.
+#        # Otherwise, just use 0.0.
+#        run: |
+#          VERSION=0.0
+#          REF_NAME=${{ github.ref }}
+#          [[ $REF_NAME == refs/tags/v* ]] && VERSION=${REF_NAME/refs\/tags\/v/}
+#          echo ::set-output name=version::${VERSION}
+#
+#      # The next step uses a custom Ansible inventory, and due to that it cannot find
+#      # the group_vars folder inside the inventory folder. This symlink fixes that.
+#      - name: Make symlink to group_vars
+#        run: ln -s inventory/group_vars
+#
+#      - name: Install Ansible
+#        run: pip3 install ansible
+#
+#      - name: Prepare package source
+#        run: ansible-playbook --connection=local ./prepare-client-packages.yml
+#
+#      - name: Install dependencies
+#        run: brew install gnu-tar
+#
+#      - name: Install fpm
+#        run: gem install --no-document fpm
+#
+#      - name: Build package
+#        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.' etc"
+#
+#      - name: Find filename of generated package
+#        id: find_filename
+#        shell: bash
+#        run: |
+#          pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
+#          echo ::set-output name=pkgfile::${pkgfile}
+#
+#      - name: Upload macOS package as artifact
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: macos_package
+#          path: ${{ steps.find_filename.outputs.pkgfile }}
 
   test-deb-package:
     needs: build-linux-packages
