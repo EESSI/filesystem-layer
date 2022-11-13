@@ -1,0 +1,25 @@
+name: Test ingest-tarball.sh script
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - scripts/ingest-tarball.sh
+      - scripts/test-ingest-tarball.sh
+  pull_request:
+    branches:
+      - main
+    paths:
+      - scripts/ingest-tarball.sh
+      - scripts/test-ingest-tarball.sh
+
+jobs:
+  test-ingestion-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: run tarball ingestion test script
+        run: |
+            scripts/test-ingest-tarball.sh

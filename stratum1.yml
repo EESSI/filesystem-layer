@@ -8,21 +8,11 @@
         cvmfs_packages:
           stratum1:
             - apache2
-            - libapache2-mod-wsgi
+            - "{{ 'libapache2-mod-wsgi-py3' if ansible_distribution_release in ('bookworm', 'jammy') else 'libapache2-mod-wsgi' }}"
             - squid
             - cvmfs-server
             - cvmfs-config-default
       when: ansible_facts['os_family'] == 'Debian'
-    - name: Fix for CentOS 8
-      set_fact:
-        cvmfs_packages:
-          stratum1:
-            - httpd
-            - python3-mod_wsgi
-            - squid
-            - cvmfs-server
-            - cvmfs-config-default
-      when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '8'
   roles:
     - role: geerlingguy.repo-epel
       when: ansible_facts['os_family'] == 'RedHat'

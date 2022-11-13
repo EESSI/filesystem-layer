@@ -1,10 +1,17 @@
 FROM centos:centos7
 
+ENV LANG en_US.utf8
+ENV LC_ALL en_US.utf8
+
 USER root
 
 RUN yum install -y epel-release
-RUN yum install -y ansible
 RUN yum install -y cronie
+RUN yum install -y git
+RUN yum install -y python3 python3-pip
+
+RUN pip3 install --upgrade pip
+RUN python3 -m pip install ansible
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 

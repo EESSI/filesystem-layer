@@ -22,13 +22,14 @@ on:
 jobs:
   build_and_publish:
     name: Build and publish image
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    timeout-minutes: 720
     permissions:
       packages: write
       contents: read
     strategy:
       matrix:
-        tag: ['client-pilot:centos7', 'build-node:debian10']
+        tag: ['client-pilot:centos7', 'build-node:debian11']
         platform: [amd64, arm64, ppc64le]
 
     steps:
@@ -87,7 +88,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client-pilot:centos7', 'build-node:debian10']
+        tag: ['client-pilot:centos7', 'build-node:debian11']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'

@@ -59,13 +59,15 @@ eessi_cvmfs_server_urls:
   - domain: eessi-hpc.org
     use_geoapi: true
     urls:
-      - "http://cvmfs-s1-rug.eessi-hpc.org/cvmfs/@fqrn@"
-      - "http://cvmfs-s1-bgo.eessi-hpc.org/cvmfs/@fqrn@"
+      - "http://rug-nl.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
+      - "http://bgo-no.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
+      - "http://azure-us-east1.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
+      - "http://aws-eu-west1.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
 
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
   - repository: pilot.eessi-hpc.org
-    stratum0: cvmfs-s0.eessi-hpc.org
+    stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
     key_dir: /etc/cvmfs/keys/eessi-hpc.org
     server_options:
@@ -73,16 +75,16 @@ eessi_cvmfs_repositories:
       - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
-    use_for_ci: no
+    use_for_ci: false
   - repository: ci.eessi-hpc.org
-    stratum0: cvmfs-s0.eessi-hpc.org
+    stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
     key_dir: /etc/cvmfs/keys/eessi-hpc.org
     server_options:
       - CVMFS_AUTO_GC=false
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
-    use_for_ci: yes
+    use_for_ci: true
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.

@@ -89,13 +89,17 @@ First install the Stratum 0 server:
 ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml stratum0.yml
 ```
 
-Then install the files for the configuration repository:
-```
-ansible-playbook -b -K -e @inventory/local_site_specific_vars.yml stratum0-deploy-cvmfs-config.yml
-```
-
 Note that there can be only one Stratum 0, so you should only run this playbook
 for testing purposes or in case we need to move or redeploy the current Stratum 0 server.
+
+An additional playbook `create_cvmfs_content_structure.yml`, which runs the Ansible role `roles/create_cvmfs_content_structure`,
+can be used to automatically deploy certain files and symlinks to the EESSI CVMFS repositories.
+The list of files and symlinks can be defined in `roles/create_cvmfs_content_structure/vars`,
+where you can add files `<name of the CVMFS repo>.yml`.
+A cron job can be used on the Stratum 0 or a publisher node to periodically check for changes in these files, 
+and to push updates to your repo.
+In order to do this, clone this `filesystem-layer` repository, and let your cron job do a `git pull` followed by
+a run of the playbook (e.g. `ansible-playbook --connection=local create_cvmfs_content_structure.yml`).
 
 ### Stratum 1
 Installing a Stratum 1 requires a GEO API license key, which will be used to find
@@ -162,6 +166,16 @@ rpm -i cvmfs-config-eessi-*.rpm
 dpkg -i cvmfs-config-eessi-*.deb
 ```
 
+NB! We now also have a yum repository where you can install the configuration package from. If you
+opt for this solution you will get automatic updates. Instead of downloading the rpm as above, you
+run the following commands:
+
+```
+sudo yum -y install http://repo.eessi-infra.org/eessi/rhel/8/noarch/eessi-release-0-1.noarch.rpm
+sudo yum check-update
+sudo yum -y install cvmfs-config-eessi
+```
+
 Next, you need to make a file `/etc/cvmfs/default.local` manually; this file is used for local settings and
 contains, for instance, the URL to your local proxy and the size of the local cache. As an example, you can put
 the following in this file, which corresponds to not using a proxy and setting the local quota limit to 40000MB:
@@ -185,13 +199,13 @@ Finally, run `cvmfs_config setup` to set up CVMFS.
 
 Once the client has been installed, you should be able to access all repositories under /cvmfs. They might not immediately show up in that directory before you have actually used them, so you might first have to run ls, e.g.:
 ```
-ls /cvmfs/cvmfs-config.eessi-hpc.org
+ls /cvmfs/pilot.eessi-hpc.org
 ```
 
 On the client machines you can use the `cvmfs_config` tool for different operations. For instance, you can verify the file system by running:
 ```
-$ sudo cvmfs_config probe cvmfs-config.eessi-hpc.org
-Probing /cvmfs/cvmfs-config.eessi-hpc.org... OK
+$ sudo cvmfs_config probe pilot.eessi-hpc.org
+Probing /cvmfs/pilot.eessi-hpc.org... OK
 ```
 
 Checking for misconfigurations can be done with:
@@ -206,9 +220,11 @@ CVMFS_DEBUGLOG=/some/path/to/cvmfs.log
 
 ### Proxy / Stratum 1
 
-In order to test your local proxy and/or Stratum 1, even without a client installed, you can use curl:
+In order to test your local proxy and/or Stratum 1, even without a client installed, you can use
+curl. Leave out the `--proxy http://url-to-your-proxy:3128` if you do not use a proxy.
+
 ```
-curl --proxy http://url-to-your-proxy:3128 --head http://url-to-your-stratum1/cvmfs/cvmfs-config.eessi-hpc.org/.cvmfspublished
+curl --proxy http://url-to-your-proxy:3128 --head http://url-to-your-stratum1/cvmfs/pilot.eessi-hpc.org/.cvmfspublished
 ```
 This should return:
 ```
@@ -219,6 +235,11 @@ X-Cache: MISS from url-to-your-proxy
 The second time you run it, you should get a cache hit:
 ```
 X-Cache: HIT from url-to-your-proxy
+```
+
+Example with the Norwegian Stratum 1:
+```
+curl --head http://bgo-no.stratum1.cvmfs.eessi-infra.org/cvmfs/pilot.eessi-hpc.org/.cvmfspublished
 ```
 
 ### Using the CVMFS infrastructure
