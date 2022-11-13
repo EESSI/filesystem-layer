@@ -1,5 +1,7 @@
+#/bin/bash
 cvmfsversion=$1
 arch=$(dpkg --print-architecture)
+os=debian11
 
 apt-get update
 apt-get install -y wget
@@ -19,8 +21,8 @@ then
 else
     mkdir -p /root/deb
     cd /root/deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}~1+debian10_${arch}.deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}~1+debian10_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}~1+${os}_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}~1+${os}_${arch}.deb
 fi
 
 cd /root/deb
