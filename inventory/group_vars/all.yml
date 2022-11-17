@@ -42,6 +42,17 @@ eessi_cvmfs_keys:
      -----END PUBLIC KEY-----
   # The following (duplicate) key can be removed after this PR has been merged:
   # https://github.com/galaxyproject/ansible-cvmfs/pull/32
+  - path: /etc/cvmfs/keys/eessi-hpc.org/data.eessi-hpc.org.pub
+    key: |
+     -----BEGIN PUBLIC KEY-----
+     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAommtaoqQ36Rb/cFnqUWg
+     8FoYCOjJWVBMQ4sVZ87oFRWehOUbcfy/ah85D9055HQws7i/hLNGJJAa7Es3E2o8
+     v8LtSlRdfR1A7b7LA6p3213HHz6dNU6I1riwtE2OP7/w4Q3+Agj1iRtW535GwzGo
+     4ZbewL8T1kbyaEm4HyefoitHXJthoPyTlYAhvAegIil1VJPhJZW+q/NWxnsd9QGJ
+     uAtbSICQg6mBJI50KiCBYmKHOAjH2W8qEnLWc7JoPoNvAHuMx1ya6YerBM5T9Esm
+     HJN0HHOVdRIwNjjPkV2jIqhJoI85no89v8/V45SFPVo+A7N0Cj4QdQrQTezpnlby
+     FQIDAQAB
+     -----END PUBLIC KEY-----
   - path: /etc/cvmfs/keys/eessi-hpc.org/ci.eessi-hpc.org.pub
     key: |
      -----BEGIN PUBLIC KEY-----
@@ -67,6 +78,16 @@ eessi_cvmfs_server_urls:
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
   - repository: pilot.eessi-hpc.org
+    stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
+    owner: "{{ cvmfs_repo_owner | default('root') }}"
+    key_dir: /etc/cvmfs/keys/eessi-hpc.org
+    server_options:
+      - CVMFS_AUTO_GC=false
+      - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
+      - CVMFS_GARBAGE_COLLECTION=true
+    client_options: []
+    use_for_ci: false
+  - repository: data.eessi-hpc.org
     stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
     key_dir: /etc/cvmfs/keys/eessi-hpc.org
