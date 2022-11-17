@@ -1,4 +1,4 @@
-ARG cvmfsversion=2.9.0
+ARG cvmfsversion=2.9.4
 # Stick to old version of fuse-overlayfs due to issues with newer versions
 # (cfr. https://github.com/containers/fuse-overlayfs/issues/232)
 ARG fuseoverlayfsversion=0.3
@@ -31,11 +31,12 @@ RUN yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.el7.$
 RUN yum install -y https://github.com/EESSI/filesystem-layer/releases/download/latest/cvmfs-config-eessi-latest.noarch.rpm
 
 # download binary for specific version of fuse-overlayfs
-RUN curl -L -o /usr/local/bin/fuse-overlayfs https://github.com/containers/fuse-overlayfs/releases/download/v${fuseoverlayfsversion}/fuse-overlayfs-$(uname -m) \
-  && chmod +x /usr/local/bin/fuse-overlayfs
+#RUN curl -L -o /usr/local/bin/fuse-overlayfs https://github.com/containers/fuse-overlayfs/releases/download/v${fuseoverlayfsversion}/fuse-overlayfs-$(uname -m) \
+#  && chmod +x /usr/local/bin/fuse-overlayfs
 
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
-  && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local
+  && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local \
+  && echo 'CVMFS_HIDE_MAGIC_XATTRS=yes' >> /etc/cvmfs/default.local
 
 RUN mkdir -p /cvmfs/pilot.eessi-hpc.org
 
