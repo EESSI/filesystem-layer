@@ -48,6 +48,8 @@ tarballs_success=(
   "$tstdir/eessi-2000.01-compat-macos-x86_64-123456.tar.gz 2000.01 compat/macos/x86_64"
   "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 init"
   "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 software/linux/x86_64/intel/haswell"
+  "$tstdir/eessi-noversion-dataset-WRF-3.0-123456.tar.gz none none"
+  "$tstdir/eessi-noversion-dataset-WRF-and-GROMACS-123456.tar.gz none none"
 )
 
 # Test that should return an error
@@ -76,6 +78,10 @@ tarballs_fail=(
   # Invalid architecture
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat/linux/sparc"
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat"
+  # Wrong version for dataset
+  "$tstdir/eessi-undefinedversion-dataset-WRF-3.0-123456.tar.gz none none"
+  # Wrong content type for datasets
+  "$tstdir/eessi-undefinedversion-data-WRF-3.0-123456.tar.gz none none"
 )
 
 # Run the tests that should succeed
