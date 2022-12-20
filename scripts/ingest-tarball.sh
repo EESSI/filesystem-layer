@@ -1,26 +1,29 @@
 #!/bin/bash
 
 # Ingest a tarball containing software, a compatibility layer,
-# or init scripts to the EESSI CVMFS repository, and generate
-# nested catalogs in a separate transaction.
+# init scripts, or dataset(s) to the EESSI CVMFS repositories,
+# and generate nested catalogs in a separate transaction, if necessary.
 # This script has to be run on a CVMFS publisher node.
 
 # This script assumes that the given tarball is named like:
-# eessi-<version>-{compat,init,software}-[additional information]-<timestamp>.tar.gz
-# It also assumes, and verifies, that the  name of the top-level directory of the contents of the
-# of the tarball matches <version>, and that name of the second level should is either compat, init, or software.
+# eessi-<version>-{compat,init,software,dataset}-[additional information]-<timestamp>.tar.gz
+# For non-dataset tarballs it also assumes, and verifies, that the  name of the top-level directory
+# of the contents of the of the tarball matches <version>,
+# and that name of the second level is either compat, init, or software.
 
 # Only if it passes these checks, the tarball gets ingested to the base dir in the repository specified below.
 
-repo=pilot.eessi-hpc.org
-basedir=versions
+repo="pilot.eessi-hpc.org"
+basedir="versions"
+data_repo="data.eessi-hpc.org"
+data_basedir="/"
 decompress="gunzip -c"
 # list of supported architectures for compat and software layers
 declare -A archs=(["aarch64"]= ["ppc64le"]= ["riscv64"]= ["x86_64"]=)
 # list of supported operating systems for compat and software layers
 declare -A oss=(["linux"]= ["macos"]=)
 # list of supported tarball content types
-declare -A content_types=(["compat"]= ["init"]= ["software"]=)
+declare -A content_types=(["compat"]= ["init"]= ["software"]= ["dataset"]=)
 
 
 function echo_green() {
@@ -50,6 +53,18 @@ function check_repo_vars() {
     then
         error "the 'basedir' variable has to be set to a subdirectory of the CVMFS repository."
     fi
+}
+
+function check_no_version() {
+  if [ -z "${version}" ]
+  then
+    error "EESSI version cannot be derived from the filename."
+  fi
+
+  if [ "${version}" != "noversion" ]
+  then
+    error "Tarballs that do not belong to a specific stack (e.g. dataset tarballs) should have 'noversion' in its filename."
+  fi
 }
 
 function check_version() {
@@ -198,6 +213,12 @@ function ingest_compat_tarball() {
 
 }
 
+function ingest_dataset_tarball() {
+    repo="${data_repo}"
+    basedir="${data_basedir}"
+    cvmfs_ingest_tarball
+}
+
 
 # Check if a tarball has been specified
 if [ "$#" -ne 1 ]; then
@@ -219,8 +240,16 @@ tar_first_file=$(tar tf "${tar_file}" | head -n 1)
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 tar_contents_type_dir=$(echo "${tar_first_file}" | head -n 2 | tail -n 1 | cut -d/ -f2)
 
-# Do some checks, and ingest the tarball
-check_repo_vars
-check_version
-check_contents_type
-ingest_${tar_contents_type_dir}_tarball
+if [ "${contents_type_dir}" == "dataset" ]
+then
+  # For dataset tarballs, we have to skip some checks or do some different checks,
+  # as they do not belong to a specific stack version
+  check_no_version
+else
+  check_version
+  check_contents_type
+  check_repo_vars
+fi
+
+# Finally, run the ingestion function for the specific type of tarball
+ingest_${contents_type_dir}_tarball
