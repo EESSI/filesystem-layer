@@ -1,14 +1,14 @@
 #!/bin/bash
 
 # Ingest a tarball containing software, a compatibility layer,
-# or init scripts to the EESSI CVMFS repository, and generate
+# or (init) scripts to the EESSI CVMFS repository, and generate
 # nested catalogs in a separate transaction.
 # This script has to be run on a CVMFS publisher node.
 
 # This script assumes that the given tarball is named like:
-# eessi-<version>-{compat,init,software}-[additional information]-<timestamp>.tar.gz
+# eessi-<version>-{compat,init,scripts,software}-[additional information]-<timestamp>.tar.gz
 # It also assumes, and verifies, that the  name of the top-level directory of the contents of the
-# of the tarball matches <version>, and that name of the second level should is either compat, init, or software.
+# of the tarball matches <version>, and that name of the second level should is either compat, init, scripts, or software.
 
 # Only if it passes these checks, the tarball gets ingested to the base dir in the repository specified below.
 
@@ -20,7 +20,7 @@ declare -A archs=(["aarch64"]= ["ppc64le"]= ["riscv64"]= ["x86_64"]=)
 # list of supported operating systems for compat and software layers
 declare -A oss=(["linux"]= ["macos"]=)
 # list of supported tarball content types
-declare -A content_types=(["compat"]= ["init"]= ["software"]=)
+declare -A content_types=(["compat"]= ["init"]= ["scripts"]= ["software"]=)
 
 
 function echo_green() {
@@ -94,10 +94,10 @@ function check_contents_type() {
         error "the contents type in the filename (${contents_type_dir}) does not match the contents type in the tarball (${tar_contents_type_dir})."
     fi
 
-    # Check if the second-level dir in the tarball is compat, software, or init
+    # Check if the second-level dir in the tarball is compat, software, scripts or init
     if [ ! -v content_types[${tar_contents_type_dir}] ]
     then
-        error "the second directory level of the tarball contents should be either compat, software, or init."
+        error "the second directory level of the tarball contents should be either compat, software, scripts or init."
     fi
 }
 
@@ -161,6 +161,11 @@ function check_arch() {
 
 function ingest_init_tarball() {
     # Handle the ingestion of tarballs containing init scripts
+    cvmfs_ingest_tarball
+}
+
+function ingest_scripts_tarball() {
+    # Handle the ingestion of tarballs containing scripts directory with e.g. bash utils and GPU related scripts
     cvmfs_ingest_tarball
 }
 

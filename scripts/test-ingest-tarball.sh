@@ -47,6 +47,7 @@ tarballs_success=(
   "$tstdir/eessi-2000.01-compat-linux-ppc64le-123456.tar.gz 2000.01 compat/linux/ppc64le"
   "$tstdir/eessi-2000.01-compat-macos-x86_64-123456.tar.gz 2000.01 compat/macos/x86_64"
   "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 init"
+  "$tstdir/eessi-2000.01-scripts-123456.tar.gz 2000.01 scripts"
   "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 software/linux/x86_64/intel/haswell"
 )
 
@@ -55,10 +56,12 @@ tarballs_fail=(
   # Non-matching type dirs
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 init"
   "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 initt"
+  "$tstdir/eessi-2000.01-scripts-123456.tar.gz 2000.01 scriptss"
   "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 soft"
   # Non-matching versions
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.12 compat"
   "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.12 init"
+  "$tstdir/eessi-2000.01-scripts-123456.tar.gz 2000.12 scripts"
   "$tstdir/eessi-2000.01-software-123456.tar.gz 20.12 software"
   # Invalid contents type
   "$tstdir/eessi-2000.01-something-123456.tar.gz 2000.01 software"
@@ -69,6 +72,7 @@ tarballs_fail=(
   # Missing version directory in tarball contents
   "$tstdir/eessi-2000.01-compat-123456.tar.gz compat linux"
   "$tstdir/eessi-2000.01-init-123456.tar.gz init Magic_Castle"
+  "$tstdir/eessi-2000.01-scripts-123456.tar.gz scripts Magic_Castle"
   "$tstdir/eessi-2000.01-software-123456.tar.gz software linux"
   # Invalid operating system
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat/windows/x86_64"
