@@ -1,0 +1,16 @@
+FROM rockylinux:8
+
+USER root
+
+RUN dnf install -y epel-release
+RUN dnf install -y cronie
+RUN dnf install -y git
+RUN dnf install -y python3-pip
+
+RUN python3 -m pip install --upgrade pip
+RUN python3 -m pip install ansible
+
+COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
+
+VOLUME ["/sys/fs/cgroup"]
+CMD ["/usr/sbin/init"]

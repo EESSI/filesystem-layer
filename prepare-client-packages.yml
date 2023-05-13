@@ -19,16 +19,16 @@
 
     - name: Create directory structure for the CVMFS config
       file:
-       path: "{{ item }}"
-       state: directory
-       mode: 0775
+        path: "{{ item }}"
+        state: directory
+        mode: 0775
       with_items:
-      - "{{ package_source_dir }}"
-      - "{{ package_source_dir }}/etc"
-      - "{{ package_source_dir }}/etc/cvmfs"
-      - "{{ package_source_dir }}/etc/cvmfs/keys"
-      - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_domain }}"
-      - "{{ package_source_dir }}/etc/cvmfs/domain.d"
+        - "{{ package_source_dir }}"
+        - "{{ package_source_dir }}/etc"
+        - "{{ package_source_dir }}/etc/cvmfs"
+        - "{{ package_source_dir }}/etc/cvmfs/keys"
+        - "{{ package_source_dir }}/etc/cvmfs/keys/{{ eessi_domain }}"
+        - "{{ package_source_dir }}/etc/cvmfs/domain.d"
 
     - name: Make EESSI CVMFS public key files
       copy:

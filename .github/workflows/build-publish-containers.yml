@@ -11,7 +11,7 @@ on:
     branches:
       - main
     paths:
-      - containers/Dockerfile.EESSI-client*
+      - containers/Dockerfile.EESSI-*
       - containers/build-or-download-cvmfs-rpm.sh
 
   # also rebuild the containers for new releases of filesystem-layer:
@@ -19,30 +19,34 @@ on:
   release:
     types: [published]
  
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
   build_and_publish:
     name: Build and publish image
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    timeout-minutes: 720
     permissions:
       packages: write
       contents: read
     strategy:
       matrix:
-        tag: ['client-pilot:centos7', 'build-node:debian10']
+        tag: ['client-pilot:centos7', 'build-node:debian11']
         platform: [amd64, arm64, ppc64le]
 
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18 # v2.1.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@8c0edbc76e98fa90f69d9a2c020dcb50019dc325 # v2.2.1
 
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 # v3.0.11
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ matrix.platform }}-${{ matrix.tag }}
@@ -51,7 +55,7 @@ jobs:
 
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v1 
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
@@ -64,7 +68,7 @@ jobs:
           echo DOCKERFILE=Dockerfile.EESSI-${tag//:/-} >> $GITHUB_ENV
 
       - name: Build and push to GitHub Packages
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@c56af957549030174b10d6867f20e78cfd7debc5 #v3.2.0
         with:
           tags: ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-${{ matrix.platform }}
           file: containers/${{ env.DOCKERFILE }}
@@ -87,11 +91,11 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client-pilot:centos7', 'build-node:debian10']
+        tag: ['client-pilot:centos7', 'build-node:debian11']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v1
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}

@@ -1,0 +1,42 @@
+name: Check Stratum servers
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '30 5 * * *'
+
+# Declare default permissions as read only.
+permissions: read-all
+
+jobs:
+  check-stratums:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+
+      - name: run check_stratums.py
+        id: check
+        shell: bash {0}
+        continue-on-error: true
+        run: |
+            scripts/check-stratum-servers.py --s0 2>&1 | tee stratum.log
+            EC=$?
+            echo 'STRATUM_ERRORS<<EOF' >> $GITHUB_ENV
+            cat stratum.log >> $GITHUB_ENV
+            echo 'EOF' >> $GITHUB_ENV
+            exit $EC
+
+      - name: send Slack message if there was an error
+        uses: rtCamp/action-slack-notify@12e36fc18b0689399306c2e0b3e0f2978b7f1ee7 # v2.2.0
+        if: steps.check.outcome != 'success' && github.event_name != 'pull_request'
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          SLACK_MESSAGE: ${{ env.STRATUM_ERRORS }}
+          SLACK_COLOR: 'danger'
+          SLACK_FOOTER: 

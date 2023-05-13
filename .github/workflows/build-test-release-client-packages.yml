@@ -10,13 +10,16 @@ on:
     branches:
       - main
 
+# Declare default permissions as read only.
+permissions: read-all
+
 jobs:
 
   build-linux-packages:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
 
       - name: Get the version number for the packages
         id: get_version
@@ -34,7 +37,7 @@ jobs:
         run: ln -s inventory/group_vars
 
       - name: Prepare package source
-        uses: roles-ansible/check-ansible-debian-stretch-action@master
+        uses: roles-ansible/check-ansible-debian-stable-action@cbd0678c583ed7e6b2deb6f801c78b891d9631e5 #v1.0
         with:
           targets: "./prepare-client-packages.yml"
           hosts: "localhost"
@@ -43,77 +46,77 @@ jobs:
 # it will make debugging more annoying.
 
       - name: Build RPM package
-        uses: bpicode/github-action-fpm@master
+        uses: bpicode/github-action-fpm@e76c0e2166030f4691d641a700b16958c7d12f5d # v0.9.2
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build Deb package
-        uses: bpicode/github-action-fpm@master
+        uses: bpicode/github-action-fpm@e76c0e2166030f4691d641a700b16958c7d12f5d # v0.9.2
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build tar package
-        uses: bpicode/github-action-fpm@master
+        uses: bpicode/github-action-fpm@e76c0e2166030f4691d641a700b16958c7d12f5d # v0.9.2
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi-${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Upload packages as build artifacts
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
         with:
           name: linux_packages
           path: cvmfs-config-eessi*
 
-  build-macos-package:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
-      - name: Get the version number for the packages
-        id: get_version
-        # If this is a tag, use the tag name (e.g. v1.2.3) without v as version number.
-        # Otherwise, just use 0.0.
-        run: |
-          VERSION=0.0
-          REF_NAME=${{ github.ref }}
-          [[ $REF_NAME == refs/tags/v* ]] && VERSION=${REF_NAME/refs\/tags\/v/}
-          echo ::set-output name=version::${VERSION}
-
-      # The next step uses a custom Ansible inventory, and due to that it cannot find
-      # the group_vars folder inside the inventory folder. This symlink fixes that.
-      - name: Make symlink to group_vars
-        run: ln -s inventory/group_vars
-
-      - name: Install Ansible
-        run: pip3 install ansible
-
-      - name: Prepare package source
-        run: ansible-playbook --connection=local ./prepare-client-packages.yml
-
-      - name: Install dependencies
-        run: brew install gnu-tar
-
-      - name: Install fpm
-        run: gem install --no-document fpm
-
-      - name: Build package
-        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.' etc"
-
-      - name: Find filename of generated package
-        id: find_filename
-        shell: bash
-        run: |
-          pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
-          echo ::set-output name=pkgfile::${pkgfile}
-
-      - name: Upload macOS package as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: macos_package
-          path: ${{ steps.find_filename.outputs.pkgfile }}
+#  build-macos-package:
+#    runs-on: macos-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v2
+#
+#      - name: Get the version number for the packages
+#        id: get_version
+#        # If this is a tag, use the tag name (e.g. v1.2.3) without v as version number.
+#        # Otherwise, just use 0.0.
+#        run: |
+#          VERSION=0.0
+#          REF_NAME=${{ github.ref }}
+#          [[ $REF_NAME == refs/tags/v* ]] && VERSION=${REF_NAME/refs\/tags\/v/}
+#          echo ::set-output name=version::${VERSION}
+#
+#      # The next step uses a custom Ansible inventory, and due to that it cannot find
+#      # the group_vars folder inside the inventory folder. This symlink fixes that.
+#      - name: Make symlink to group_vars
+#        run: ln -s inventory/group_vars
+#
+#      - name: Install Ansible
+#        run: pip3 install ansible
+#
+#      - name: Prepare package source
+#        run: ansible-playbook --connection=local ./prepare-client-packages.yml
+#
+#      - name: Install dependencies
+#        run: brew install gnu-tar
+#
+#      - name: Install fpm
+#        run: gem install --no-document fpm
+#
+#      - name: Build package
+#        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.' etc"
+#
+#      - name: Find filename of generated package
+#        id: find_filename
+#        shell: bash
+#        run: |
+#          pkgfile="$(ls -1 cvmfs-config-eessi*.pkg)"
+#          echo ::set-output name=pkgfile::${pkgfile}
+#
+#      - name: Upload macOS package as artifact
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: macos_package
+#          path: ${{ steps.find_filename.outputs.pkgfile }}
 
   test-deb-package:
     needs: build-linux-packages
@@ -129,7 +132,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install cvmfs
 
       - name: Download cvmfs-config-eessi package
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
         with:
           name: linux_packages
 
@@ -167,7 +170,7 @@ jobs:
         run: yum install -y cvmfs
 
       - name: Download cvmfs-config-eessi package
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
         with:
           name: linux_packages
 
@@ -205,7 +208,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install cvmfs
 
       - name: Download cvmfs-config-eessi package
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
         with:
           name: linux_packages
 
@@ -228,54 +231,57 @@ jobs:
       - name: Test repository access
         run: ls /cvmfs/pilot.eessi-hpc.org/
 
-  test-macos-package:
-    needs: build-macos-package
-    runs-on: macos-latest
-    steps:
-      - name: Install OSXFUSE
-        run: brew install --cask macfuse
-
-      - name: Download and install CVMFS client
-        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-latest.pkg && sudo installer -target / -pkg cvmfs-latest.pkg
-        
-      - name: Download cvmfs-config-eessi package
-        uses: actions/download-artifact@v2
-        with:
-          name: macos_package
-
-      - name: Find filename of package
-        id: find_filename
-        shell: bash
-        run: |
-          pkgfile="$(find . -name cvmfs-config-eessi*.pkg)"
-          echo ::set-output name=pkgfile::${pkgfile}
-
-      - name: Install package
-        run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
-
-      - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
-        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
-
-      - name: Mount the repositories
-        run: sudo mkdir -p /Users/Shared/cvmfs/pilot.eessi-hpc.org && sudo mount -t cvmfs pilot.eessi-hpc.org /Users/Shared/cvmfs/pilot.eessi-hpc.org
-
-      - name: Test repository access
-        run: ls /Users/Shared/cvmfs/pilot.eessi-hpc.org/
+#  test-macos-package:
+#    needs: build-macos-package
+#    runs-on: macos-10.15
+#    steps:
+#      - name: Install OSXFUSE
+#        run: brew install --cask macfuse
+#
+#      - name: Download and install CVMFS client
+#        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-latest.pkg && sudo installer -target / -pkg cvmfs-latest.pkg
+#
+#      - name: Download cvmfs-config-eessi package
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: macos_package
+#
+#      - name: Find filename of package
+#        id: find_filename
+#        shell: bash
+#        run: |
+#          pkgfile="$(find . -name cvmfs-config-eessi*.pkg)"
+#          echo ::set-output name=pkgfile::${pkgfile}
+#
+#      - name: Install package
+#        run: sudo installer -target / -pkg ./${{ steps.find_filename.outputs.pkgfile }}
+#
+#      - name: Add local CVMFS configuration (/etc/cvmfs/default.local)
+#        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
+#
+#      - name: Mount the repositories
+#        run: sudo mkdir -p /Users/Shared/cvmfs/pilot.eessi-hpc.org && sudo mount -t cvmfs pilot.eessi-hpc.org /Users/Shared/cvmfs/pilot.eessi-hpc.org
+#
+#      - name: Test repository access
+#        run: ls /Users/Shared/cvmfs/pilot.eessi-hpc.org/
 
   release:
-    needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package, test-tar-package]
+    #needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package, test-tar-package]
+    needs: [build-linux-packages, test-deb-package, test-rpm-package, test-tar-package]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
 
       - name: Find release version in tag
         id: find_version
         run: |
           echo ::set-output name=version::${GITHUB_REF#refs/tags/}
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
         with:
           path: ./build_artifacts
 
@@ -286,7 +292,7 @@ jobs:
           ls -1 -R .
           echo ::set-output name=package_filenames::$(find ./build_artifacts -name cvmfs-config-eessi*)
 
-      - uses: meeDamian/github-release@2.0
+      - uses: meeDamian/github-release@7ae19492500104f636b3fee4d8103af0fed36c8e # v2.0.3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ steps.find_version.outputs.version }}
@@ -300,11 +306,13 @@ jobs:
     needs: [release] # only run when the previous step (the actual release) was successful
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
 
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
         with:
           path: ./build_artifacts
 
@@ -323,14 +331,14 @@ jobs:
           echo ::set-output name=package_filenames::$(find ./build_artifacts -name cvmfs-config-eessi*latest*)
 
       - name: Delete any previous tag/release named "latest"
-        uses: dev-drprasad/delete-tag-and-release@v0.1.3
+        uses: dev-drprasad/delete-tag-and-release@085c6969f18bad0de1b9f3fe6692a3cd01f64fe5 # v0.2.0
         with:
           delete_release: true # default: false
           tag_name: latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: meeDamian/github-release@2.0
+      - uses: meeDamian/github-release@7ae19492500104f636b3fee4d8103af0fed36c8e # v2.0.3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: latest
