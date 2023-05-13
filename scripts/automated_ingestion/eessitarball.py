@@ -32,6 +32,20 @@ class EessiTarball:
         self.s3 = s3
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
+
+        self.metadata = {}
+
+        self.sw_repo_name = ''
+        self.sw_repo = None
+
+        self.sw_pr_number = -1
+        self.sw_pr = None
+
+        self.sw_pr_comment_id = -1
+        self.sw_pr_comment = None
+
+        self.tarball_name = ''
+
 #        self.url = f'https://{config["aws"]["staging_bucket"]}.s3.amazonaws.com/{object_name}'
         # TODO verify if staging bucket and object_name are added correctly
         self.url = f'{config["aws"]["endpoint_url"]}/{config["aws"]["staging_bucket"]}/{object_name}'
@@ -152,9 +166,7 @@ class EessiTarball:
     def verify_checksum(self):
         """Verify the checksum of the downloaded tarball with the one in its metadata file."""
         local_sha256 = sha256sum(self.local_path)
-        meta_sha256 = None
-        with open(self.local_metadata_path, 'r') as meta:
-            meta_sha256 = json.load(meta)['payload']['sha256sum']
+        meta_sha256 = self.metadata['payload']['sha256sum']
         logging.debug(f'Checksum of downloaded tarball: {local_sha256}')
         logging.debug(f'Checksum stored in metadata file: {meta_sha256}')
         return local_sha256 == meta_sha256
@@ -176,18 +188,12 @@ class EessiTarball:
         script = self.config['paths']['ingestion_script']
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
         logging.info(f'Running the ingestion script for {self.object}...')
-        # TODO add additional parameters for more info in cvmfs_server tag history
-        metadata = ''
-        with open(self.local_metadata_path, 'r') as meta:
-            metadata = meta.read()
-        sw_repo_name = json.loads(metadata)['link2pr']['repo']
-        sw_pr_number = json.loads(metadata)['link2pr']['pr']
-        sw_repo = self.github.get_repo(sw_repo_name)
-        sw_pr = sw_repo.get_pull(int(sw_pr_number))
-        sw_branch = sw_pr.base.ref
-        uploader = json.loads(metadata)['uploader']['username']
 
-        ingest_cmd = sudo + [script, self.local_path, sw_repo_name, sw_branch, sw_pr_number, uploader]
+        # TODO add additional parameters for more info in cvmfs_server tag history
+        sw_branch = self.sw_pr.base.ref
+        uploader = self.metadata['uploader']['username']
+
+        ingest_cmd = sudo + [script, self.local_path, self.sw_repo_name, sw_branch, self.sw_pr_number, uploader]
         logging.info(f'ingesting with /{" ".join(ingest_cmd)}/')
         ingest_run = subprocess.run(
             ingest_cmd,
@@ -234,9 +240,22 @@ class EessiTarball:
             logging.warn('Skipping this tarball...')
             return
 
+        # read metadata and init data structures
         contents = ''
         with open(self.local_metadata_path, 'r') as meta:
             contents = meta.read()
+        self.metadata = json.loads(contents)
+
+        self.sw_repo_name = self.metadata['link2pr']['repo']
+        self.sw_repo = self.github.get_repo(self.sw_repo_name)
+
+        self.sw_pr_number = self.metadata['link2pr']['pr']
+        self.sw_pr = self.sw_repo.get_pull(int(sw_pr_number))
+
+        self.sw_pr_comment_id = self.metadata['link2pr']['pr_comment_id']
+        self.sw_pr_comment = self.sw_pr.get_issue_comment(int(sw_pr_comment_id))
+
+        self.tarball_name = self.metadata['payload']['filename']
 
         logging.info(f'Adding tarball\'s metadata to the "{next_state}" folder of the git repository.')
         file_path_staged = next_state + '/' + self.metadata_file
@@ -286,6 +305,14 @@ class EessiTarball:
             return None
 
 
+    def determine_sw_repo_pr_comment(self, tarball_name):
+        """Determine PR comment."""
+        if self.sw_pr_comment:
+            return self.sw_pr_comment
+        else:
+            return self.find_comment(self.sw_pr, tarball_name)
+
+
     def determine_tarball_prefix(self):
         """Determine common prefix of tarball."""
         tar = tarfile.open(self.local_path, 'r')
@@ -298,21 +325,8 @@ class EessiTarball:
     def update_sw_repo_comment(self, comment_template, prefix=None):
         """Update comment in PR of software-layer repository.
         """
-        # update comment in pull request of softwares-layer repo
-        metadata = ''
-        with open(self.local_metadata_path, 'r') as meta:
-            metadata = meta.read()
-
-        # get pull request (object of PyGithub)
-        sw_repo_name = json.loads(metadata)['link2pr']['repo']
-        sw_repo = self.github.get_repo(sw_repo_name)
-
-        sw_pr_number = json.loads(metadata)['link2pr']['pr']
-        sw_pr = sw_repo.get_pull(int(sw_pr_number))
-
-        # find issue comment (object of PyGithub)
-        tarball_name = json.loads(metadata)['payload']['filename']
-        issue_comment = self.find_comment(sw_pr, tarball_name)
+        # obtain issue_comment (use previously stored value in self or determine via tarball_name)
+        issue_comment = self.determine_sw_repo_pr_comment(self.tarball_name)
 
         if issue_comment is not None:
             comment_update = self.config['github'][comment_template].format(
@@ -334,12 +348,8 @@ class EessiTarball:
     def make_approval_request(self):
         """Process a staged tarball by opening a pull request for ingestion approval."""
         next_state = self.next_state(self.state)
-        file_path_staged = self.state + '/' + self.metadata_file
-        file_path_to_ingest = next_state + '/' + self.metadata_file
 
         filename = os.path.basename(self.object)
-        # TODO tarball_metadata not used below?
-        tarball_metadata = self.git_repo.get_contents(file_path_staged)
         git_branch = filename + '_' + next_state
         self.download()
 
@@ -348,13 +358,16 @@ class EessiTarball:
             # Existing branch found for this tarball, so we've run this step before.
             # Try to find out if there's already a PR as well...
             logging.info("Branch already exists for " + self.object)
+
             # Filtering with only head=<branch name> returns all prs if there's no match, so double-check
             find_pr = [pr for pr in self.git_repo.get_pulls(head=git_branch, state='all') if pr.head.ref == git_branch]
             logging.debug('Found PRs: ' + str(find_pr))
+
             if find_pr:
                 # So, we have a branch and a PR for this tarball (if there are more, pick the first one)...
                 pr = find_pr.pop(0)
                 logging.info(f'PR {pr.number} found for {self.object}')
+
                 if pr.state == 'open':
                     # The PR is still open, so it hasn't been reviewed yet: ignore this tarball.
                     logging.info('PR is still open, skipping this tarball...')
@@ -375,21 +388,19 @@ class EessiTarball:
                 ref = self.git_repo.get_git_ref(f'heads/{git_branch}')
                 ref.delete()
         logging.info(f'Making pull request to get ingestion approval for {self.object}.')
+
         # Create a new branch
         self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
+
         # Move the file to the directory of the next stage in this branch
         self.move_metadata_file(self.state, next_state, branch=git_branch)
-        # Get metadata file contents
-        metadata = ''
-        with open(self.local_metadata_path, 'r') as meta:
-            metadata = meta.read()
 
         # Try to get the tarball contents and open a PR to get approval for the ingestion
         try:
             tarball_contents = self.get_contents_overview()
             pr_body = self.config['github']['pr_body'].format(
                 tar_overview=self.get_contents_overview(),
-                metadata=metadata,
+                metadata=self.metadata,
             )
             new_pr = self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
 
