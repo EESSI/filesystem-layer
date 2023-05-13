@@ -62,6 +62,11 @@ pr_body = A new tarball has been staged.
     
     </details>
 
+ingest_staged = |{date}|staged|tarball `{tarball}` downloaded to S0,</br>merge PR {approval_pr} for approval|
+ingest_approved = |{date}|approved|:+1: tarball `{tarball}` approved, see PR {approval_pr}|
+ingest_rejected = |{date}|rejected|:-1: tarball `{tarball}` rejected, see PR {approval_pr}|
+ingest_done = |{date}|ingested|:tada: tarball `{tarball}` successfully ingested at `{prefix}`|
+
 [slack]
 ingestion_notification = yes
 ingestion_message = Tarball `{tarball}` has been ingested into the CVMFS repository.
