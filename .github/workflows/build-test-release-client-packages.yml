@@ -37,7 +37,7 @@ jobs:
         run: ln -s inventory/group_vars
 
       - name: Prepare package source
-        uses: roles-ansible/check-ansible-debian-stable-action@cbd0678c583ed7e6b2deb6f801c78b891d9631e5 #v1.0
+        uses: roles-ansible/check-ansible-debian-stable-action@bc4b37806481d66df213c1a8d5c59495ed7801f0
         with:
           targets: "./prepare-client-packages.yml"
           hosts: "localhost"
