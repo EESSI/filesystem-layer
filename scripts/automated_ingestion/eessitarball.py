@@ -33,6 +33,7 @@ class EessiTarball:
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
 
+        self.contents = ''
         self.metadata = {}
 
         self.sw_repo_name = ''
@@ -243,23 +244,24 @@ class EessiTarball:
         # read metadata and init data structures
         contents = ''
         with open(self.local_metadata_path, 'r') as meta:
-            contents = meta.read()
-        self.metadata = json.loads(contents)
+            self.contents = meta.read()
+        self.metadata = json.loads(self.contents)
 
         self.sw_repo_name = self.metadata['link2pr']['repo']
         self.sw_repo = self.github.get_repo(self.sw_repo_name)
 
         self.sw_pr_number = self.metadata['link2pr']['pr']
-        self.sw_pr = self.sw_repo.get_pull(int(sw_pr_number))
+        self.sw_pr = self.sw_repo.get_pull(int(self.sw_pr_number))
 
-        self.sw_pr_comment_id = self.metadata['link2pr']['pr_comment_id']
-        self.sw_pr_comment = self.sw_pr.get_issue_comment(int(sw_pr_comment_id))
+        if 'pr_comment_id' in self.metadata['link2pr']:
+            self.sw_pr_comment_id = self.metadata['link2pr']['pr_comment_id']
+            self.sw_pr_comment = self.sw_pr.get_issue_comment(int(self.sw_pr_comment_id))
 
         self.tarball_name = self.metadata['payload']['filename']
 
         logging.info(f'Adding tarball\'s metadata to the "{next_state}" folder of the git repository.')
         file_path_staged = next_state + '/' + self.metadata_file
-        new_file = self.git_repo.create_file(file_path_staged, 'new tarball', contents, branch='main')
+        new_file = self.git_repo.create_file(file_path_staged, 'new tarball', self.contents, branch='main')
 
         self.state = next_state
         self.run_handler()
@@ -328,10 +330,10 @@ class EessiTarball:
         # obtain issue_comment (use previously stored value in self or determine via tarball_name)
         issue_comment = self.determine_sw_repo_pr_comment(self.tarball_name)
 
-        if issue_comment is not None:
+        if issue_comment:
             comment_update = self.config['github'][comment_template].format(
                 date=datetime.now(timezone.utc).strftime('%b %d %X %Z %Y'),
-                tarball=tarball_name,
+                tarball=self.tarball_name,
                 approval_pr=self.find_approval_pr(),
                 prefix=prefix,
                 )
@@ -399,8 +401,8 @@ class EessiTarball:
         try:
             tarball_contents = self.get_contents_overview()
             pr_body = self.config['github']['pr_body'].format(
-                tar_overview=self.get_contents_overview(),
-                metadata=self.metadata,
+                tar_overview=tarball_contents,
+                metadata=self.contents,
             )
             new_pr = self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
 
