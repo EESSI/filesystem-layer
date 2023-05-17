@@ -9,4 +9,3 @@ files:
 symlinks:
   latest: versions/2021.12
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
-  versions/2021.06: ../2021.06
