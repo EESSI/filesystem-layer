@@ -220,6 +220,7 @@ fi
 tar_file_basename=$(basename "${tar_file}")
 version=$(echo "${tar_file_basename}" | cut -d- -f2)
 contents_type_dir=$(echo "${tar_file_basename}" | cut -d- -f3)
+# use the second file, as the first one may be the top-level (version) directory, e.g. 2021.12
 tar_first_file=$(tar tf "${tar_file}" | head -n 2 | tail -n 1)
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 tar_contents_type_dir=$(echo "${tar_first_file}" | head -n 2 | tail -n 1 | cut -d/ -f2)
