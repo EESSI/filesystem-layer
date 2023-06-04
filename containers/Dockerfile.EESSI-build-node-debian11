@@ -1,8 +1,8 @@
-ARG cvmfsversion=2.10.0
-ARG awscliversion=1.27.8
-ARG fuseoverlayfsversion=1.9
+ARG cvmfsversion=2.10.1
+ARG awscliversion=1.27.146
+ARG fuseoverlayfsversion=1.12
 
-FROM debian:11.5 AS prepare-deb
+FROM debian:11.7 AS prepare-deb
 ARG cvmfsversion
 COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
 RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
