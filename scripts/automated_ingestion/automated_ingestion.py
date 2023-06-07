@@ -18,7 +18,7 @@ REQUIRED_CONFIG = {
     'secrets': ['aws_secret_access_key', 'aws_access_key_id', 'github_pat'],
     'paths': ['download_dir', 'ingestion_script', 'metadata_file_extension'],
     'aws': ['staging_bucket'],
-    'github': ['staging_repo', 'failed_ingestion_issue_body', 'pr_body'],
+    'github': ['staging_repo', 'failed_ingestion_issue_body', 'pr_body', 'ingest_staged', 'ingest_approved', 'ingest_rejected', 'ingest_done'],
 }
 
 LOG_LEVELS = {
@@ -98,7 +98,14 @@ def main():
         's3',
         aws_access_key_id=config['secrets']['aws_access_key_id'],
         aws_secret_access_key=config['secrets']['aws_secret_access_key'],
+        endpoint_url=config['aws']['endpoint_url'],
+        verify=config['aws']['verify_cert_path'],
     )
+    #    verify='/etc/ssl/certs/ca-bundle.crt', # WORKS
+    #    verify='/etc/ssl/cacerts/ca-bundle.crt', # does not work
+    #    verify='/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem', # WORKS
+    #    verify=False, # works
+    #    verify=config['aws']['verify_cert_path'], # does not work
 
     tarballs = find_tarballs(s3, config['aws']['staging_bucket'])
     if args.list_only:
