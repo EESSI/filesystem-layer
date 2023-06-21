@@ -19,7 +19,7 @@ class EessiTarball:
     for which it interfaces with the S3 bucket, GitHub, and CVMFS.
     """
 
-    def __init__(self, object_name, config, github, s3):
+    def __init__(self, object_name, config, github, s3, bucket):
         """Initialize the tarball object."""
         self.config = config
         self.github = github
@@ -27,9 +27,10 @@ class EessiTarball:
         self.metadata_file = object_name + config['paths']['metadata_file_extension']
         self.object = object_name
         self.s3 = s3
+        self.bucket = bucket
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
-        self.url = f'https://{config["aws"]["staging_bucket"]}.s3.amazonaws.com/{object_name}'
+        self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
 
         self.states = {
             'new': {'handler': self.mark_new_tarball_as_staged, 'next_state': 'staged'},
@@ -47,21 +48,20 @@ class EessiTarball:
         """
         Download this tarball and its corresponding metadata file, if this hasn't been already done.
         """
-        bucket = self.config['aws']['staging_bucket']
         if force or not os.path.exists(self.local_path):
             try:
-                self.s3.download_file(bucket, self.object, self.local_path)
+                self.s3.download_file(self.bucket, self.object, self.local_path)
             except:
                 logging.error(
-                    f'Failed to download tarball {self.object} from {bucket} to {self.local_path}.'
+                    f'Failed to download tarball {self.object} from {self.bucket} to {self.local_path}.'
                 )
                 self.local_path = None
         if force or not os.path.exists(self.local_metadata_path):
             try:
-                self.s3.download_file(bucket, self.metadata_file, self.local_metadata_path)
+                self.s3.download_file(self.bucket, self.metadata_file, self.local_metadata_path)
             except:
                 logging.error(
-                    f'Failed to download metadata file {self.metadata_file} from {bucket} to {self.local_metadata_path}.'
+                    f'Failed to download metadata file {self.metadata_file} from {self.bucket} to {self.local_metadata_path}.'
                 )
                 self.local_metadata_path = None
 

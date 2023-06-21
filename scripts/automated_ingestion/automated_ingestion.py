@@ -17,7 +17,7 @@ import sys
 REQUIRED_CONFIG = {
     'secrets': ['aws_secret_access_key', 'aws_access_key_id', 'github_pat'],
     'paths': ['download_dir', 'ingestion_script', 'metadata_file_extension'],
-    'aws': ['staging_bucket'],
+    'aws': ['staging_buckets'],
     'github': ['staging_repo', 'failed_ingestion_issue_body', 'pr_body'],
 }
 
@@ -39,10 +39,9 @@ def error(msg, code=1):
 def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt'):
     """Return a list of all tarballs in an S3 bucket that have a metadata file with the given extension (and same filename)."""
     # TODO: list_objects_v2 only returns up to 1000 objects
-    files = [
-        object['Key']
-        for object in s3.list_objects_v2(Bucket=bucket)['Contents']
-    ]
+    s3_objects = s3.list_objects_v2(Bucket=bucket).get('Contents', [])
+    files = [obj['Key'] for obj in s3_objects]
+
     tarballs = [
         file
         for file in files
@@ -100,15 +99,16 @@ def main():
         aws_secret_access_key=config['secrets']['aws_secret_access_key'],
     )
 
-    tarballs = find_tarballs(s3, config['aws']['staging_bucket'])
-    if args.list_only:
-        for num, tarball in enumerate(tarballs):
-            print(f'{num}: {tarball}')
-        sys.exit(0)
-
-    for tarball in tarballs:
-        tar = EessiTarball(tarball, config, gh, s3)
-        tar.run_handler()
+    buckets = [x.strip() for x in config['aws']['staging_buckets'].split(',')]
+    for bucket in buckets:
+        tarballs = find_tarballs(s3, bucket)
+        if args.list_only:
+            for num, tarball in enumerate(tarballs):
+                print(f'{num}: {tarball}')
+        else:
+            for tarball in tarballs:
+                tar = EessiTarball(tarball, config, gh, s3, bucket)
+                tar.run_handler()
 
 
 if __name__ == '__main__':
