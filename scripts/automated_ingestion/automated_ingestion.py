@@ -17,7 +17,7 @@ import sys
 REQUIRED_CONFIG = {
     'secrets': ['aws_secret_access_key', 'aws_access_key_id', 'github_pat'],
     'paths': ['download_dir', 'ingestion_script', 'metadata_file_extension'],
-    'aws': ['staging_bucket'],
+    'aws': ['staging_buckets'],
     'github': ['staging_repo', 'failed_ingestion_issue_body', 'pr_body'],
 }
 
@@ -100,15 +100,17 @@ def main():
         aws_secret_access_key=config['secrets']['aws_secret_access_key'],
     )
 
-    tarballs = find_tarballs(s3, config['aws']['staging_bucket'])
-    if args.list_only:
-        for num, tarball in enumerate(tarballs):
-            print(f'{num}: {tarball}')
-        sys.exit(0)
+    buckets = [x.strip() for x in config['aws']['staging_buckets'].split(',')]
+    for bucket in buckets:
+        tarballs = find_tarballs(s3, bucket)
+        if args.list_only:
+            for num, tarball in enumerate(tarballs):
+                print(f'{num}: {tarball}')
+            sys.exit(0)
 
-    for tarball in tarballs:
-        tar = EessiTarball(tarball, config, gh, s3)
-        tar.run_handler()
+        for tarball in tarballs:
+            tar = EessiTarball(tarball, config, gh, s3, bucket)
+            tar.run_handler()
 
 
 if __name__ == '__main__':
