@@ -106,11 +106,10 @@ def main():
         if args.list_only:
             for num, tarball in enumerate(tarballs):
                 print(f'{num}: {tarball}')
-            sys.exit(0)
-
-        for tarball in tarballs:
-            tar = EessiTarball(tarball, config, gh, s3, bucket)
-            tar.run_handler()
+        else:
+            for tarball in tarballs:
+                tar = EessiTarball(tarball, config, gh, s3, bucket)
+                tar.run_handler()
 
 
 if __name__ == '__main__':
