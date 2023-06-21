@@ -104,7 +104,7 @@ def main():
         tarballs = find_tarballs(s3, bucket)
         if args.list_only:
             for num, tarball in enumerate(tarballs):
-                print(f'{num}: {tarball}')
+                print(f'[{bucket}] {num}: {tarball}')
         else:
             for tarball in tarballs:
                 tar = EessiTarball(tarball, config, gh, s3, bucket)
