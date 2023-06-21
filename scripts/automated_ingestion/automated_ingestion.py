@@ -39,11 +39,8 @@ def error(msg, code=1):
 def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt'):
     """Return a list of all tarballs in an S3 bucket that have a metadata file with the given extension (and same filename)."""
     # TODO: list_objects_v2 only returns up to 1000 objects
-    s3_objects = s3.list_objects_v2(Bucket=bucket)
-    files = []
-    # take into account that S3 bucket may be empty (=> no 'Contents' key)
-    if 'Contents' in s3_objects:
-        files.extend(obj['Key'] for obj in s3_objects['Contents'])
+    s3_objects = s3.list_objects_v2(Bucket=bucket).get('Contents', [])
+    files = [obj['Key'] for obj in s3_objects]
 
     tarballs = [
         file
