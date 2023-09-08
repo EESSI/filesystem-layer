@@ -22,7 +22,6 @@ class EessiTarball:
     def __init__(self, object_name, config, git_staging_repo, s3, bucket):
         """Initialize the tarball object."""
         self.config = config
-        self.github = github
         self.git_repo = git_staging_repo
         self.metadata_file = object_name + config['paths']['metadata_file_extension']
         self.object = object_name
