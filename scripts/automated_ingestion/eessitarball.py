@@ -19,11 +19,11 @@ class EessiTarball:
     for which it interfaces with the S3 bucket, GitHub, and CVMFS.
     """
 
-    def __init__(self, object_name, config, github, s3, bucket):
+    def __init__(self, object_name, config, git_staging_repo, s3, bucket):
         """Initialize the tarball object."""
         self.config = config
         self.github = github
-        self.git_repo = github.get_repo(config['github']['staging_repo'])
+        self.git_repo = git_staging_repo
         self.metadata_file = object_name + config['paths']['metadata_file_extension']
         self.object = object_name
         self.s3 = s3
