@@ -92,7 +92,7 @@ def main():
     logging.basicConfig(filename=log_file, format=log_format, level=log_level)
     # TODO: check configuration: secrets, paths, permissions on dirs, etc
     gh_pat = config['secrets']['github_pat']
-    gh = github.Github(gh_pat)
+    gh_staging_repo = github.Github(gh_pat).get_repo(config['github']['staging_repo'])
     s3 = boto3.client(
         's3',
         aws_access_key_id=config['secrets']['aws_access_key_id'],
@@ -107,7 +107,7 @@ def main():
                 print(f'[{bucket}] {num}: {tarball}')
         else:
             for tarball in tarballs:
-                tar = EessiTarball(tarball, config, gh, s3, bucket)
+                tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket)
                 tar.run_handler()
 
 
