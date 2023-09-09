@@ -40,10 +40,10 @@
     - name: Make EESSI CVMFS domain configuration file
       copy:
         content: |
-          # Stratum 1 servers for the eessi-hpc.org domain
+          # Stratum 1 servers for the eessi.io domain
           CVMFS_SERVER_URL="{{ item.urls|join(';') }}"
 
-          # Public keys for the eessi-hpc.org domain
+          # Public keys for the eessi.io domain
           CVMFS_KEYS_DIR="/etc/cvmfs/keys/{{ item.domain }}"
 
           # Enable or disable the Geo API, based on the configuration file
