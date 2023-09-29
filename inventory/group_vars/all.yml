@@ -40,7 +40,6 @@ eessi_cvmfs_server_urls:
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
   - repository: software.eessi.io
-    #stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
     stratum0: 195.169.23.15
     owner: "{{ cvmfs_repo_owner | default('root') }}"
     key_dir: /etc/cvmfs/keys/eessi.io
