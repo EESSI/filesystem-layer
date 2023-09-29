@@ -17,24 +17,31 @@ eessi_cvmfs_config_repo: {}
 # Public keys for the repositories, which you can find on the Stratum 0 at:
 # /etc/cvmfs/keys/*.pub
 # Note: you first have to run the stratum0.yml playbook once to generate the repositories and keys.
-eessi_cvmfs_keys: []
-#  - path: /etc/cvmfs/keys/eessi.io/software.eessi.io
-#    key: |
+eessi_cvmfs_keys:
+  - path: /etc/cvmfs/keys/eessi.io/software.eessi.io.pub
+    key: |
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx/MGKNYeXgAzNGRmyy6c
+      AHPzXOfA+MPEdDsYNxz4FWCq24HqwDGCdrGFWuAPPnocumMpVqU6G4nhjYNEf7HY
+      VBXub9sAS7cl7jycN+n82A7hgoZqkTlRpBTCv30zAII7MsCfSakxXx5PLIWFe10i
+      8Cs7heb2ZAdDXPCJE1CQMnhknAu1ucKfZz5mB6DP6pGiH30rGyFiEH7M5HsfiA9T
+      VkfWMPmd10YmboA9GsNhng8SWoWX8rMDIupAmtYTxiS3bdslrAa7hThpymtx6Jcb
+      ZhEaIPp0ACctyk4+B6ZXnZX0HHtqqpyP6mo2QMMc6fQI9RlvO9hboqoESza5FzJ5
+      FQIDAQAB
+      -----END PUBLIC KEY-----
 
 # URLs for all the Stratum 1 servers.
 eessi_cvmfs_server_urls:
   - domain: eessi.io
     use_geoapi: true
     urls:
-      - "http://rug-nl.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
-      - "http://bgo-no.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
-      - "http://azure-us-east1.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
-      - "http://aws-eu-west1.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
+      - "http://eessi-cvmfs.s3.eu-west-1.amazonaws.com/cvmfs/@fqrn@"
 
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
   - repository: software.eessi.io
-    stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
+    #stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
+    stratum0: 195.169.23.15
     owner: "{{ cvmfs_repo_owner | default('root') }}"
     key_dir: /etc/cvmfs/keys/eessi.io
     server_options:
