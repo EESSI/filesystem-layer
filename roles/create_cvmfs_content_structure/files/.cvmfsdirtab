@@ -9,7 +9,7 @@
 /versions/*/software/*/*/*/*/software
 /versions/*/software/*/*/*/*/software/*/*
 /versions/*/software/*/*/*/*/modules
-# generic and graviton2 are one level less deep
+# generic and some (aarch64) targets are one level less deep
 /versions/*/software/*/*/*/software
 /versions/*/software/*/*/*/software/*/*
 /versions/*/software/*/*/*/modules
