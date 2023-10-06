@@ -107,6 +107,13 @@ eessi_cvmfs_repositories:
     client_options: []
     use_for_ci: true
 
+# Meta information for CVMFS Stratum servers
+cvmfs_meta_administrator: "EESSI CVMFS Administrators"
+cvmfs_meta_email: "{{ eessi_email }}"
+cvmfs_meta_organisation: "EESSI"
+cvmfs_meta_custom:
+  _comment: "See https://eessi.io/docs/ for more information about the EESSI repository."
+
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.
 galaxy_cvmfs_config_repo: "{{ eessi_cvmfs_config_repo }}"
