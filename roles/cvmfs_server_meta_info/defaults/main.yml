@@ -1,7 +1,7 @@
 ---
-cvmfs_metadata:
-  administrator: "{{ cvmfs_metadata_administrator | default('Your Name') }}"
-  email: "{{ cvmfs_metadata_email | default('you@organisation.org') }}"
-  organisation: "{{ cvmfs_metadata_organisation | default('Your Organisation') }}"
-  custom: "{{ cvmfs_metadata_custom | default({'_comment': 'Put arbitrary structured data here'}) }}"
+cvmfs_meta:
+  administrator: "{{ cvmfs_meta_administrator | default('Your Name') }}"
+  email: "{{ cvmfs_meta_email | default('you@organisation.org') }}"
+  organisation: "{{ cvmfs_meta_organisation | default('Your Organisation') }}"
+  custom: "{{ cvmfs_meta_custom | default({'_comment': 'Put arbitrary structured data here'}) }}"
 ...

@@ -1,7 +1,7 @@
 ---
 - name: Create a meta.json containing the CVMFS Server Meta Information
   ansible.builtin.copy:
-    content: "{{ cvmfs_metadata | to_nice_json(indent=2, sort_keys=false) }}"
+    content: "{{ cvmfs_meta | to_nice_json(indent=2, sort_keys=false) }}"
     dest: "/srv/cvmfs/info/v1/meta.json"
     owner: root
     group: root
