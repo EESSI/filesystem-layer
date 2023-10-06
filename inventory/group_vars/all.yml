@@ -5,7 +5,7 @@
 eessi_cvmfs_repos_enabled: true
 
 # Email address for the project.
-eessi_email: eessi@list.rug.nl
+eessi_email: support@eessi.io
 
 #
 # Defaults for eessi-hpc.org repos.
