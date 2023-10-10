@@ -1,0 +1,35 @@
+---
+- name: Create temporary file for storing json
+  ansible.builtin.tempfile:
+    state: file
+    suffix: .json
+  register: tmp_json_file
+
+- name: Add meta information for repository to temporary json file
+  ansible.builtin.copy:
+    content: "{{ cvmfs_repo_meta | combine(this_cvmfs_repo_meta) | to_nice_json(indent=2, sort_keys=false) }}"
+    dest: "{{ tmp_json_file.path }}"
+    mode: 0644
+
+- name: Calculate the checksum of the json file
+  ansible.builtin.stat:
+    path: "{{ tmp_json_file.path }}"
+  register: json_file_stat
+
+- name: Get the current meta information of this repository from the server
+  ansible.builtin.command:
+    cmd: "cvmfs_swissknife info -M -r {{ this_cvmfs_repo_meta['recommended-stratum0'] }}"
+  changed_when: false
+  register: current_repo_meta
+
+- name: Update the repository's meta information
+  ansible.builtin.command:
+    cmd: "cvmfs_server update-repoinfo -f {{ tmp_json_file.path }} {{ this_cvmfs_repo.repository }}"
+  when: (current_repo_meta.stdout | checksum) != json_file_stat.stat.checksum
+  become_user: "{{ cvmfs_repo_owner }}"
+
+- name: Remove temporary json file
+  ansible.builtin.file:
+    path: "{{ tmp_json_file.path }}"
+    state: absent
+...
