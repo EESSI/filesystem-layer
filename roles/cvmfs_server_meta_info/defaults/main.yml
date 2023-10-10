@@ -1,7 +1,18 @@
 ---
-cvmfs_meta:
-  administrator: "{{ cvmfs_meta_administrator | default('Your Name') }}"
-  email: "{{ cvmfs_meta_email | default('you@organisation.org') }}"
-  organisation: "{{ cvmfs_meta_organisation | default('Your Organisation') }}"
-  custom: "{{ cvmfs_meta_custom | default({'_comment': 'Put arbitrary structured data here'}) }}"
+cvmfs_server_meta:
+  administrator: "{{ cvmfs_server_meta_administrator | default('Your Name') }}"
+  email: "{{ cvmfs_server_meta_email | default('you@organisation.org') }}"
+  organisation: "{{ cvmfs_server_meta_organisation | default('Your Organisation') }}"
+  custom: "{{ cvmfs_server_meta_custom | default({'_comment': 'Put arbitrary structured data here'}) }}"
+
+cvmfs_repo_meta:
+  administrator: "{{ cvmfs_server_meta_administrator | default('Your Name') }}"
+  email: "{{ cvmfs_server_meta_email | default('you@organisation.org') }}"
+  organisation: "{{ cvmfs_server_meta_organisation | default('Your Organisation') }}"
+  description: "Repository content"
+  url: "{{ cvmfs_server_meta_website | default('Project website') }}"
+  recommended-stratum0:  "stratum 0 url"
+  recommended-stratum1s: [ "stratum1 url", "stratum1 url" ]
+
+  custom: "{{ cvmfs_server_meta_custom | default({'_comment': 'Put arbitrary structured data here'}) }}"
 ...
