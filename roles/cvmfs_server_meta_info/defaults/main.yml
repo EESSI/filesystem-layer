@@ -12,7 +12,7 @@ cvmfs_repo_meta:
   description: "Repository content"
   url: "{{ cvmfs_server_meta_website | default('Project website') }}"
   recommended-stratum0:  "stratum 0 url"
-  recommended-stratum1s: [ "stratum1 url", "stratum1 url" ]
+  recommended-stratum1s: ["stratum1 url", "stratum1 url"]
 
   custom: "{{ cvmfs_server_meta_custom | default({'_comment': 'Put arbitrary structured data here'}) }}"
 ...
