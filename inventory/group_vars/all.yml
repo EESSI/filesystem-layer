@@ -35,12 +35,13 @@ eessi_cvmfs_server_urls:
   - domain: eessi.io
     use_geoapi: true
     urls:
-      - "http://eessi-cvmfs.s3.eu-west-1.amazonaws.com/cvmfs/@fqrn@"
+      - "http://aws-eu-central-s1.eessi.science/cvmfs/@fqrn@"
+      - "http://azure-us-east-s1.eessi.science/cvmfs/@fqrn@"
 
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
   - repository: software.eessi.io
-    stratum0: 195.169.23.15
+    stratum0: rug-nl-s0.eessi.science
     owner: "{{ cvmfs_repo_owner | default('root') }}"
     key_dir: /etc/cvmfs/keys/eessi.io
     server_options:
