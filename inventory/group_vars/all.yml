@@ -5,7 +5,7 @@
 eessi_cvmfs_repos_enabled: true
 
 # Email address for the project.
-eessi_email: eessi@list.rug.nl
+eessi_email: support@eessi.io
 
 #
 # Defaults for eessi-hpc.org repos.
@@ -87,6 +87,7 @@ eessi_cvmfs_repositories:
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
     use_for_ci: false
+    description: Repository containing pilot versions of the EESSI software stack.
   - repository: data.eessi-hpc.org
     stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
@@ -97,6 +98,7 @@ eessi_cvmfs_repositories:
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
     use_for_ci: false
+    description: "Data files used for applications available in the EESSI stack."
   - repository: ci.eessi-hpc.org
     stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
     owner: "{{ cvmfs_repo_owner | default('root') }}"
@@ -106,6 +108,15 @@ eessi_cvmfs_repositories:
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
     use_for_ci: true
+    description: "Small-sized repository used for CI purposes."
+
+# Meta information for CVMFS Stratum servers
+cvmfs_server_meta_administrator: "EESSI CVMFS Administrators"
+cvmfs_server_meta_email: "{{ eessi_email }}"
+cvmfs_server_meta_organisation: "EESSI"
+cvmfs_server_meta_custom:
+  _comment: "See https://eessi.io/docs/ for more information about the EESSI repository."
+cvmfs_server_meta_website: "https://eessi.io"
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.
