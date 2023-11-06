@@ -108,7 +108,7 @@ eessi_cvmfs_repositories:
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
     use_for_ci: true
-    description: "Small-sized epository used for CI purposes."
+    description: "Small-sized repository used for CI purposes."
 
 # Meta information for CVMFS Stratum servers
 cvmfs_server_meta_administrator: "EESSI CVMFS Administrators"
