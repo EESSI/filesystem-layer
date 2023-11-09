@@ -5,7 +5,7 @@
 eessi_cvmfs_repos_enabled: true
 
 # Email address for the project.
-eessi_email: eessi@list.rug.nl
+eessi_email: support@eessi.io
 
 #
 # Defaults for eessi.io repos.
@@ -51,6 +51,14 @@ eessi_cvmfs_repositories:
     client_options: []
     use_for_ci: false
     description: "Repository that contains the EESSI software stacks."
+
+# Meta information for CVMFS Stratum servers
+cvmfs_server_meta_administrator: "EESSI CVMFS Administrators"
+cvmfs_server_meta_email: "{{ eessi_email }}"
+cvmfs_server_meta_organisation: "EESSI"
+cvmfs_server_meta_custom:
+  _comment: "See https://eessi.io/docs/ for more information about the EESSI repository."
+cvmfs_server_meta_website: "https://eessi.io"
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.
