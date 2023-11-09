@@ -7,5 +7,4 @@ files:
     mode: '644'
 
 symlinks:
-  latest: versions/2023.06
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
