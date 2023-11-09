@@ -16,9 +16,12 @@ echo '  - 127.0.0.1' >> inventory/local_site_specific_vars.yml
 export CVMFS_GEO_DB_FILE=NONE
 
 # Only test CI suitable repos on the Stratum 1, as the other ones may be very large.
-cat >> inventory/local_site_specific_vars.yml <<-EOF
-	cvmfs_repositories: "{{ eessi_cvmfs_repositories | selectattr('use_for_ci', 'defined') | selectattr('use_for_ci', 'sameas', true) | list }}"
-EOF
+if [ $playbook == "stratum1.yml" ]
+then
+	cat >> inventory/local_site_specific_vars.yml <<-EOF
+		cvmfs_repositories: "{{ eessi_cvmfs_repositories | selectattr('use_for_ci', 'defined') | selectattr('use_for_ci', 'sameas', true) | list }}"
+	EOF
+fi
 
 # Install the Ansible dependencies.
 ansible-galaxy role install -r requirements.yml -p ./roles
