@@ -50,6 +50,7 @@ eessi_cvmfs_repositories:
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
     use_for_ci: false
+    description: "Repository that contains the EESSI software stacks."
 
 # Override all the Galaxy defaults by our EESSI defaults.
 # This is required, beucase the galaxy_* variables are used inside the Ansible tasks.
