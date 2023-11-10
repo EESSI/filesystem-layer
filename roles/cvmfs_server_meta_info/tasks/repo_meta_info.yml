@@ -26,7 +26,7 @@
   ansible.builtin.command:
     cmd: "cvmfs_server update-repoinfo -f {{ tmp_json_file.path }} {{ this_cvmfs_repo.repository }}"
   when: (current_repo_meta.stdout | checksum) != json_file_stat.stat.checksum
-  become_user: "{{ cvmfs_repo_owner }}"
+  become_user: "{{ cvmfs_repo_owner | default('root') }}"
 
 - name: Remove temporary json file
   ansible.builtin.file:
