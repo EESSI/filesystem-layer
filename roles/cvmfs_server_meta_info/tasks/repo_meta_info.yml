@@ -18,7 +18,7 @@
 
 - name: Get the current meta information of this repository from the server
   ansible.builtin.command:
-    cmd: "cvmfs_swissknife info -M -r {{ this_cvmfs_repo_meta['recommended-stratum0'] }}"
+    cmd: "cvmfs_swissknife info -M -r http://localhost:{{ cvmfs_stratum0_http_ports[0] | default('80') }}/cvmfs/{{ this_cvmfs_repo.repository }}"
   changed_when: false
   register: current_repo_meta
 
