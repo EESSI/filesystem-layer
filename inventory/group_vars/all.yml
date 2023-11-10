@@ -21,13 +21,13 @@ eessi_cvmfs_keys:
   - path: /etc/cvmfs/keys/eessi.io/software.eessi.io.pub
     key: |
       -----BEGIN PUBLIC KEY-----
-      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAx/MGKNYeXgAzNGRmyy6c
-      AHPzXOfA+MPEdDsYNxz4FWCq24HqwDGCdrGFWuAPPnocumMpVqU6G4nhjYNEf7HY
-      VBXub9sAS7cl7jycN+n82A7hgoZqkTlRpBTCv30zAII7MsCfSakxXx5PLIWFe10i
-      8Cs7heb2ZAdDXPCJE1CQMnhknAu1ucKfZz5mB6DP6pGiH30rGyFiEH7M5HsfiA9T
-      VkfWMPmd10YmboA9GsNhng8SWoWX8rMDIupAmtYTxiS3bdslrAa7hThpymtx6Jcb
-      ZhEaIPp0ACctyk4+B6ZXnZX0HHtqqpyP6mo2QMMc6fQI9RlvO9hboqoESza5FzJ5
-      FQIDAQAB
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyau1UFUcoiqpE5U9StON
+      W0Trc3PM02AA5kYgknrqZJdusj5PcNg7rhOnrd+SX8BIiVtVMr6mqORXsJ2FNydJ
+      lfm512GcmurM154m6Hz4I+UttcpVLe1CvlyxjjCrN0siSiPnLDONy3Ih1PWyRlA/
+      sobSaIhx3Vyn1IzC0nbjstKObAYJs2kjokS+cipX2oIXJSoxkhvXcxmiMCi2GQIs
+      KTQDT+bATs9eK+ZqY4n5x8VX87AlMBQuSCP5mA8VQPx4aCf8AjHWAn3qmPrhk3od
+      Z/Cl9vrYzoWJT1HOyumv7aEv7UlY81++3w/AwYKXLJI6ioop2AotjrUm3w2U3+k7
+      WQIDAQAB
       -----END PUBLIC KEY-----
 
 # URLs for all the Stratum 1 servers.
