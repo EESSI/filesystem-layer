@@ -8,7 +8,7 @@ eessi_cvmfs_repos_enabled: true
 eessi_email: support@eessi.io
 
 #
-# Defaults for eessi-hpc.org repos.
+# Defaults for eessi.io repos.
 #
 
 # We do not use a config repo anymore.
@@ -18,97 +18,39 @@ eessi_cvmfs_config_repo: {}
 # /etc/cvmfs/keys/*.pub
 # Note: you first have to run the stratum0.yml playbook once to generate the repositories and keys.
 eessi_cvmfs_keys:
-  - path: /etc/cvmfs/keys/eessi-hpc.org/cvmfs-config.eessi-hpc.org.pub
+  - path: /etc/cvmfs/keys/eessi.io/software.eessi.io.pub
     key: |
-     -----BEGIN PUBLIC KEY-----
-     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqoTBc/Eksr9ECEOoCzHA
-     F20UjePR7mJyWB13eTBXnjq7PLKKilfk2llLKetPIRMEmbvp97NiQ9ALe/tiGDzT
-     1Wg82Mf9oO4DNQYrTfE/MP5inIrMtSv1WnYJYV4Bgm24s8IhHXytIf1D4qt0x1v5
-     0yRui0dwaZrErWKRKufbJ6ehmEDHuVSEAujrORyig/jYFKVyTaCsXnmwFDJmX2Uw
-     RGCaf0M9ZLYs9t/SWA0s08rle5kH82hgBsIvUr7PLT7hbU407VK6+Y02tuxbI0JR
-     +hCt494UsFs3tchmTebpK+x3pVRXybQ66Qm1mQiaz+2VbUJdQEov4RCC5PcOmOOk
-     BwIDAQAB
-     -----END PUBLIC KEY-----
-  - path: /etc/cvmfs/keys/eessi-hpc.org/pilot.eessi-hpc.org.pub
-    key: |
-     -----BEGIN PUBLIC KEY-----
-     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAommtaoqQ36Rb/cFnqUWg
-     8FoYCOjJWVBMQ4sVZ87oFRWehOUbcfy/ah85D9055HQws7i/hLNGJJAa7Es3E2o8
-     v8LtSlRdfR1A7b7LA6p3213HHz6dNU6I1riwtE2OP7/w4Q3+Agj1iRtW535GwzGo
-     4ZbewL8T1kbyaEm4HyefoitHXJthoPyTlYAhvAegIil1VJPhJZW+q/NWxnsd9QGJ
-     uAtbSICQg6mBJI50KiCBYmKHOAjH2W8qEnLWc7JoPoNvAHuMx1ya6YerBM5T9Esm
-     HJN0HHOVdRIwNjjPkV2jIqhJoI85no89v8/V45SFPVo+A7N0Cj4QdQrQTezpnlby
-     FQIDAQAB
-     -----END PUBLIC KEY-----
-  # The following (duplicate) key can be removed after this PR has been merged:
-  # https://github.com/galaxyproject/ansible-cvmfs/pull/32
-  - path: /etc/cvmfs/keys/eessi-hpc.org/data.eessi-hpc.org.pub
-    key: |
-     -----BEGIN PUBLIC KEY-----
-     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAommtaoqQ36Rb/cFnqUWg
-     8FoYCOjJWVBMQ4sVZ87oFRWehOUbcfy/ah85D9055HQws7i/hLNGJJAa7Es3E2o8
-     v8LtSlRdfR1A7b7LA6p3213HHz6dNU6I1riwtE2OP7/w4Q3+Agj1iRtW535GwzGo
-     4ZbewL8T1kbyaEm4HyefoitHXJthoPyTlYAhvAegIil1VJPhJZW+q/NWxnsd9QGJ
-     uAtbSICQg6mBJI50KiCBYmKHOAjH2W8qEnLWc7JoPoNvAHuMx1ya6YerBM5T9Esm
-     HJN0HHOVdRIwNjjPkV2jIqhJoI85no89v8/V45SFPVo+A7N0Cj4QdQrQTezpnlby
-     FQIDAQAB
-     -----END PUBLIC KEY-----
-  - path: /etc/cvmfs/keys/eessi-hpc.org/ci.eessi-hpc.org.pub
-    key: |
-     -----BEGIN PUBLIC KEY-----
-     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAommtaoqQ36Rb/cFnqUWg
-     8FoYCOjJWVBMQ4sVZ87oFRWehOUbcfy/ah85D9055HQws7i/hLNGJJAa7Es3E2o8
-     v8LtSlRdfR1A7b7LA6p3213HHz6dNU6I1riwtE2OP7/w4Q3+Agj1iRtW535GwzGo
-     4ZbewL8T1kbyaEm4HyefoitHXJthoPyTlYAhvAegIil1VJPhJZW+q/NWxnsd9QGJ
-     uAtbSICQg6mBJI50KiCBYmKHOAjH2W8qEnLWc7JoPoNvAHuMx1ya6YerBM5T9Esm
-     HJN0HHOVdRIwNjjPkV2jIqhJoI85no89v8/V45SFPVo+A7N0Cj4QdQrQTezpnlby
-     FQIDAQAB
-     -----END PUBLIC KEY-----
+      -----BEGIN PUBLIC KEY-----
+      MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyau1UFUcoiqpE5U9StON
+      W0Trc3PM02AA5kYgknrqZJdusj5PcNg7rhOnrd+SX8BIiVtVMr6mqORXsJ2FNydJ
+      lfm512GcmurM154m6Hz4I+UttcpVLe1CvlyxjjCrN0siSiPnLDONy3Ih1PWyRlA/
+      sobSaIhx3Vyn1IzC0nbjstKObAYJs2kjokS+cipX2oIXJSoxkhvXcxmiMCi2GQIs
+      KTQDT+bATs9eK+ZqY4n5x8VX87AlMBQuSCP5mA8VQPx4aCf8AjHWAn3qmPrhk3od
+      Z/Cl9vrYzoWJT1HOyumv7aEv7UlY81++3w/AwYKXLJI6ioop2AotjrUm3w2U3+k7
+      WQIDAQAB
+      -----END PUBLIC KEY-----
 
 # URLs for all the Stratum 1 servers.
 eessi_cvmfs_server_urls:
-  - domain: eessi-hpc.org
+  - domain: eessi.io
     use_geoapi: true
     urls:
-      - "http://rug-nl.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
-      - "http://bgo-no.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
-      - "http://azure-us-east1.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
-      - "http://aws-eu-west1.stratum1.cvmfs.eessi-infra.org/cvmfs/@fqrn@"
+      - "http://aws-eu-central-s1.eessi.science/cvmfs/@fqrn@"
+      - "http://azure-us-east-s1.eessi.science/cvmfs/@fqrn@"
 
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
-  - repository: pilot.eessi-hpc.org
-    stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
+  - repository: software.eessi.io
+    stratum0: rug-nl-s0.eessi.science
     owner: "{{ cvmfs_repo_owner | default('root') }}"
-    key_dir: /etc/cvmfs/keys/eessi-hpc.org
+    key_dir: /etc/cvmfs/keys/eessi.io
     server_options:
       - CVMFS_AUTO_GC=false
       - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
       - CVMFS_GARBAGE_COLLECTION=true
     client_options: []
     use_for_ci: false
-    description: Repository containing pilot versions of the EESSI software stack.
-  - repository: data.eessi-hpc.org
-    stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
-    owner: "{{ cvmfs_repo_owner | default('root') }}"
-    key_dir: /etc/cvmfs/keys/eessi-hpc.org
-    server_options:
-      - CVMFS_AUTO_GC=false
-      - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
-      - CVMFS_GARBAGE_COLLECTION=true
-    client_options: []
-    use_for_ci: false
-    description: "Data files used for applications available in the EESSI stack."
-  - repository: ci.eessi-hpc.org
-    stratum0: rug-nl.stratum0.cvmfs.eessi-infra.org
-    owner: "{{ cvmfs_repo_owner | default('root') }}"
-    key_dir: /etc/cvmfs/keys/eessi-hpc.org
-    server_options:
-      - CVMFS_AUTO_GC=false
-      - CVMFS_GARBAGE_COLLECTION=true
-    client_options: []
-    use_for_ci: true
-    description: "Small-sized repository used for CI purposes."
+    description: "Repository that contains the EESSI software stacks."
 
 # Meta information for CVMFS Stratum servers
 cvmfs_server_meta_administrator: "EESSI CVMFS Administrators"

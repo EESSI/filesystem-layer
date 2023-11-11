@@ -12,7 +12,7 @@
 
 # Only if it passes these checks, the tarball gets ingested to the base dir in the repository specified below.
 
-repo=pilot.eessi-hpc.org
+repo=software.eessi.io
 basedir=versions
 decompress="gunzip -c"
 # list of supported architectures for compat and software layers

@@ -7,6 +7,7 @@
     group: root
     mode: 0644
   become: true
+  when: (cvmfs_repositories | length) > 0
 
 - name: Create meta information for each CVMFS repository
   ansible.builtin.include_tasks: repo_meta_info.yml
@@ -17,6 +18,6 @@
       recommended-stratum0: "http://{{ item.stratum0 }}/cvmfs/{{ item.repository }}"
       recommended-stratum1s: "{{ eessi_cvmfs_server_urls | selectattr('domain', 'in', item.repository) |
                                  map(attribute='urls') | map('regex_replace', '@fqrn@', item.repository) }}"
-  with_items: "{{ eessi_cvmfs_repositories }}"
+  with_items: "{{ cvmfs_repositories | default(eessi_cvmfs_repositories) }}"
   when: "'cvmfsstratum0servers' in group_names or cvmfs_role == 'stratum0'"
 ...

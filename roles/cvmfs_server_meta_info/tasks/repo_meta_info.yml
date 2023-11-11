@@ -18,7 +18,7 @@
 
 - name: Get the current meta information of this repository from the server
   ansible.builtin.command:
-    cmd: "cvmfs_swissknife info -M -r {{ this_cvmfs_repo_meta['recommended-stratum0'] }}"
+    cmd: "cvmfs_swissknife info -M -r http://localhost:{{ cvmfs_stratum0_http_ports[0] | default('80') }}/cvmfs/{{ this_cvmfs_repo.repository }}"
   changed_when: false
   register: current_repo_meta
 
@@ -26,7 +26,7 @@
   ansible.builtin.command:
     cmd: "cvmfs_server update-repoinfo -f {{ tmp_json_file.path }} {{ this_cvmfs_repo.repository }}"
   when: (current_repo_meta.stdout | checksum) != json_file_stat.stat.checksum
-  become_user: "{{ cvmfs_repo_owner }}"
+  become_user: "{{ cvmfs_repo_owner | default('root') }}"
 
 - name: Remove temporary json file
   ansible.builtin.file:

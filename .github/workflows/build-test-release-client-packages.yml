@@ -147,12 +147,12 @@ jobs:
         run: sudo cvmfs_config setup
 
       - name: Test repository access
-        run: ls /cvmfs/pilot.eessi-hpc.org/
+        run: ls /cvmfs/software.eessi.io/
 
   test-rpm-package:
     needs: build-linux-packages
     runs-on: ubuntu-latest
-    container: 
+    container:
       image: centos:centos7
       options: --device /dev/fuse --privileged
 
@@ -183,10 +183,10 @@ jobs:
 
       - name: Mount the repositories
         #run: cvmfs_config setup
-        run: mkdir -p /cvmfs/pilot.eessi-hpc.org && mount -t cvmfs pilot.eessi-hpc.org /cvmfs/pilot.eessi-hpc.org
+        run: mkdir -p /cvmfs/software.eessi.io && mount -t cvmfs software.eessi.io /cvmfs/software.eessi.io
 
       - name: Test repository access
-        run: ls /cvmfs/pilot.eessi-hpc.org/
+        run: ls /cvmfs/software.eessi.io/
 
   test-tar-package:
     needs: build-linux-packages
@@ -223,7 +223,7 @@ jobs:
         run: sudo cvmfs_config setup
 
       - name: Test repository access
-        run: ls /cvmfs/pilot.eessi-hpc.org/
+        run: ls /cvmfs/software.eessi.io/
 
 #  test-macos-package:
 #    needs: build-macos-package
@@ -254,10 +254,10 @@ jobs:
 #        run: echo "CVMFS_CLIENT_PROFILE=single" | sudo tee /etc/cvmfs/default.local
 #
 #      - name: Mount the repositories
-#        run: sudo mkdir -p /Users/Shared/cvmfs/pilot.eessi-hpc.org && sudo mount -t cvmfs pilot.eessi-hpc.org /Users/Shared/cvmfs/pilot.eessi-hpc.org
+#        run: sudo mkdir -p /Users/Shared/cvmfs/software.eessi.io && sudo mount -t cvmfs software.eessi.io /Users/Shared/cvmfs/software.eessi.io
 #
 #      - name: Test repository access
-#        run: ls /Users/Shared/cvmfs/pilot.eessi-hpc.org/
+#        run: ls /Users/Shared/cvmfs/software.eessi.io/
 
   release:
     #needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package, test-tar-package]
