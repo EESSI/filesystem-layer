@@ -18,7 +18,7 @@ eessi_cvmfs_config_repo: {}
 # /etc/cvmfs/keys/*.pub
 # Note: you first have to run the stratum0.yml playbook once to generate the repositories and keys.
 eessi_cvmfs_keys:
-  - path: /etc/cvmfs/keys/eessi.io/software.eessi.io.pub
+  - path: /etc/cvmfs/keys/eessi.io/eessi.io.pub
     key: |
       -----BEGIN PUBLIC KEY-----
       MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAyau1UFUcoiqpE5U9StON
