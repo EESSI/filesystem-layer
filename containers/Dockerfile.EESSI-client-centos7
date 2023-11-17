@@ -1,7 +1,7 @@
-ARG cvmfsversion=2.9.4
+ARG cvmfsversion=2.11.2
 # Stick to old version of fuse-overlayfs due to issues with newer versions
 # (cfr. https://github.com/containers/fuse-overlayfs/issues/232)
-ARG fuseoverlayfsversion=0.3
+ARG fuseoverlayfsversion=1.10
 
 FROM centos:7 AS prepare-rpm
 ARG cvmfsversion
