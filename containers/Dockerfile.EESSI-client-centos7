@@ -27,6 +27,7 @@ COPY --from=build-fuse-overlayfs /usr/local/bin/fuse-overlayfs /usr/local/bin/fu
 RUN yum install -y sudo vim openssh-clients lsof
 RUN yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.el7.$(uname -m).rpm \
                    /root/rpmbuild/RPMS/$(uname -m)/cvmfs-fuse3-${cvmfsversion}-1.el7.$(uname -m).rpm \
+                   /root/rpmbuild/RPMS/$(uname -m)/cvmfs-libs-${cvmfsversion}-1.el7.$(uname -m).rpm \
                    http://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-latest.noarch.rpm
 RUN yum install -y https://github.com/EESSI/filesystem-layer/releases/download/latest/cvmfs-config-eessi-latest.noarch.rpm
 
