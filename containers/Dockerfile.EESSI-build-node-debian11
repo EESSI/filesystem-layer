@@ -1,4 +1,4 @@
-ARG cvmfsversion=2.10.1
+ARG cvmfsversion=2.11.2
 ARG awscliversion=1.27.146
 ARG fuseoverlayfsversion=1.10
 
