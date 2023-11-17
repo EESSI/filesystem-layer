@@ -16,4 +16,5 @@ else
     cd /root/rpmbuild/RPMS/${arch}
     wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-${cvmfsversion}-1.el7.${arch}.rpm
     wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3-${cvmfsversion}-1.el7.${arch}.rpm
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-libs-${cvmfsversion}-1.el7.${arch}.rpm
 fi
