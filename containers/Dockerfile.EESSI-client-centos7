@@ -39,6 +39,6 @@ RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
   && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local \
   && echo 'CVMFS_HIDE_MAGIC_XATTRS=yes' >> /etc/cvmfs/default.local
 
-RUN mkdir -p /cvmfs/pilot.eessi-hpc.org
+RUN mkdir -p /cvmfs/software.eessi.io
 
 RUN useradd -ms /bin/bash eessi
