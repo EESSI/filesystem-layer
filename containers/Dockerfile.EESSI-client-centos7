@@ -29,7 +29,6 @@ RUN yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.el7.$
                    /root/rpmbuild/RPMS/$(uname -m)/cvmfs-fuse3-${cvmfsversion}-1.el7.$(uname -m).rpm \
                    /root/rpmbuild/RPMS/$(uname -m)/cvmfs-libs-${cvmfsversion}-1.el7.$(uname -m).rpm \
                    http://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default-latest.noarch.rpm
-RUN yum install -y https://github.com/EESSI/filesystem-layer/releases/download/latest/cvmfs-config-eessi-latest.noarch.rpm
 
 # download binary for specific version of fuse-overlayfs
 #RUN curl -L -o /usr/local/bin/fuse-overlayfs https://github.com/containers/fuse-overlayfs/releases/download/v${fuseoverlayfsversion}/fuse-overlayfs-$(uname -m) \
