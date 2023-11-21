@@ -128,8 +128,11 @@ jobs:
       - name: Download and install CVMFS client
         run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb && sudo dpkg -i cvmfs-release-latest_all.deb
 
+      - name: Download and install cvmfs-config-none package
+        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-none_1.1-0_all.deb && sudo dpkg -i cvmfs-config-none_1.1-0_all.deb
+
       - name: Install CVMFS client
-        run: sudo apt-get update && sudo apt-get install cvmfs cvmfs-config-none
+        run: sudo apt-get update && sudo apt-get install cvmfs
 
       - name: Download cvmfs-config-eessi package
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
@@ -164,7 +167,7 @@ jobs:
 
     steps:
       - name: Download and install CVMFS client
-        run: yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
+        run: yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum-config-manager --enable cernvm-config
 
       - name: Install CVMFS client
         run: yum install -y cvmfs cvmfs-config-none
@@ -204,8 +207,11 @@ jobs:
       - name: Download and install CVMFS client
         run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest_all.deb && sudo dpkg -i cvmfs-release-latest_all.deb
 
+      - name: Download and install cvmfs-config-none package
+        run: wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-none_1.1-0_all.deb && sudo dpkg -i cvmfs-config-none_1.1-0_all.deb
+
       - name: Install CVMFS client
-        run: sudo apt-get update && sudo apt-get install cvmfs cvmfs-config-none
+        run: sudo apt-get update && sudo apt-get install cvmfs
 
       - name: Download cvmfs-config-eessi package
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
