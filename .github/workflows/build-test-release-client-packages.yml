@@ -40,6 +40,7 @@ jobs:
         run: |
           wget https://github.com/EESSI/filesystem-layer/releases/download/v0.4.0/cvmfs-config-eessi-0.4.0.tar
           tar xf cvmfs-config-eessi-0.4.0.tar
+          rm cvmfs-config-eessi-0.4.0.tar
 
 # We probably should loop over the set {rpm,deb,osxpkg} to create packages, but
 # it will make debugging more annoying.
