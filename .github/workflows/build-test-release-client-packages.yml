@@ -36,6 +36,11 @@ jobs:
           echo "localhost ansible_connection=local" > inventory/hosts
           ansible-playbook ./prepare-client-packages.yml
 
+      - name: Include the old eessi-hpc.org config as well for now
+        run: |
+          wget https://github.com/EESSI/filesystem-layer/releases/download/v0.4.0/cvmfs-config-eessi-0.4.0.tar
+          tar xf cvmfs-config-eessi-0.4.0.tar
+
 # We probably should loop over the set {rpm,deb,osxpkg} to create packages, but
 # it will make debugging more annoying.
 
