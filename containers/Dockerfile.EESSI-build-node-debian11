@@ -22,7 +22,8 @@ RUN apt-get install -y python3-pip jq
 RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian11_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian11_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-libs_${cvmfsversion}~1+debian11_$(dpkg --print-architecture).deb \
-            /root/deb/cvmfs-config-default_latest_all.deb
+            /root/deb/cvmfs-config-default_latest_all.deb \
+            /root/deb/cvmfs-config-eessi_latest_all.deb
 
 # download binary for specific version of fuse-overlayfs
 RUN curl -L -o /usr/local/bin/fuse-overlayfs https://github.com/containers/fuse-overlayfs/releases/download/v${fuseoverlayfsversion}/fuse-overlayfs-$(uname -m) \
