@@ -238,9 +238,9 @@ The second time you run it, you should get a cache hit:
 X-Cache: HIT from url-to-your-proxy
 ```
 
-Example with the Norwegian Stratum 1:
+Example with an EESSI Stratum 1 server:
 ```
-curl --head http://bgo-no.stratum1.cvmfs.eessi-infra.org/cvmfs/software.eessi.io/.cvmfspublished
+curl --head http://aws-eu-central-s1.eessi.science/cvmfs/software.eessi.io/.cvmfspublished
 ```
 
 ### Using the CVMFS infrastructure
