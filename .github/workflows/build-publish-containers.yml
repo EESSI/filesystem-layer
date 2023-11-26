@@ -18,7 +18,7 @@ on:
   # this often means that we have a new CVMFS configuration package
   release:
     types: [published]
- 
+
 # Declare default permissions as read only.
 permissions: read-all
 
@@ -32,7 +32,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client-pilot:centos7', 'build-node:debian11']
+        tag: ['client:centos7', 'build-node:debian11']
         platform: [amd64, arm64, ppc64le]
 
     steps:
@@ -91,7 +91,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client-pilot:centos7', 'build-node:debian11']
+        tag: ['client:centos7', 'build-node:debian11']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'

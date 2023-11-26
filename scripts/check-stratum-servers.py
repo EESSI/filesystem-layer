@@ -11,7 +11,7 @@ import yaml
 # Default location for EESSI's Ansible group vars file containing the CVMFS settings.
 DEFAULT_ANSIBLE_GROUP_VARS_LOCATION = 'https://raw.githubusercontent.com/EESSI/filesystem-layer/main/inventory/group_vars/all.yml'
 # Default fully qualified CVMFS repository name
-DEFAULT_CVMFS_FQRN = 'pilot.eessi-hpc.org'
+DEFAULT_CVMFS_FQRN = 'software.eessi.io'
 # Maximum amount of time (in minutes) that a Stratum 1 is allowed to not having performed a snapshot.
 DEFAULT_MAX_SNAPSHOT_DELAY = 30
 # Maximum amount of time (in minutes) allowed between the snapshots of any two Stratum 1 servers.

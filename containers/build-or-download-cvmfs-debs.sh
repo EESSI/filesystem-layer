@@ -23,6 +23,7 @@ else
     cd /root/deb
     wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}~1+${os}_${arch}.deb
     wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}~1+${os}_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-libs_${cvmfsversion}~1+${os}_${arch}.deb
 fi
 
 cd /root/deb

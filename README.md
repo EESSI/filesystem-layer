@@ -197,15 +197,16 @@ Finally, run `cvmfs_config setup` to set up CVMFS.
 
 ### Client
 
-Once the client has been installed, you should be able to access all repositories under /cvmfs. They might not immediately show up in that directory before you have actually used them, so you might first have to run ls, e.g.:
+Once the client has been installed, you should be able to access all repositories under `/cvmfs`.
+They might not immediately show up in that directory before you have actually used them, so you might first have to run ls, e.g.:
 ```
-ls /cvmfs/pilot.eessi-hpc.org
+ls /cvmfs/software.eessi.io
 ```
 
 On the client machines you can use the `cvmfs_config` tool for different operations. For instance, you can verify the file system by running:
 ```
-$ sudo cvmfs_config probe pilot.eessi-hpc.org
-Probing /cvmfs/pilot.eessi-hpc.org... OK
+$ sudo cvmfs_config probe software.eessi.io
+Probing /cvmfs/software.eessi.io... OK
 ```
 
 Checking for misconfigurations can be done with:
@@ -224,7 +225,7 @@ In order to test your local proxy and/or Stratum 1, even without a client instal
 curl. Leave out the `--proxy http://url-to-your-proxy:3128` if you do not use a proxy.
 
 ```
-curl --proxy http://url-to-your-proxy:3128 --head http://url-to-your-stratum1/cvmfs/pilot.eessi-hpc.org/.cvmfspublished
+curl --proxy http://url-to-your-proxy:3128 --head http://url-to-your-stratum1/cvmfs/software.eessi.io/.cvmfspublished
 ```
 This should return:
 ```
@@ -237,19 +238,19 @@ The second time you run it, you should get a cache hit:
 X-Cache: HIT from url-to-your-proxy
 ```
 
-Example with the Norwegian Stratum 1:
+Example with an EESSI Stratum 1 server:
 ```
-curl --head http://bgo-no.stratum1.cvmfs.eessi-infra.org/cvmfs/pilot.eessi-hpc.org/.cvmfspublished
+curl --head http://aws-eu-central-s1.eessi.science/cvmfs/software.eessi.io/.cvmfspublished
 ```
 
 ### Using the CVMFS infrastructure
 
 When the infrastructure seems to work, you can try publishing some new files. This can be done by starting a transaction on the Stratum 0, adding some files, and publishing the transaction:
 ```
-sudo cvmfs_server transaction pilot.eessi-hpc.org
-mkdir /cvmfs/pilot.eessi-hpc.org/testdir
-touch /cvmfs/pilot.eessi-hpc.org/testdir/testfile
-sudo cvmfs_server publish pilot.eessi-hpc.org
+sudo cvmfs_server transaction software.eessi.io
+mkdir /cvmfs/software.eessi.io/testdir
+touch /cvmfs/software.eessi.io/testdir/testfile
+sudo cvmfs_server publish software.eessi.io
 ```
 It might take a few minutes, but then the new file should show up at the clients.
 
