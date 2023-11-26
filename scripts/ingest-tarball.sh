@@ -187,7 +187,7 @@ function ingest_compat_tarball() {
         echo_yellow "Removing the existing layer, and adding the new one from the tarball..."
         cvmfs_server transaction "${repo}"
         rm -rf "/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}/"
-        tar -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
+        tar --no-same-owner --no-same-permissions -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
         cvmfs_server publish -m "update compat layer for ${version}, ${os}, ${arch}" "${repo}"
         ec=$?
         if [ $ec -eq 0 ]
