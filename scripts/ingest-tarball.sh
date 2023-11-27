@@ -15,6 +15,7 @@
 repo=software.eessi.io
 basedir=versions
 decompress="gunzip -c"
+cvmfs_server="sudo cvmfs_server"
 # list of supported architectures for compat and software layers
 declare -A archs=(["aarch64"]= ["ppc64le"]= ["riscv64"]= ["x86_64"]=)
 # list of supported operating systems for compat and software layers
@@ -104,8 +105,8 @@ function check_contents_type() {
 function cvmfs_regenerate_nested_catalogs() {
     # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
     echo "Generating the nested catalogs..."
-    cvmfs_server transaction "${repo}"
-    cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
+    ${cvmfs_server} transaction "${repo}"
+    ${cvmfs_server} publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
     ec=$?
     if [ $ec -eq 0 ]
     then
@@ -119,7 +120,7 @@ function cvmfs_ingest_tarball() {
     # Do a regular "cvmfs_server ingest" for a given tarball,
     # followed by regenerating the nested catalog
     echo "Ingesting tarball ${tar_file} to ${repo}..."
-    ${decompress} "${tar_file}" | cvmfs_server ingest -t - -b "${basedir}" "${repo}"
+    ${decompress} "${tar_file}" | ${cvmfs_server} ingest -t - -b "${basedir}" "${repo}"
     ec=$?
     if [ $ec -eq 0 ]
     then
@@ -185,16 +186,16 @@ function ingest_compat_tarball() {
     then
         echo_yellow "Compatibility layer for version ${version}, OS ${os}, and architecture ${arch} already exists!"
         echo_yellow "Removing the existing layer, and adding the new one from the tarball..."
-        cvmfs_server transaction "${repo}"
+        ${cvmfs_server} transaction "${repo}"
         rm -rf "/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}/"
         tar -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
-        cvmfs_server publish -m "update compat layer for ${version}, ${os}, ${arch}" "${repo}"
+        ${cvmfs_server} publish -m "update compat layer for ${version}, ${os}, ${arch}" "${repo}"
         ec=$?
         if [ $ec -eq 0 ]
         then
             echo_green "Successfully ingested the new compatibility layer!"
         else
-            cvmfs_server abort "${repo}"
+            ${cvmfs_server} abort "${repo}"
             error "error while updating the compatibility layer, transaction aborted."
         fi
     else
