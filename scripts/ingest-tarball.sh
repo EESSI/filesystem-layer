@@ -15,7 +15,7 @@
 repo=software.eessi.io
 basedir=versions
 decompress="gunzip -c"
-cvmfs_server="sudo cvmfs_server"
+cvmfs_server="cvmfs_server"
 # list of supported architectures for compat and software layers
 declare -A archs=(["aarch64"]= ["ppc64le"]= ["riscv64"]= ["x86_64"]=)
 # list of supported operating systems for compat and software layers
@@ -39,6 +39,14 @@ function echo_yellow() {
 function error() {
     echo_red "ERROR: $1" >&2
     exit 1
+}
+
+function is_repo_owner() {
+    if [ -f "/etc/cvmfs/repositories.d/${repo}/server.conf" ]
+    then
+        . "/etc/cvmfs/repositories.d/${repo}/server.conf"
+        [ x"$(whoami)" = x"$CVMFS_USER" ]
+    fi
 }
 
 function check_repo_vars() {
@@ -224,6 +232,9 @@ contents_type_dir=$(echo "${tar_file_basename}" | cut -d- -f3)
 tar_first_file=$(tar tf "${tar_file}" | head -n 1)
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 tar_contents_type_dir=$(tar tf "${tar_file}" | head -n 2 | tail -n 1 | cut -d/ -f2)
+
+# Check if we are running as the CVMFS repo owner, otherwise run cvmfs_server with sudo
+is_repo_owner || cvmfs_server="sudo cvmfs_server"
 
 # Do some checks, and ingest the tarball
 check_repo_vars
