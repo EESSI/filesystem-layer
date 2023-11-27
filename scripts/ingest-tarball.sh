@@ -15,6 +15,7 @@
 repo=software.eessi.io
 basedir=versions
 decompress="gunzip -c"
+cvmfs_server="cvmfs_server"
 # list of supported architectures for compat and software layers
 declare -A archs=(["aarch64"]= ["ppc64le"]= ["riscv64"]= ["x86_64"]=)
 # list of supported operating systems for compat and software layers
@@ -38,6 +39,14 @@ function echo_yellow() {
 function error() {
     echo_red "ERROR: $1" >&2
     exit 1
+}
+
+function is_repo_owner() {
+    if [ -f "/etc/cvmfs/repositories.d/${repo}/server.conf" ]
+    then
+        . "/etc/cvmfs/repositories.d/${repo}/server.conf"
+        [ x"$(whoami)" = x"$CVMFS_USER" ]
+    fi
 }
 
 function check_repo_vars() {
@@ -104,8 +113,8 @@ function check_contents_type() {
 function cvmfs_regenerate_nested_catalogs() {
     # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
     echo "Generating the nested catalogs..."
-    cvmfs_server transaction "${repo}"
-    cvmfs_server publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
+    ${cvmfs_server} transaction "${repo}"
+    ${cvmfs_server} publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
     ec=$?
     if [ $ec -eq 0 ]
     then
@@ -119,7 +128,7 @@ function cvmfs_ingest_tarball() {
     # Do a regular "cvmfs_server ingest" for a given tarball,
     # followed by regenerating the nested catalog
     echo "Ingesting tarball ${tar_file} to ${repo}..."
-    ${decompress} "${tar_file}" | cvmfs_server ingest -t - -b "${basedir}" "${repo}"
+    ${decompress} "${tar_file}" | ${cvmfs_server} ingest -t - -b "${basedir}" "${repo}"
     ec=$?
     if [ $ec -eq 0 ]
     then
@@ -185,16 +194,16 @@ function ingest_compat_tarball() {
     then
         echo_yellow "Compatibility layer for version ${version}, OS ${os}, and architecture ${arch} already exists!"
         echo_yellow "Removing the existing layer, and adding the new one from the tarball..."
-        cvmfs_server transaction "${repo}"
+        ${cvmfs_server} transaction "${repo}"
         rm -rf "/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}/"
         tar -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
-        cvmfs_server publish -m "update compat layer for ${version}, ${os}, ${arch}" "${repo}"
+        ${cvmfs_server} publish -m "update compat layer for ${version}, ${os}, ${arch}" "${repo}"
         ec=$?
         if [ $ec -eq 0 ]
         then
             echo_green "Successfully ingested the new compatibility layer!"
         else
-            cvmfs_server abort "${repo}"
+            ${cvmfs_server} abort "${repo}"
             error "error while updating the compatibility layer, transaction aborted."
         fi
     else
@@ -223,6 +232,9 @@ contents_type_dir=$(echo "${tar_file_basename}" | cut -d- -f3)
 tar_first_file=$(tar tf "${tar_file}" | head -n 1)
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 tar_contents_type_dir=$(tar tf "${tar_file}" | head -n 2 | tail -n 1 | cut -d/ -f2)
+
+# Check if we are running as the CVMFS repo owner, otherwise run cvmfs_server with sudo
+is_repo_owner || cvmfs_server="sudo cvmfs_server"
 
 # Do some checks, and ingest the tarball
 check_repo_vars
