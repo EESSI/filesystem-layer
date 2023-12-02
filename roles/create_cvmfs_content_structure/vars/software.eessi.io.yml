@@ -6,5 +6,9 @@ files:
     dest: ''
     mode: '644'
 
+  - name: README.eessi
+    dest: ''
+    mode: '644'
+
 symlinks:
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
