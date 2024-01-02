@@ -280,10 +280,14 @@ class EessiTarball:
         metadata = ''
         with open(self.local_metadata_path, 'r') as meta:
             metadata = meta.read()
+        meta_dict = json.loads(metadata)
+        repo, pr_id = meta_dict['link2pr']['repo'], meta_dict['link2pr']['pr']
+        pr_url = f"https://github.com/{repo}/pull/{pr_id}"
         # Try to get the tarball contents and open a PR to get approval for the ingestion
         try:
             tarball_contents = self.get_contents_overview()
             pr_body = self.config['github']['pr_body'].format(
+                pr_url=pr_url,
                 tar_overview=self.get_contents_overview(),
                 metadata=metadata,
             )
