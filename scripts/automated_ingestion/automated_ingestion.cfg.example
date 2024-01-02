@@ -42,7 +42,7 @@ failed_tarball_overview_issue_body = An error occurred while trying to get the c
     ```
     {error}
     ```
-pr_body = A new tarball has been staged.
+pr_body = A new tarball has been staged for {pr_url}.
     Please review the contents of this tarball carefully.
     Merging this PR will lead to automatic ingestion of the tarball.
     
