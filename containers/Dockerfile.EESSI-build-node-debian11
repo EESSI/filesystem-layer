@@ -1,5 +1,5 @@
 ARG cvmfsversion=2.11.2
-ARG awscliversion=1.30.2
+ARG awscliversion=1.32.22
 ARG fuseoverlayfsversion=1.10
 
 FROM debian:11.7 AS prepare-deb
