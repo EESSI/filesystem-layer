@@ -168,6 +168,23 @@ function check_arch() {
     fi
 }
 
+function update_lmod_caches() {
+    # Update the Lmod caches for the stacks of all supported CPUs
+    script_dir=$(dirname $(realpath $BASH_SOURCE))
+    update_caches_script=${script_dir}/update_lmod_caches.sh
+    if [ ! -f ${update_caches_script} ]
+    then
+        error "cannot find the script for updating the Lmod caches; it should be placed in the same directory as the ingestion script!"
+    fi
+    if [ ! -x ${update_caches_script} ]
+    then
+        error "the script for updating the Lmod caches (${update_caches_script}) does not have execute permissions!"
+    fi
+    cvmfs_server transaction "${repo}"
+    ${update_caches_script} /cvmfs/${repo}/${basedir}/${version}
+    cvmfs_server publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${repo}"
+}
+
 function ingest_init_tarball() {
     # Handle the ingestion of tarballs containing init scripts
     cvmfs_ingest_tarball
@@ -183,6 +200,7 @@ function ingest_software_tarball() {
     check_arch
     check_os
     cvmfs_ingest_tarball
+    update_lmod_caches
 }
 
 function ingest_compat_tarball() {
