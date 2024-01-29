@@ -36,34 +36,10 @@ fi
 # Find all subtrees of supported CPU targets by looking for "modules" directories, and taking their parent directory
 architectures=$(find ${stack_base_dir}/software/ -maxdepth 5 -type d -name modules -exec dirname {} \;)
 
-# For every subtree:
-# - create an .lmod directory;
-# - add an lmodrc.lua file that defines the location of the cache;
-# - create or update the cache.
+# Create/update the Lmod cache for all architectures
 for archdir in ${architectures}
 do
-  DOT_LMOD="${archdir}/.lmod"
-  LMOD_RC="${archdir}/.lmod/lmodrc.lua"
-
-  if [ ! -d "${DOT_LMOD}" ]
-  then
-    mkdir -p "${DOT_LMOD}/cache"
-  fi
-
-  if [ ! -f "${LMOD_RC}" ]
-  then
-    cat > "${LMOD_RC}" <<LMODRCEOF
-propT = {
-}
-scDescriptT = {
-    {
-        ["dir"] = "${DOT_LMOD}/cache",
-        ["timestamp"] = "${DOT_LMOD}/cache/timestamp",
-    },
-}
-LMODRCEOF
-  fi
-
-  ${update_lmod_system_cache_files=} -d ${DOT_LMOD}/cache -t ${DOT_LMOD}/cache/timestamp ${archdir}/modules/all
+  lmod_cache_dir="${archdir}/.lmod/cache"
+  ${update_lmod_system_cache_files=} -d ${lmod_cache_dir} -t ${lmod_cache_dir}/timestamp ${archdir}/modules/all
   echo_green "Updated the Lmod cache for ${archdir}."
 done
