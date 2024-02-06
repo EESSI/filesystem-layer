@@ -193,11 +193,15 @@ function ingest_compat_tarball() {
     if [ -f "/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}/startprefix" ];
     then
         echo_yellow "Compatibility layer for version ${version}, OS ${os}, and architecture ${arch} already exists!"
-        echo_yellow "Removing the existing layer, and adding the new one from the tarball..."
+        old_layer_path="/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}"
         ${cvmfs_server} transaction "${repo}"
-        rm -rf "/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}/"
+        last_suffix=$((ls -1d ${old_layer_path}-* | tail -n 1 | xargs basename | cut -d- -f2) 2> /dev/null)
+        new_suffix=$(printf '%03d\n' $((${last_suffix:-0} + 1)))
+        old_layer_suffixed_path="${old_layer_path}-${new_suffix}"
+        echo_yellow "Moving the existing compat layer from ${old_layer_path} to ${old_layer_suffixed_path}..."
+        mv ${old_layer_path} ${old_layer_suffixed_path}
         tar -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
-        ${cvmfs_server} publish -m "update compat layer for ${version}, ${os}, ${arch}" "${repo}"
+        ${cvmfs_server} publish -m "updated compat layer for ${version}, ${os}, ${arch}" "${repo}"
         ec=$?
         if [ $ec -eq 0 ]
         then
