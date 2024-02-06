@@ -189,17 +189,17 @@ function ingest_compat_tarball() {
     # Handle the ingestion of tarballs containing a compatibility layer
     check_arch
     check_os
+    compat_layer_path="/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}"
     # Assume that we already had a compat layer in place if there is a startprefix script in the corresponding CVMFS directory
-    if [ -f "/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}/startprefix" ];
+    if [ -f "${compat_layer_path}/startprefix" ];
     then
         echo_yellow "Compatibility layer for version ${version}, OS ${os}, and architecture ${arch} already exists!"
-        old_layer_path="/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}"
         ${cvmfs_server} transaction "${repo}"
-        last_suffix=$((ls -1d ${old_layer_path}-* | tail -n 1 | xargs basename | cut -d- -f2) 2> /dev/null)
+        last_suffix=$((ls -1d ${compat_layer_path}-* | tail -n 1 | xargs basename | cut -d- -f2) 2> /dev/null)
         new_suffix=$(printf '%03d\n' $((${last_suffix:-0} + 1)))
-        old_layer_suffixed_path="${old_layer_path}-${new_suffix}"
-        echo_yellow "Moving the existing compat layer from ${old_layer_path} to ${old_layer_suffixed_path}..."
-        mv ${old_layer_path} ${old_layer_suffixed_path}
+        old_layer_suffixed_path="${compat_layer_path}-${new_suffix}"
+        echo_yellow "Moving the existing compat layer from ${compat_layer_path} to ${old_layer_suffixed_path}..."
+        mv ${compat_layer_path} ${old_layer_suffixed_path}
         tar -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
         ${cvmfs_server} publish -m "updated compat layer for ${version}, ${os}, ${arch}" "${repo}"
         ec=$?
