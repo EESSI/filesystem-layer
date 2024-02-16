@@ -41,7 +41,7 @@ eessi_cvmfs_server_urls:
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
   - repository: software.eessi.io
-    stratum0: rug-nl-s0.eessi.science
+    stratum0: aws-eu-west-s1-sync.eessi.science
     owner: "{{ cvmfs_repo_owner | default('root') }}"
     key_dir: /etc/cvmfs/keys/eessi.io
     server_options:
