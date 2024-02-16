@@ -46,19 +46,19 @@ jobs:
 # it will make debugging more annoying.
 
       - name: Build RPM package
-        uses: bpicode/github-action-fpm@e76c0e2166030f4691d641a700b16958c7d12f5d # v0.9.2
+        uses: bpicode/github-action-fpm@7502b06a5a58390398d4002bd284f8cb3caae6eb
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build Deb package
-        uses: bpicode/github-action-fpm@e76c0e2166030f4691d641a700b16958c7d12f5d # v0.9.2
+        uses: bpicode/github-action-fpm@7502b06a5a58390398d4002bd284f8cb3caae6eb
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Build tar package
-        uses: bpicode/github-action-fpm@e76c0e2166030f4691d641a700b16958c7d12f5d # v0.9.2
+        uses: bpicode/github-action-fpm@7502b06a5a58390398d4002bd284f8cb3caae6eb
         with:
           fpm_args: "etc"
           fpm_opts: "--debug -n cvmfs-config-eessi-${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
