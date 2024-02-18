@@ -34,7 +34,7 @@ and a role for adding the EPEL repository (https://github.com/geerlingguy/ansibl
 
 To download the dependency roles do:
 ```
-ansible-galaxy role install -r requirements.yml -p ./roles
+ansible-galaxy role install -r requirements.yml
 ```
 
 ### Configuration
