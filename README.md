@@ -79,8 +79,8 @@ and, if necessary, created machine-specific configuration files in `inventory/ho
 ### Firewalls
 To make all communication between the CVMFS services possible, some ports have to be opened on the Stratum 0 (default: port 80), 
 Stratum 1 (default: port 80 and 8000), and local proxy (default: port 3128).
-These default port numbers are listed in `roles/galaxyproject.cvmfs/defaults/main.yml`, but can be overridden in your local
-configuration file (`local_site_specific_vars.yml`).
+These default port numbers are listed in the file `defaults/main.yml` of the `ansible-cvmfs` role,
+but can be overridden in your local configuration file (`local_site_specific_vars.yml`).
 
 The Ansible playbook can update your firewall rules automatically (`firewalld` on Redhat systems, `ufw` on Debian systems), 
 but by default it will not do this. If you want to enable this functionality, set `cvmfs_manage_firewall` to `true`.
