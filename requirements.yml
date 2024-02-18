@@ -1,6 +1,6 @@
 ---
 
-# ansible-galaxy role install -r requirements.yml -p ./roles
+# ansible-galaxy role install -r requirements.yml
 roles:
 
   - name: eessi.cvmfs
