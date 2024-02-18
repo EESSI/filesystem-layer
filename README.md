@@ -27,8 +27,10 @@ For more details, see the Ansible installation guide: https://docs.ansible.com/a
 Note that Ansible needs to be able to log in to the remote machines where you want to install some CVMFS component,
 and needs to be able to use privilege escalation (e.g. `sudo`) on those machines to execute tasks with root permission.
 
-For the installation of all components we make use of two Ansible roles: the CVMFS installation role provided by the Galaxy project (see
-https://github.com/galaxyproject/ansible-cvmfs), and a role for adding the EPEL repository (https://github.com/geerlingguy/ansible-role-repo-epel).
+For the installation of all components we make use of two Ansible roles:
+the EESSI CVMFS installation role (see https://github.com/galaxyproject/ansible-cvmfs) 
+based on the one developed by the Galaxy project (see https://github.com/galaxyproject/ansible-cvmfs),
+and a role for adding the EPEL repository (https://github.com/geerlingguy/ansible-role-repo-epel).
 
 To download the dependency roles do:
 ```
