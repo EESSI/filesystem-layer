@@ -1,10 +1,12 @@
 #/bin/bash
 cvmfsversion=$1
-arch=$(dpkg --print-architecture)
-os=debian11
 
 apt-get update
-apt-get install -y wget
+apt-get install -y wget lsb-release
+
+arch=$(dpkg --print-architecture)
+os="$(lsb_release -si | tr [:upper:] [:lower:])$(lsb_release -sr)"
+
 if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ]
 then
     apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools python3-dev python3-setuptools uuid-dev valgrind libz-dev lsb-release
