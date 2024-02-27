@@ -1,4 +1,5 @@
 ARG cvmfsversion=2.11.2
+ARG archspecversion=0.2.2
 ARG awscliversion=1.32.22
 ARG fuseoverlayfsversion=1.10
 
@@ -10,6 +11,7 @@ RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 
 FROM debian:12.5
 ARG cvmfsversion
+ARG archspecversion
 ARG awscliversion
 ARG fuseoverlayfsversion
 
@@ -37,7 +39,7 @@ RUN mkdir -p /cvmfs/software.eessi.io
 
 RUN useradd -ms /bin/bash eessi
 
-RUN python3 -m venv /opt/archspec && . /opt/archspec/bin/activate && pip3 install archspec && deactivate && ln -s /opt/archspec/bin/archspec /usr/local/bin/archspec
+RUN python3 -m venv /opt/archspec && . /opt/archspec/bin/activate && pip3 install archspec==${archspecversion} && deactivate && ln -s /opt/archspec/bin/archspec /usr/local/bin/archspec
 # stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
 RUN python3 -m venv /opt/awscli && . /opt/awscli/bin/activate && pip3 install awscli==${awscliversion} && deactivate && ln -s /opt/awscli/bin/aws /usr/local/bin/aws
 
