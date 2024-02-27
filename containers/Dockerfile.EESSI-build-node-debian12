@@ -37,9 +37,9 @@ RUN mkdir -p /cvmfs/software.eessi.io
 
 RUN useradd -ms /bin/bash eessi
 
-RUN python3 -m venv /opt/archspec && source /opt/archspec/bin/activate && pip3 install archspec && deactivate && ln -s /opt/archspec/bin/archspec /usr/local/bin/archspec
+RUN python3 -m venv /opt/archspec && . /opt/archspec/bin/activate && pip3 install archspec && deactivate && ln -s /opt/archspec/bin/archspec /usr/local/bin/archspec
 # stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
-RUN python3 -m venv /opt/awscli && source /opt/awscli/bin/activate && pip3 install awscli==${awscliversion} && deactivate && ln -s /opt/awscli/bin/aws /usr/local/bin/aws
+RUN python3 -m venv /opt/awscli && . /opt/awscli/bin/activate && pip3 install awscli==${awscliversion} && deactivate && ln -s /opt/awscli/bin/aws /usr/local/bin/aws
 
 RUN curl -OL https://raw.githubusercontent.com/EESSI/eessi-bot-software-layer/develop/scripts/eessi-upload-to-staging \
   && mv eessi-upload-to-staging /usr/bin \
