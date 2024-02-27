@@ -18,7 +18,7 @@ COPY --from=prepare-deb /root/deb /root/deb
 RUN apt-get update
 RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev lsof strace
 # python3 and jq are required for eessi-upload-to-staging script (next to awscli)
-RUN apt-get install -y python3-pip jq
+RUN apt-get install -y python3-pip python3-venv jq
 RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian11_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian11_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-libs_${cvmfsversion}~1+debian11_$(dpkg --print-architecture).deb \
@@ -37,8 +37,9 @@ RUN mkdir -p /cvmfs/software.eessi.io
 
 RUN useradd -ms /bin/bash eessi
 
+RUN python3 -m venv /opt/archspec && source /opt/archspec/bin/activate && pip3 install archspec && deactivate && ln -s /opt/archspec/bin/archspec /usr/local/bin/archspec
 # stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
-RUN pip3 install archspec awscli==${awscliversion}
+RUN python3 -m venv /opt/awscli && source /opt/awscli/bin/activate && pip3 install awscli==${awscliversion} && deactivate && ln -s /opt/awscli/bin/aws /usr/local/bin/aws
 
 RUN curl -OL https://raw.githubusercontent.com/EESSI/eessi-bot-software-layer/develop/scripts/eessi-upload-to-staging \
   && mv eessi-upload-to-staging /usr/bin \
