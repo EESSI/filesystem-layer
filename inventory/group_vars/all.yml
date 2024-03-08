@@ -51,6 +51,17 @@ eessi_cvmfs_repositories:
     client_options: []
     use_for_ci: false
     description: "Repository that contains the EESSI software stacks."
+  - repository: riscv.eessi.io
+    stratum0: aws-eu-west-s1-sync.eessi.science
+    owner: "{{ cvmfs_repo_owner | default('root') }}"
+    key_dir: /etc/cvmfs/keys/eessi.io
+    server_options:
+      - CVMFS_AUTO_GC=false
+      - CVMFS_AUTO_TAG_TIMESPAN="30 days ago"
+      - CVMFS_GARBAGE_COLLECTION=true
+    client_options: []
+    use_for_ci: false
+    description: "Repository for developing an EESSI software stack for RISC-V."
 
 # Meta information for CVMFS Stratum servers
 cvmfs_server_meta_administrator: "EESSI CVMFS Administrators"
