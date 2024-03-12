@@ -1,11 +1,11 @@
 # Compatibility layer paths:
-# /versions/<version>/compat/{linux,macos}/{aarch64,ppc64le,x86_64}
+# /versions/<version>/compat/{linux,macos}/{aarch64,riscv64,x86_64}
 /versions/*/compat/*/*
 /versions/*/compat/*/*/var
 /versions/*/compat/*/*/var/db/repos
 
 # Software layer paths:
-# /versions/<version>/software/{linux,macos}/{aarch64,ppc64le,x86_64}/<vendor>/<microarchitecture>/software
+# /versions/<version>/software/{linux,macos}/{aarch64,riscv64,x86_64}/<vendor>/<microarchitecture>/software
 /versions/*/software/*/*/*/*/software
 /versions/*/software/*/*/*/*/software/*/*
 /versions/*/software/*/*/*/*/modules
