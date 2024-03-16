@@ -32,8 +32,8 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:centos7', 'build-node:debian11']
-        platform: [amd64, arm64, ppc64le]
+        tag: ['client:centos7', 'build-node:debian11', 'build-node:debian12']
+        platform: [amd64, arm64]
 
     steps:
       - name: Check out the repo
@@ -91,7 +91,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:centos7', 'build-node:debian11']
+        tag: ['client:centos7', 'build-node:debian11', 'build-node:debian12']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
@@ -110,8 +110,7 @@ jobs:
         run: |
           docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \
-            ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-arm64 \
-            ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-ppc64le
+            ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-arm64
 
       - name: Inspect the final image
         if: github.event_name != 'pull_request'
