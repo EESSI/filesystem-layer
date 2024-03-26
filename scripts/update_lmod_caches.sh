@@ -26,7 +26,7 @@ then
   error "${stack_base_dir} does not point to an existing directory!"
 fi
 
-# Check if Lmod's cache update script can be found at the expected location (in the compatibility layer of the gien stack)
+# Check if Lmod's cache update script can be found at the expected location (in the compatibility layer of the given stack)
 update_lmod_system_cache_files="${stack_base_dir}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
 if [ ! -f ${update_lmod_system_cache_files} ]
 then
