@@ -1,4 +1,2 @@
 build
 hosts
-roles/galaxyproject.cvmfs
-roles/geerlingguy.repo-epel

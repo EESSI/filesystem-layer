@@ -2,20 +2,10 @@
 ---
 - name: CVMFS Stratum 0
   hosts: cvmfsstratum0servers
-  pre_tasks:
-    - name: Fix that adds additional dependencies for Debian systems
-      set_fact:
-        cvmfs_packages:
-          stratum0:
-            - apache2
-            - cvmfs-server
-            - cvmfs-config-default
-            - cvmfs
-      when: ansible_facts['os_family'] == 'Debian'
   roles:
     - role: geerlingguy.repo-epel
       when: ansible_facts['os_family'] == 'RedHat'
-    - galaxyproject.cvmfs
+    - eessi.cvmfs
     - cvmfs_server_meta_info
     - create_cvmfs_content_structure
 ...
