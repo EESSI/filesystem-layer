@@ -41,5 +41,12 @@ for archdir in ${architectures}
 do
   lmod_cache_dir="${archdir}/.lmod/cache"
   ${update_lmod_system_cache_files} -d ${lmod_cache_dir} -t ${lmod_cache_dir}/timestamp ${archdir}/modules/all
-  echo_green "Updated the Lmod cache for ${archdir}."
+  exit_code=$?
+  if [[ ${exit_code} -eq 0 ]]; then
+      echo_green "Updated the Lmod cache for ${archdir}."
+      ls -lrt ${lmod_cache_dir}
+  else
+      echo_red "Updating the Lmod cache failed for ${archdir}."
+      exit ${exit_code}
+  fi
 done
