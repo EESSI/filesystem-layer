@@ -40,6 +40,6 @@ architectures=$(find ${stack_base_dir}/software/ -maxdepth 5 -type d -name modul
 for archdir in ${architectures}
 do
   lmod_cache_dir="${archdir}/.lmod/cache"
-  ${update_lmod_system_cache_files=} -d ${lmod_cache_dir} -t ${lmod_cache_dir}/timestamp ${archdir}/modules/all
+  ${update_lmod_system_cache_files} -d ${lmod_cache_dir} -t ${lmod_cache_dir}/timestamp ${archdir}/modules/all
   echo_green "Updated the Lmod cache for ${archdir}."
 done
