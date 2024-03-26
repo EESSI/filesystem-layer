@@ -180,9 +180,9 @@ function update_lmod_caches() {
     then
         error "the script for updating the Lmod caches (${update_caches_script}) does not have execute permissions!"
     fi
-    cvmfs_server transaction "${repo}"
+    ${cvmfs_server} transaction "${repo}"
     ${update_caches_script} /cvmfs/${repo}/${basedir}/${version}
-    cvmfs_server publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${repo}"
+    ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${repo}"
 }
 
 function ingest_init_tarball() {
