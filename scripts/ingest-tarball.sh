@@ -250,7 +250,6 @@ fi
 # Get some information about the tarball
 tar_file_basename=$(basename "${tar_file}")
 version=$(echo "${tar_file_basename}" | cut -d- -f2)
-contents_type_dir=$(echo "${tar_file_basename}" | cut -d- -f3)
 tar_first_file=$(tar tf "${tar_file}" | head -n 1)
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 tar_contents_type_dir=$(tar tf "${tar_file}" | head -n 2 | tail -n 1 | cut -d/ -f2)
@@ -261,5 +260,4 @@ is_repo_owner || cvmfs_server="sudo cvmfs_server"
 # Do some checks, and ingest the tarball
 check_repo_vars
 check_version
-check_contents_type
 ingest_${tar_contents_type_dir}_tarball
