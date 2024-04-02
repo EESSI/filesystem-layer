@@ -261,5 +261,7 @@ is_repo_owner || cvmfs_server="sudo cvmfs_server"
 # Do some checks, and ingest the tarball
 check_repo_vars
 check_version
-check_contents_type
+# Disable the call to check_contents_type, as it does not work for tarballs produced
+# by our build bot that only contain init files (as they have "software" in the filename)
+# check_contents_type
 ingest_${tar_contents_type_dir}_tarball

@@ -54,10 +54,11 @@ tarballs_success=(
 # Test that should return an error
 tarballs_fail=(
   # Non-matching type dirs
-  "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 init"
-  "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 initt"
-  "$tstdir/eessi-2000.01-scripts-123456.tar.gz 2000.01 scriptss"
-  "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 soft"
+  # They have been disabled, as we removed the content type check in the ingestion script
+  # "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 init"
+  # "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 initt"
+  # "$tstdir/eessi-2000.01-scripts-123456.tar.gz 2000.01 scriptss"
+  # "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 soft"
   # Non-matching versions
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.12 compat"
   "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.12 init"
@@ -85,7 +86,7 @@ tarballs_fail=(
 # Run the tests that should succeed
 for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
-    "${INGEST_SCRIPT}" "$t" > /dev/null
+    "${INGEST_SCRIPT}" "$t" >& /dev/null
     if [ ! $? -eq 0 ]; then
         num_tests_failed=$((num_tests_failed + 1))
     else
