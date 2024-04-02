@@ -86,7 +86,7 @@ tarballs_fail=(
 # Run the tests that should succeed
 for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
-    "${INGEST_SCRIPT}" "$t" > /dev/null
+    "${INGEST_SCRIPT}" "$t" >& /dev/null
     if [ ! $? -eq 0 ]; then
         num_tests_failed=$((num_tests_failed + 1))
     else
