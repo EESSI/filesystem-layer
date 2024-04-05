@@ -28,14 +28,14 @@ then
     sed -i 's/python-dev/python3-dev/' ../../packaging/debian/cvmfs/control.in
     sed -i 's/python-setuptools/python3-setuptools/' ../../packaging/debian/cvmfs/control.in
     # valgrind is not available (yet) for RISC-V
-    if [[ "$arch" = "riscv64" ]]
+    if [ "$arch" = "riscv64" ]
     then
         sed -i 's/, valgrind//' ../../packaging/debian/cvmfs/control.in
     else
         apt-get install -y valgrind
     fi
     # make sure the cvmfs package also uses debian 13 for debian sid
-    [[ $release = "n/a" ]] && sed "s@\$(lsb_release -sr)@13@" ./deb.sh
+    [ $release = "n/a" ] && sed "s@\$(lsb_release -sr)@13@" ./deb.sh
     ./deb.sh /tmp/cvmfs-cvmfs-${cvmfsversion} /root/deb
 else
     mkdir -p /root/deb
