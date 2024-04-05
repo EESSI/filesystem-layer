@@ -1,0 +1,8 @@
+EESSI - the European Environment for Scientific Software Installations
+
+This is the EESSI RISC-V development repository (riscv.eessi.io),
+which contains development versions of an EESSI RISC-V software stack.
+Note that versions may be added, modified, or deleted at any time.
+
+For more information about this repository,
+please see https://www.eessi.io/docs/repositories/riscv.eessi.io/.

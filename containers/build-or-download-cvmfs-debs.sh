@@ -1,9 +1,11 @@
+#/bin/bash
 cvmfsversion=$1
 arch=$(dpkg --print-architecture)
+os=debian11
 
 apt-get update
 apt-get install -y wget
-if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ] || [ "$arch" = "riscv64" ]
+if [ "$arch" = "arm64" ] || [ "$arch" = "riscv64" ]
 then
     apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools python3-dev python3-setuptools uuid-dev valgrind libz-dev lsb-release
     # Set Python 2 as default Python
@@ -19,8 +21,9 @@ then
 else
     mkdir -p /root/deb
     cd /root/deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}~1+debian10_${arch}.deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}~1+debian10_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}~1+${os}_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}~1+${os}_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-libs_${cvmfsversion}~1+${os}_${arch}.deb
 fi
 
 cd /root/deb

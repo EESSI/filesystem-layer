@@ -1,4 +1,4 @@
-# Specifications of files and symlinks for the pilot.eessi-hpc.org CVMFS repository.
+# Specifications of files and symlinks for the software.eessi.io CVMFS repository.
 # Paths for files and symlinks should be relative to the root of the repository.
 ---
 files:
@@ -6,6 +6,9 @@ files:
     dest: ''
     mode: '644'
 
+  - name: README.eessi
+    dest: ''
+    mode: '644'
+
 symlinks:
-  latest: versions/2021.12
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
