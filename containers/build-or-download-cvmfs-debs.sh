@@ -9,7 +9,7 @@ distro=$(lsb_release -si | tr [:upper:] [:lower:])
 release=$(lsb_release -sr)
 
 # lsb_release -sr prints n/a for debian sid, replace it by 13
-if [[ ${distro} = "debian" ]] && [[ ${release} = "n/a" ]]
+if [ "${distro}" = "debian" ] && [ "${release}" = "n/a" ]
 then
     release=13
 fi
