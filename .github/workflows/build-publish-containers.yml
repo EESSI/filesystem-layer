@@ -32,7 +32,8 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:centos7', 'build-node:debian11']
+        #tag: ['client:centos7', 'build-node:debian11']
+        tag: ['build-node:debian-sid']
         platform: [amd64, arm64, riscv64]
 
     steps:
@@ -91,7 +92,8 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:centos7', 'build-node:debian11', 'build-node:debian-sid']
+        #tag: ['client:centos7', 'build-node:debian11', 'build-node:debian-sid']
+        tag: ['build-node:debian-sid']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
