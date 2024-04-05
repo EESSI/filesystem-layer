@@ -35,7 +35,7 @@ then
         apt-get install -y valgrind
     fi
     # make sure the cvmfs package also uses debian 13 for debian sid
-    [ $release = "n/a" ] && sed "s@\$(lsb_release -sr)@13@" ./deb.sh
+    [ $release = "13" ] && sed "s@\$(lsb_release -sr)@13@" ./deb.sh
     ./deb.sh /tmp/cvmfs-cvmfs-${cvmfsversion} /root/deb
 else
     mkdir -p /root/deb
