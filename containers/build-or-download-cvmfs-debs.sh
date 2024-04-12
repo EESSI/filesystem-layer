@@ -36,6 +36,11 @@ then
         wget https://github.com/cvmfs/cvmfs/pull/3446.patch
         patch -p 1 -i ./3446.patch
         rm 3446.patch
+        # QEMU shows the host CPU in /proc/cpuinfo, so we need to tweak the CPU detection for some packages and use uname -m instead
+        sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/libcrypto/src/configureHook.sh
+        sed -i "s/rv64/riscv64/" externals/libcrypto/src/configureHook.sh
+        sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/protobuf/src/configureHook.sh
+        sed -i "s/rv64/riscv64/" externals/protobuf/src/configureHook.sh
     else
         apt-get install -y valgrind
     fi
