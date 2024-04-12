@@ -5,7 +5,7 @@ roles:
 
   - name: eessi.cvmfs
     src: https://github.com/EESSI/ansible-cvmfs
-    version: cd41783
+    version: 8188eb8
 
   - name: geerlingguy.repo-epel
     version: 3.0.0
