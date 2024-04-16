@@ -1,22 +1,52 @@
 #/bin/bash
 cvmfsversion=$1
 arch=$(dpkg --print-architecture)
-os=debian11
 
 apt-get update
-apt-get install -y wget
-if [ "$arch" = "ppc64el" ] || [ "$arch" = "arm64" ]
+apt-get install -y wget lsb-release
+
+distro=$(lsb_release -si | tr [:upper:] [:lower:])
+release=$(lsb_release -sr)
+
+# lsb_release -sr prints n/a for debian sid, replace it by 13
+if [ "${distro}" = "debian" ] && [ "${release}" = "n/a" ]
 then
-    apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python-dev python-setuptools python3-dev python3-setuptools uuid-dev valgrind libz-dev lsb-release
-    # Set Python 2 as default Python
-    update-alternatives --install /usr/bin/python python /usr/bin/python2 1
-    update-alternatives --install /usr/bin/python python /usr/bin/python3 2
+    release=13
+fi
+
+os="${distro}${release}"
+
+if [ "$arch" = "arm64" ] || [ "$arch" = "riscv64" ] || [ "${os}" = "debian13" ]
+then
+    apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release
     cd /tmp
     wget https://github.com/cvmfs/cvmfs/archive/refs/tags/cvmfs-${cvmfsversion}.tar.gz
     tar xzf cvmfs-${cvmfsversion}.tar.gz
-    cd cvmfs-cvmfs-${cvmfsversion}/ci/cvmfs
+    cd cvmfs-cvmfs-${cvmfsversion}
     mkdir /root/deb
-    sed -i 's/Architecture: i386 amd64 armhf arm64/Architecture: i386 amd64 armhf arm64 ppc64el/' ../../packaging/debian/cvmfs/control.in
+    sed -i 's/Architecture: i386 amd64 armhf arm64/Architecture: i386 amd64 armhf arm64 riscv64/' packaging/debian/cvmfs/control.in
+    sed -i 's/python-dev/python3-dev/' packaging/debian/cvmfs/control.in
+    sed -i 's/python-setuptools/python3-setuptools/' packaging/debian/cvmfs/control.in
+    if [ "$arch" = "riscv64" ]
+    then
+        # valgrind is not available (yet) for RISC-V
+        sed -i 's/, valgrind//' packaging/debian/cvmfs/control.in
+        # for RISC-V we need to run autoreconf, see:
+        # https://github.com/cvmfs/cvmfs/pull/3446
+        wget https://github.com/cvmfs/cvmfs/pull/3446.patch
+        patch -p 1 -i ./3446.patch
+        rm 3446.patch
+        # QEMU shows the host CPU in /proc/cpuinfo, so we need to tweak the CPU detection for some packages and use uname -m instead
+        sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/libcrypto/src/configureHook.sh
+        sed -i "s/rv64/riscv64/" externals/libcrypto/src/configureHook.sh
+        sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/protobuf/src/configureHook.sh
+        sed -i "s/rv64/riscv64/" externals/protobuf/src/configureHook.sh
+    else
+        apt-get install -y valgrind
+    fi
+    cd ci/cvmfs
+    # make sure the cvmfs package also uses debian 13 for debian sid
+    [ $release = "13" ] && sed -i "s@\$(lsb_release -sr)@13@" ./deb.sh && sed -i "s/focal/trixie/" ./deb.sh
     ./deb.sh /tmp/cvmfs-cvmfs-${cvmfsversion} /root/deb
 else
     mkdir -p /root/deb

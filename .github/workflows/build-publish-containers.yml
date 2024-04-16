@@ -12,7 +12,7 @@ on:
       - main
     paths:
       - containers/Dockerfile.EESSI-*
-      - containers/build-or-download-cvmfs-rpm.sh
+      - containers/build-or-download-cvmfs-*.sh
 
   # also rebuild the containers for new releases of filesystem-layer:
   # this often means that we have a new CVMFS configuration package
@@ -32,8 +32,14 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:centos7', 'build-node:debian11']
-        platform: [amd64, arm64, ppc64le]
+        tag: ['client:centos7', 'build-node:debian11', 'build-node:debian-sid']
+        platform: [amd64, arm64, riscv64]
+        exclude:
+          # exclude images that don't support RISC-V
+          - tag: client:centos7
+            platform: riscv64
+          - tag: build-node:debian11
+            platform: riscv64
 
     steps:
       - name: Check out the repo
@@ -91,7 +97,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:centos7', 'build-node:debian11']
+        tag: ['client:centos7', 'build-node:debian11', 'build-node:debian-sid']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
@@ -106,12 +112,19 @@ jobs:
           echo REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
 
       - name: Create the final image using  "docker buildx imagetools create"
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && matrix.tag == 'build-node:debian-sid'
         run: |
           docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-arm64 \
-            ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-ppc64le
+            ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-riscv64
+
+      - name: Create the final image using  "docker buildx imagetools create"
+        if: github.event_name != 'pull_request' && matrix.tag != 'build-node:debian-sid'
+        run: |
+          docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
+            ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \
+            ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-arm64
 
       - name: Inspect the final image
         if: github.event_name != 'pull_request'
