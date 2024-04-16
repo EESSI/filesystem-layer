@@ -39,7 +39,3 @@ RUN useradd -ms /bin/bash eessi
 
 # stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
 RUN pip3 install archspec awscli==${awscliversion}
-
-RUN curl -OL https://raw.githubusercontent.com/EESSI/eessi-bot-software-layer/develop/scripts/eessi-upload-to-staging \
-  && mv eessi-upload-to-staging /usr/bin \
-  && chmod a+x /usr/bin/eessi-upload-to-staging
