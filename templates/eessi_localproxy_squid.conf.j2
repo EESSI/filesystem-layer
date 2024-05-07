@@ -9,7 +9,7 @@ dns_v4_first on
 acl local_nodes src {{ cvmfs_localproxy_allowed_clients|join(' ') }}
 
 # Destination domains that are allowed
-acl stratum_ones dstdomain .eessi-hpc.org
+acl stratum_ones dstdomain .eessi.science
 
 # Squid port (default: 3128)
 {% for port in cvmfs_localproxy_http_ports %}
