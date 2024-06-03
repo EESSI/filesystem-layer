@@ -104,12 +104,12 @@ In order to do this, clone this `filesystem-layer` repository, and let your cron
 a run of the playbook (e.g. `ansible-playbook --connection=local create_cvmfs_content_structure.yml`).
 
 ### Stratum 1
-Installing a Stratum 1 requires a GEO API license key, which will be used to find
+Installing a Stratum 1 requires a GEO API account id and license key, which will be used to find
 the (geographically) closest Stratum 1 server for your client and proxies.
 More information on how to (freely) obtain this key is available in the CVMFS documentation: 
 https://cvmfs.readthedocs.io/en/stable/cpt-replica.html#geo-api-setup .
 
-You can put your license key in the local configuration file `inventory/local_site_specific_vars.yml`. 
+You can put your account id and license key in the local configuration file `inventory/local_site_specific_vars.yml`. 
 
 Furthermore, the Stratum 1 runs a Squid server. The template configuration file can be found at 
 `templates/eessi_stratum1_squid.conf.j2`.
