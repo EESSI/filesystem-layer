@@ -27,12 +27,14 @@ For more details, see the Ansible installation guide: https://docs.ansible.com/a
 Note that Ansible needs to be able to log in to the remote machines where you want to install some CVMFS component,
 and needs to be able to use privilege escalation (e.g. `sudo`) on those machines to execute tasks with root permission.
 
-For the installation of all components we make use of two Ansible roles: the CVMFS installation role provided by the Galaxy project (see
-https://github.com/galaxyproject/ansible-cvmfs), and a role for adding the EPEL repository (https://github.com/geerlingguy/ansible-role-repo-epel).
+For the installation of all components we make use of two Ansible roles:
+the EESSI CVMFS installation role (see https://github.com/galaxyproject/ansible-cvmfs) 
+based on the one developed by the Galaxy project (see https://github.com/galaxyproject/ansible-cvmfs),
+and a role for adding the EPEL repository (https://github.com/geerlingguy/ansible-role-repo-epel).
 
 To download the dependency roles do:
 ```
-ansible-galaxy role install -r requirements.yml -p ./roles
+ansible-galaxy role install -r requirements.yml
 ```
 
 ### Configuration
@@ -77,8 +79,8 @@ and, if necessary, created machine-specific configuration files in `inventory/ho
 ### Firewalls
 To make all communication between the CVMFS services possible, some ports have to be opened on the Stratum 0 (default: port 80), 
 Stratum 1 (default: port 80 and 8000), and local proxy (default: port 3128).
-These default port numbers are listed in `roles/galaxyproject.cvmfs/defaults/main.yml`, but can be overridden in your local
-configuration file (`local_site_specific_vars.yml`).
+These default port numbers are listed in the file `defaults/main.yml` of the `ansible-cvmfs` role,
+but can be overridden in your local configuration file (`local_site_specific_vars.yml`).
 
 The Ansible playbook can update your firewall rules automatically (`firewalld` on Redhat systems, `ufw` on Debian systems), 
 but by default it will not do this. If you want to enable this functionality, set `cvmfs_manage_firewall` to `true`.
@@ -102,12 +104,12 @@ In order to do this, clone this `filesystem-layer` repository, and let your cron
 a run of the playbook (e.g. `ansible-playbook --connection=local create_cvmfs_content_structure.yml`).
 
 ### Stratum 1
-Installing a Stratum 1 requires a GEO API license key, which will be used to find
+Installing a Stratum 1 requires a GEO API account id and license key, which will be used to find
 the (geographically) closest Stratum 1 server for your client and proxies.
 More information on how to (freely) obtain this key is available in the CVMFS documentation: 
 https://cvmfs.readthedocs.io/en/stable/cpt-replica.html#geo-api-setup .
 
-You can put your license key in the local configuration file `inventory/local_site_specific_vars.yml`. 
+You can put your account id and license key in the local configuration file `inventory/local_site_specific_vars.yml`. 
 
 Furthermore, the Stratum 1 runs a Squid server. The template configuration file can be found at 
 `templates/eessi_stratum1_squid.conf.j2`.

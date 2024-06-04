@@ -1,11 +1,11 @@
 ---
 
-# ansible-galaxy role install -r requirements.yml -p ./roles
+# ansible-galaxy role install -r requirements.yml
 roles:
 
-  - name: galaxyproject.cvmfs
-    src: https://github.com/galaxyproject/ansible-cvmfs
-    version: 78b2e03
+  - name: eessi.cvmfs
+    src: https://github.com/EESSI/ansible-cvmfs
+    version: cb7a4de
 
   - name: geerlingguy.repo-epel
     version: 3.0.0
