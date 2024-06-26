@@ -95,7 +95,15 @@ class EessiTarball:
 
         else:
             tar_members_desc = 'Summarized overview of the contents of the tarball:'
-            prefix = os.path.commonprefix(paths)
+            # determine prefix after filtering out '<EESSI version>/init' subdirectory,
+            # to get actual prefix for specific CPU target (like '2023.06/software/linux/aarch64/neoverse_v1')
+            init_subdir = os.path.join('*', 'init')
+            non_init_paths = sorted([p for p in paths if not any(x.match(init_subdir) for x in PurePosixPath(p).parents)])
+            if non_init_paths:
+                prefix = os.path.commonprefix(non_init_paths)
+            else:
+                prefix = os.path.commonprefix(paths)
+
             # TODO: this only works for software tarballs, how to handle compat layer tarballs?
             swdirs = [  # all directory names with the pattern: <prefix>/software/<name>/<version>
                 m.path
