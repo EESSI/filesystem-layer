@@ -22,17 +22,21 @@ try:
 except IOError:
     raise IOError("Unable to open the known issues file")
 
-# Remove the admin.list file if it exists, we will recreate it
-if os.path.exists('admin.list'):
-    try:
-        os.remove('admin.list')
-    except OSError:
-        raise OSError("Unable to remove the admin.list file")
-
-admin_list_file = open('admin.list', 'a')
+# Create a admin.list file per arch
 path = '/cvmfs/software.eessi.io/versions/2023.06/software/linux/'
 for i in range(len(known_issues)):
     arch, known_issues_arch = list(known_issues[i].items())[0]
+    admin_list_filename = f"admin.list.{arch}"
+
+    # Remove the admin.list file if it exists, we will recreate it
+    if os.path.exists(admin_list_filename):
+        try:
+            os.remove(admin_list_filename)
+        except OSError:
+            raise OSError(f"Unable to remove the {admin_list_filename} file")
+
+    # Open the admin.list file, with no dashes in the filename
+    admin_list_file = open(admin_list_filename.replace('/', '_'), 'a')
     for j in range(len(known_issues_arch)):
         # Write known issue per arch and module
         known_issues_module, known_issue = list(known_issues_arch[j].items())[0]
