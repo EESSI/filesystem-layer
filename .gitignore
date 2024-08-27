@@ -1,2 +1,4 @@
 build
 hosts
+*.list
+*-known-issues.yml
