@@ -3,28 +3,31 @@
 # Create admin.list file for Lmod.
 # This will use information from the known_issues.yaml file to display
 # a message to the user when they load a module that is known to have issues.
-#
 import os
 import yaml
 from urllib import request
 
+
 # Download the known issues YAML file from the EESSI/software-layer GitHub repository
-
-
-# Get known issues file
 # TODO: This hardcodes version 2023.06, we should make this dynamic
-url = 'https://raw.githubusercontent.com/EESSI/software-layer/2023.06-software.eessi.io/eessi-2023.06-known-issues.yml'
-r = request.urlretrieve(url, 'eessi-2023.06-known-issues.yml')
+KNOWN_ISSUES_FILE = 'eessi-2023.06-known-issues.yml'
+KNOWN_ISSUES_URL = 'https://raw.githubusercontent.com/EESSI/software-layer/2023.06-software.eessi.io/' + KNOWN_ISSUES_FILE
+r = request.urlretrieve(KNOWN_ISSUES_URL, KNOWN_ISSUES_FILE)
 
 # Open the YAML file
-with open('eessi-2023.06-known-issues.yml', 'r') as file:
-    # Load the YAML data
-    known_issues = yaml.safe_load(file)
+try:
+    with open(KNOWN_ISSUES_FILE, 'r') as file:
+        # Load the YAML data
+        known_issues = yaml.safe_load(file)
+except IOError:
+    raise IOError("Unable to open the known issues file")
 
 # Remove the admin.list file if it exists, we will recreate it
 if os.path.exists('admin.list'):
-    os.remove('admin.list')
-
+    try:
+        os.remove('admin.list')
+    except OSError:
+        raise OSError("Unable to remove the admin.list file")
 
 admin_list_file = open('admin.list', 'a')
 path = '/cvmfs/software.eessi.io/versions/2023.06/software/linux/'
