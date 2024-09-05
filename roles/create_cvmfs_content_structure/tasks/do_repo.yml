@@ -49,7 +49,7 @@
 
   rescue:
     - name: Abort transaction
-      ansible.builtin.command: "cvmfs_server abort {{ cvmfs_repo }}"
+      ansible.builtin.command: "cvmfs_server abort -f {{ cvmfs_repo }}"
       when: cvmfs_start_transaction and cvmfs_abort_transaction_on_failures
 
     - name: Exit because of failure
