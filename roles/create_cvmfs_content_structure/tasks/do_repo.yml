@@ -10,6 +10,14 @@
 
 - name: Apply changes to CVMFS repository, if there are any
   block:
+  - name: "Create directories"
+    ansible.builtin.file:
+      path: "/cvmfs/{{ cvmfs_repo }}/{{ item.name }}"
+      state: directory
+      mode: "{{ item.mode }}"
+    with_items: "{{ directories }}"
+    register: create_directories
+
   - name: "Create symlinks"
     ansible.builtin.file:
       path: "/cvmfs/{{ cvmfs_repo }}/{{ item }}"
