@@ -2,7 +2,7 @@
 # Paths for files and symlinks should be relative to the root of the repository.
 ---
 directories:
-  - name: modules/EESSI
+  - name: init/modules/EESSI
     mode: '755'
 
 files:
@@ -16,4 +16,4 @@ files:
 
 symlinks:
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
-  modules/EESSI/2023.06.lua: /cvmfs/software.eessi.io/versions/2023.06/init/modules/EESSI/2023.06.lua
+  init/modules/EESSI/2023.06.lua: /cvmfs/software.eessi.io/versions/2023.06/init/modules/EESSI/2023.06.lua
