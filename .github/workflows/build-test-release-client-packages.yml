@@ -162,7 +162,7 @@ jobs:
     needs: build-linux-packages
     runs-on: ubuntu-latest
     container:
-      image: centos:centos7
+      image: rockylinux:8
       options: --device /dev/fuse --privileged
 
     steps:
