@@ -167,7 +167,7 @@ jobs:
 
     steps:
       - name: Download and install CVMFS client
-        run: yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum-config-manager --enable cernvm-config
+        run: yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
 
       - name: Install CVMFS client
         run: yum install -y cvmfs cvmfs-config-none
