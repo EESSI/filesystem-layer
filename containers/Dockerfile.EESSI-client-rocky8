@@ -3,13 +3,13 @@ ARG cvmfsversion=2.11.5
 # (cfr. https://github.com/containers/fuse-overlayfs/issues/232)
 ARG fuseoverlayfsversion=1.10
 
-FROM centos:7 AS prepare-rpm
+FROM rockylinux:8 AS prepare-rpm
 ARG cvmfsversion
 COPY ./containers/build-or-download-cvmfs-rpms.sh /build-or-download-cvmfs-rpms.sh
 RUN sh /build-or-download-cvmfs-rpms.sh ${cvmfsversion}
 
 
-FROM centos:7 AS build-fuse-overlayfs
+FROM rockylinux:8 AS build-fuse-overlayfs
 ARG fuseoverlayfsversion
 RUN yum install -y wget fuse3-devel autoconf automake gcc make tar
 RUN wget https://github.com/containers/fuse-overlayfs/archive/refs/tags/v${fuseoverlayfsversion}.tar.gz \
@@ -18,7 +18,7 @@ RUN wget https://github.com/containers/fuse-overlayfs/archive/refs/tags/v${fuseo
   && ./autogen.sh && ./configure && make && make install
 
 
-FROM centos:7
+FROM rockylinux:8
 ARG cvmfsversion
 
 COPY --from=prepare-rpm /root/rpmbuild/RPMS /root/rpmbuild/RPMS
