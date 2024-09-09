@@ -1,4 +1,4 @@
-ARG cvmfsversion=2.11.2
+ARG cvmfsversion=2.11.5
 # Stick to old version of fuse-overlayfs due to issues with newer versions
 # (cfr. https://github.com/containers/fuse-overlayfs/issues/232)
 ARG fuseoverlayfsversion=1.10
