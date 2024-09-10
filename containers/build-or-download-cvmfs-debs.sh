@@ -44,6 +44,25 @@ then
     else
         apt-get install -y valgrind
     fi
+
+    # gcc 14 fix for CVMFS's dependency pacparser, see
+    # https://github.com/manugarg/pacparser/issues/194
+    if gcc --version | grep -q "^gcc" | grep -q "14"; then
+cat << EOF > externals/pacparser/src/fix_gcc14.patch
+--- a/src/spidermonkey/js/src/jsapi.c
++++ b/src/spidermonkey/js/src/jsapi.c
+@@ -93,7 +93,7 @@
+ #ifdef HAVE_VA_LIST_AS_ARRAY
+ #define JS_ADDRESSOF_VA_LIST(ap) ((va_list *)(ap))
+ #else
+-#define JS_ADDRESSOF_VA_LIST(ap) (&(ap))
++#define JS_ADDRESSOF_VA_LIST(ap) ((va_list *)(&(ap)))
+ #endif
+ 
+ #if defined(JS_PARANOID_REQUEST) && defined(JS_THREADSAFE)
+EOF
+    fi
+
     cd ci/cvmfs
     # make sure the cvmfs package also uses debian 13 for debian sid
     [ $release = "13" ] && sed -i "s@\$(lsb_release -sr)@13@" ./deb.sh && sed -i "s/focal/trixie/" ./deb.sh
