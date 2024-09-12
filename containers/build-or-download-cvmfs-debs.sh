@@ -47,7 +47,7 @@ then
 
     # gcc 14 fix for CVMFS's dependency pacparser, see
     # https://github.com/manugarg/pacparser/issues/194
-    if gcc --version | grep -q "^gcc" | grep -q "14"; then
+    if gcc --version | grep -q "^gcc.*14"; then
 cat << EOF > externals/pacparser/src/fix_gcc14.patch
 --- a/src/spidermonkey/js/src/jsapi.c
 +++ b/src/spidermonkey/js/src/jsapi.c
