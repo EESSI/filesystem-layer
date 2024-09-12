@@ -49,8 +49,8 @@ then
     # https://github.com/manugarg/pacparser/issues/194
     if gcc --version | grep -q "^gcc.*14"; then
 cat << EOF > externals/pacparser/src/fix_gcc14.patch
---- a/src/spidermonkey/js/src/jsapi.c
-+++ b/src/spidermonkey/js/src/jsapi.c
+--- src/spidermonkey/js/src/jsapi.c
++++ src/spidermonkey/js/src/jsapi.c
 @@ -93,7 +93,7 @@
  #ifdef HAVE_VA_LIST_AS_ARRAY
  #define JS_ADDRESSOF_VA_LIST(ap) ((va_list *)(ap))
