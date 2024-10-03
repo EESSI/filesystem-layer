@@ -36,17 +36,26 @@ fi
 # Find all subtrees of supported CPU targets by looking for "modules" directories, and taking their parent directory
 architectures=$(find ${stack_base_dir}/software/ -maxdepth 5 -type d -name modules -exec dirname {} \;)
 
-# Create/update the Lmod cache for all architectures
+# Create/update the Lmod cache for all CPU targets
 for archdir in ${architectures}
 do
   lmod_cache_dir="${archdir}/.lmod/cache"
-  ${update_lmod_system_cache_files} -d ${lmod_cache_dir} -t ${lmod_cache_dir}/timestamp ${archdir}/modules/all
+  modulepath="${archdir}/modules/all"
+  # Find any accelerator targets for this CPU, and add them to the module path, so they will be included in the cache
+  if [ -d "${archdir}/accel" ]; then
+    accelerators=$(find ${archdir}/accel -maxdepth 3 -type d -name modules -exec dirname {} \;)
+    for acceldir in ${accelerators}; do
+      modulepath="${acceldir}/modules/all:$modulepath"
+    done
+  fi
+
+  ${update_lmod_system_cache_files} -d ${lmod_cache_dir} -t ${lmod_cache_dir}/timestamp "${modulepath}"
   exit_code=$?
   if [[ ${exit_code} -eq 0 ]]; then
-      echo_green "Updated the Lmod cache for ${archdir}."
+      echo_green "Updated the Lmod cache for ${archdir} using MODULEPATH: ${modulepath}."
       ls -lrt ${lmod_cache_dir}
   else
-      echo_red "Updating the Lmod cache failed for ${archdir}."
+      echo_red "Updating the Lmod cache failed for ${archdir} using MODULEPATH: ${modulepath}."
       exit ${exit_code}
   fi
 done
