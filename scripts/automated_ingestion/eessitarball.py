@@ -300,7 +300,8 @@ class EessiTarball:
                 tar_overview=self.get_contents_overview(),
                 metadata=metadata,
             )
-            self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
+            pr_title = '[%s] Ingest %s' % (self.cvmfs_repo, filename)
+            self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
         except Exception as err:
             issue_title = f'Failed to get contents of {self.object}'
             issue_body = self.config['github']['failed_tarball_overview_issue_body'].format(
