@@ -187,7 +187,7 @@ class EessiTarball:
             if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
                 send_slack_message(
                     self.config['secrets']['slack_webhook'],
-                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.object))
+                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.object), cvmfs_repo=self.cvmfs_repo)
                 )
         else:
             issue_title = f'Failed to ingest {self.object}'
