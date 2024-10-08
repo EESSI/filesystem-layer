@@ -162,15 +162,16 @@ jobs:
     needs: build-linux-packages
     runs-on: ubuntu-latest
     container:
-      image: centos:centos7
+      image: rockylinux:8
       options: --device /dev/fuse --privileged
 
     steps:
       - name: Download and install CVMFS client
-        run: yum install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm && yum-config-manager --enable cernvm-config
-
-      - name: Install CVMFS client
-        run: yum install -y cvmfs cvmfs-config-none
+        run: |
+          dnf install -y https://ecsft.cern.ch/dist/cvmfs/cvmfs-release/cvmfs-release-latest.noarch.rpm
+          dnf install -y 'dnf-command(config-manager)'
+          dnf config-manager --enable cernvm-config
+          dnf install -y cvmfs cvmfs-config-none
 
       - name: Download cvmfs-config-eessi package
         uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
