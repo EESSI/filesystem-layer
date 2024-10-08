@@ -9,6 +9,7 @@ import boto3
 import botocore
 import configparser
 import github
+import json
 import logging
 import os
 import pid
@@ -99,15 +100,15 @@ def main():
         aws_secret_access_key=config['secrets']['aws_secret_access_key'],
     )
 
-    buckets = [x.strip() for x in config['aws']['staging_buckets'].split(',')]
-    for bucket in buckets:
+    buckets = json.loads(config['aws']['staging_buckets'])
+    for bucket, cvmfs_repo in buckets.items():
         tarballs = find_tarballs(s3, bucket)
         if args.list_only:
             for num, tarball in enumerate(tarballs):
                 print(f'[{bucket}] {num}: {tarball}')
         else:
             for tarball in tarballs:
-                tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket)
+                tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket, cvmfs_repo)
                 tar.run_handler()
 
 

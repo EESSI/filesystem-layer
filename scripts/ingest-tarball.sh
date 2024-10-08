@@ -12,7 +12,6 @@
 
 # Only if it passes these checks, the tarball gets ingested to the base dir in the repository specified below.
 
-repo=software.eessi.io
 basedir=versions
 decompress="gunzip -c"
 cvmfs_server="cvmfs_server"
@@ -42,15 +41,15 @@ function error() {
 }
 
 function is_repo_owner() {
-    if [ -f "/etc/cvmfs/repositories.d/${repo}/server.conf" ]
+    if [ -f "/etc/cvmfs/repositories.d/${cvmfs_repo}/server.conf" ]
     then
-        . "/etc/cvmfs/repositories.d/${repo}/server.conf"
+        . "/etc/cvmfs/repositories.d/${cvmfs_repo}/server.conf"
         [ x"$(whoami)" = x"$CVMFS_USER" ]
     fi
 }
 
 function check_repo_vars() {
-    if [ -z "${repo}" ]
+    if [ -z "${cvmfs_repo}" ]
     then
         error "the 'repo' variable has to be set to the name of the CVMFS repository."
     fi
@@ -73,8 +72,8 @@ function check_version() {
     fi
 
     # Check if the EESSI version number encoded in the filename
-    # is valid, i.e. matches the format YYYY.DD
-    if ! echo "${version}" | egrep -q '^20[0-9][0-9]\.(0[0-9]|1[0-2])$'
+    # is valid, i.e. matches the format YYYY.MM or YYYYMMDD
+    if ! echo "${version}" | egrep '(^20[0-9][0-9]\.(0[0-9]|1[0-2])$)|(^20[0-9][0-9][0-9][0-9][0-9][0-9]$)'
     then
         error "${version} is not a valid EESSI version."
     fi
@@ -113,28 +112,28 @@ function check_contents_type() {
 function cvmfs_regenerate_nested_catalogs() {
     # Use the .cvmfsdirtab to generate nested catalogs for the ingested tarball
     echo "Generating the nested catalogs..."
-    ${cvmfs_server} transaction "${repo}"
-    ${cvmfs_server} publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${repo}"
+    ${cvmfs_server} transaction "${cvmfs_repo}"
+    ${cvmfs_server} publish -m "Generate catalogs after ingesting ${tar_file_basename}" "${cvmfs_repo}"
     ec=$?
     if [ $ec -eq 0 ]
     then
-        echo_green "Nested catalogs for ${repo} have been created!"
+        echo_green "Nested catalogs for ${cvmfs_repo} have been created!"
     else
-        echo_red "failure when creating nested catalogs for ${repo}."
+        echo_red "failure when creating nested catalogs for ${cvmfs_repo}."
     fi
 }
 
 function cvmfs_ingest_tarball() {
     # Do a regular "cvmfs_server ingest" for a given tarball,
     # followed by regenerating the nested catalog
-    echo "Ingesting tarball ${tar_file} to ${repo}..."
-    ${decompress} "${tar_file}" | ${cvmfs_server} ingest -t - -b "${basedir}" "${repo}"
+    echo "Ingesting tarball ${tar_file} to ${cvmfs_repo}..."
+    ${decompress} "${tar_file}" | ${cvmfs_server} ingest -t - -b "${basedir}" "${cvmfs_repo}"
     ec=$?
     if [ $ec -eq 0 ]
     then
-        echo_green "${tar_file} has been ingested to ${repo}."
+        echo_green "${tar_file} has been ingested to ${cvmfs_repo}."
     else
-        error "${tar_file} could not be ingested to ${repo}."
+        error "${tar_file} could not be ingested to ${cvmfs_repo}."
     fi
 
     # "cvmfs_server ingest" doesn't automatically rebuild the nested catalogs,
@@ -180,9 +179,9 @@ function update_lmod_caches() {
     then
         error "the script for updating the Lmod caches (${update_caches_script}) does not have execute permissions!"
     fi
-    ${cvmfs_server} transaction "${repo}"
-    ${update_caches_script} /cvmfs/${repo}/${basedir}/${version}
-    ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${repo}"
+    ${cvmfs_server} transaction "${cvmfs_repo}"
+    ${update_caches_script} /cvmfs/${cvmfs_repo}/${basedir}/${version}
+    ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
 }
 
 function ingest_init_tarball() {
@@ -207,25 +206,25 @@ function ingest_compat_tarball() {
     # Handle the ingestion of tarballs containing a compatibility layer
     check_arch
     check_os
-    compat_layer_path="/cvmfs/${repo}/${basedir}/${version}/compat/${os}/${arch}"
+    compat_layer_path="/cvmfs/${cvmfs_repo}/${basedir}/${version}/compat/${os}/${arch}"
     # Assume that we already had a compat layer in place if there is a startprefix script in the corresponding CVMFS directory
     if [ -f "${compat_layer_path}/startprefix" ];
     then
         echo_yellow "Compatibility layer for version ${version}, OS ${os}, and architecture ${arch} already exists!"
-        ${cvmfs_server} transaction "${repo}"
+        ${cvmfs_server} transaction "${cvmfs_repo}"
         last_suffix=$((ls -1d ${compat_layer_path}-* | tail -n 1 | xargs basename | cut -d- -f2) 2> /dev/null)
         new_suffix=$(printf '%03d\n' $((${last_suffix:-0} + 1)))
         old_layer_suffixed_path="${compat_layer_path}-${new_suffix}"
         echo_yellow "Moving the existing compat layer from ${compat_layer_path} to ${old_layer_suffixed_path}..."
         mv ${compat_layer_path} ${old_layer_suffixed_path}
-        tar -C "/cvmfs/${repo}/${basedir}/" -xzf "${tar_file}"
-        ${cvmfs_server} publish -m "updated compat layer for ${version}, ${os}, ${arch}" "${repo}"
+        tar -C "/cvmfs/${cvmfs_repo}/${basedir}/" -xzf "${tar_file}"
+        ${cvmfs_server} publish -m "updated compat layer for ${version}, ${os}, ${arch}" "${cvmfs_repo}"
         ec=$?
         if [ $ec -eq 0 ]
         then
             echo_green "Successfully ingested the new compatibility layer!"
         else
-            ${cvmfs_server} abort "${repo}"
+            ${cvmfs_server} abort "${cvmfs_repo}"
             error "error while updating the compatibility layer, transaction aborted."
         fi
     else
@@ -236,11 +235,17 @@ function ingest_compat_tarball() {
 
 
 # Check if a tarball has been specified
-if [ "$#" -ne 1 ]; then
-    error "usage: $0 <gzipped tarball>"
+if [ "$#" -ne 2 ]; then
+    error "usage: $0 <CVMFS repository name> <gzipped tarball>"
 fi
 
-tar_file="$1"
+cvmfs_repo="$1"
+tar_file="$2"
+
+# Check if the CVMFS repository exists
+if ( ! cvmfs_server list | grep -q "${cvmfs_repo}" ); then
+    error "CVMFS repository ${cvmfs_repo} does not exist!"
+fi
 
 # Check if the given tarball exists
 if [ ! -f "${tar_file}" ]; then

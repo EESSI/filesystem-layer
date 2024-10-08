@@ -19,7 +19,7 @@ class EessiTarball:
     for which it interfaces with the S3 bucket, GitHub, and CVMFS.
     """
 
-    def __init__(self, object_name, config, git_staging_repo, s3, bucket):
+    def __init__(self, object_name, config, git_staging_repo, s3, bucket, cvmfs_repo):
         """Initialize the tarball object."""
         self.config = config
         self.git_repo = git_staging_repo
@@ -27,6 +27,7 @@ class EessiTarball:
         self.object = object_name
         self.s3 = s3
         self.bucket = bucket
+        self.cvmfs_repo = cvmfs_repo
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
         self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
@@ -177,7 +178,7 @@ class EessiTarball:
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
         logging.info(f'Running the ingestion script for {self.object}...')
         ingest_cmd = subprocess.run(
-            sudo + [script, self.local_path],
+            sudo + [script, self.cvmfs_repo, self.local_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         if ingest_cmd.returncode == 0:
@@ -186,7 +187,7 @@ class EessiTarball:
             if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
                 send_slack_message(
                     self.config['secrets']['slack_webhook'],
-                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.object))
+                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.object), cvmfs_repo=self.cvmfs_repo)
                 )
         else:
             issue_title = f'Failed to ingest {self.object}'
@@ -295,11 +296,13 @@ class EessiTarball:
         try:
             tarball_contents = self.get_contents_overview()
             pr_body = self.config['github']['pr_body'].format(
+                cvmfs_repo=self.cvmfs_repo,
                 pr_url=pr_url,
                 tar_overview=self.get_contents_overview(),
                 metadata=metadata,
             )
-            self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
+            pr_title = '[%s] Ingest %s' % (self.cvmfs_repo, filename)
+            self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
         except Exception as err:
             issue_title = f'Failed to get contents of {self.object}'
             issue_body = self.config['github']['failed_tarball_overview_issue_body'].format(
