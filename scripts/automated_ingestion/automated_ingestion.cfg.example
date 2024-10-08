@@ -10,7 +10,10 @@ ingestion_script = /absolute/path/to/ingest-tarball.sh
 metadata_file_extension = .meta.txt
 
 [aws]
-staging_buckets = eessi-staging, eessi-staging-2023.06
+staging_buckets = {
+    "eessi-staging": "software.eessi.io",
+    "eessi-staging-2023.06": "software.eessi.io",
+    "dev.eessi.io-2024.09": "dev.eessi.io" }
 
 [cvmfs]
 ingest_as_root = yes
