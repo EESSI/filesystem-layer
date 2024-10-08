@@ -67,7 +67,7 @@ pr_body = A new tarball has been staged for {pr_url}.
 
 [slack]
 ingestion_notification = yes
-ingestion_message = Tarball `{tarball}` has been ingested into the CVMFS repository {cvmfs_repo}.
+ingestion_message = Tarball `{tarball}` has been ingested into the CVMFS repository `{cvmfs_repo}`.
 
 [logging]
 level = WARN
