@@ -72,7 +72,7 @@ function check_version() {
     fi
 
     # Check if the EESSI version number encoded in the filename
-    # is valid, i.e. matches the format YYYY.DD
+    # is valid, i.e. matches the format YYYY.MM or YYYYMMDD
     if ! echo "${version}" | egrep '(^20[0-9][0-9]\.(0[0-9]|1[0-2])$)|(^20[0-9][0-9][0-9][0-9][0-9][0-9]$)'
     then
         error "${version} is not a valid EESSI version."
