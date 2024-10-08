@@ -1,6 +1,7 @@
 #!/bin/bash
 
 INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
+TEST_OUTPUT=/dev/null # change to /dev/stdout to print test outputs for debugging purposes
 
 # Temporary base dir for the tests
 tstdir=$(mktemp -d)
@@ -30,11 +31,14 @@ function create_tarball() {
 # Create a fake cvmfs_server executable, and prepend it to $PATH
 cat << EOF > "${tstdir}/cvmfs_server"
 #!/bin/bash
-if [ \$# -lt 2 ]; then
-  echo "cvmfs_server expects at least two arguments!"
+if [ \$# -lt 1 ]; then
+  echo "cvmfs_server expects at least one argument!"
   exit 1
 fi
 echo "Calling: cvmfs_server \$@"
+if [ \$1 == "list" ]; then
+  echo "my.repo.tld (stratum0 / local)"
+fi
 EOF
 chmod +x "${tstdir}/cvmfs_server"
 export PATH="${tstdir}:$PATH"
@@ -86,7 +90,7 @@ tarballs_fail=(
 # Run the tests that should succeed
 for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
-    "${INGEST_SCRIPT}" "$t" >& /dev/null
+    "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 0 ]; then
         num_tests_failed=$((num_tests_failed + 1))
     else
@@ -98,7 +102,19 @@ done
 # Run the tests that should fail
 for ((i = 0; i < ${#tarballs_fail[@]}; i++)); do
     t=$(create_tarball ${tarballs_fail[$i]})
-    "${INGEST_SCRIPT}" "$t" >& /dev/null
+    "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
+    if [ ! $? -eq 1 ]; then
+        num_tests_failed=$((num_tests_failed + 1))
+    else
+        num_tests_succeeded=$((num_tests_succeeded + 1))
+    fi
+    num_tests=$((num_tests + 1))
+done
+
+# Run the tests that should succeed again, but with a non-existing repo; now they should fail
+for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
+    t=$(create_tarball ${tarballs_success[$i]})
+    "${INGEST_SCRIPT}" "my.nonexistingrepo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
         num_tests_failed=$((num_tests_failed + 1))
     else
