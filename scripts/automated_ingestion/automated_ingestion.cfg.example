@@ -11,9 +11,9 @@ metadata_file_extension = .meta.txt
 
 [aws]
 staging_buckets = {
-    "eessi-staging": "software.eessi.io",
-    "eessi-staging-2023.06": "software.eessi.io",
-    "dev.eessi.io-2024.09": "dev.eessi.io" }
+    "software.eessi.io-2023.06": "software.eessi.io",
+    "dev.eessi.io-2024.09": "dev.eessi.io",
+    "riscv.eessi.io-20240402": "riscv.eessi.io" }
 
 [cvmfs]
 ingest_as_root = yes
