@@ -296,6 +296,7 @@ class EessiTarball:
         try:
             tarball_contents = self.get_contents_overview()
             pr_body = self.config['github']['pr_body'].format(
+                cvmfs_repo=self.cvmfs_repo,
                 pr_url=pr_url,
                 tar_overview=self.get_contents_overview(),
                 metadata=metadata,
