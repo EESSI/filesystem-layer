@@ -156,6 +156,7 @@ function check_os() {
 
 function check_arch() {
     # Check if the architecture directory is correctly set for the contents of the tarball
+    arch=$(echo "${tar_first_file}" | cut -d / -f $(( $tar_contents_start_level + 2 )))
     if [ -z "${arch}" ]
     then
         error "no architecture directory found in the tarball!"
