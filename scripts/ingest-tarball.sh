@@ -143,7 +143,13 @@ function cvmfs_ingest_tarball() {
 
 function check_os() {
     # Check if the operating system directory is correctly set for the contents of the tarball
-    os=$(echo "${tar_first_file}" | cut -d / -f 3)
+    # Handle longer prefix in dev.eessi.io
+    if [ "${cvmfs_repo}" = "dev.eessi.io" ]; then
+        os=$(echo "${tar_first_file}" | cut -d / -f 4)
+    else
+        os=$(echo "${tar_first_file}" | cut -d / -f 3)
+    fi
+
     if [ -z "${os}" ]
     then
         error "no operating system directory found in the tarball!"
@@ -156,7 +162,13 @@ function check_os() {
 
 function check_arch() {
     # Check if the architecture directory is correctly set for the contents of the tarball
-    arch=$(echo "${tar_first_file}" | cut -d / -f 4)
+    # Handle longer prefix in dev.eessi.io
+    if [ "${cvmfs_repo}" = "dev.eessi.io" ]; then
+        arch=$(echo "${tar_first_file}" | cut -d / -f 5)
+    else
+        arch=$(echo "${tar_first_file}" | cut -d / -f 4)
+    fi
+    
     if [ -z "${arch}" ]
     then
         error "no architecture directory found in the tarball!"
@@ -239,7 +251,7 @@ if [ "$#" -ne 2 ]; then
     error "usage: $0 <CVMFS repository name> <gzipped tarball>"
 fi
 
-cvmfs_repo="$1"
+export cvmfs_repo="$1"
 tar_file="$2"
 
 # Check if the CVMFS repository exists
