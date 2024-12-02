@@ -143,6 +143,7 @@ function cvmfs_ingest_tarball() {
 
 function check_os() {
     # Check if the operating system directory is correctly set for the contents of the tarball
+    os=$(echo "${tar_first_file}" | cut -d / -f $(( $tar_contents_start_level + 1 )))
     if [ -z "${os}" ]
     then
         error "no operating system directory found in the tarball!"
