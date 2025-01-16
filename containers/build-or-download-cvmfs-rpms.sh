@@ -18,4 +18,5 @@ else
     wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-${cvmfsversion}-1.${elversion}.${arch}.rpm
     wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3-${cvmfsversion}-1.${elversion}.${arch}.rpm
     wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-libs-${cvmfsversion}-1.${elversion}.${arch}.rpm
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-shrinkwrap-${cvmfsversion}-1.${elversion}.${arch}.rpm
 fi
