@@ -72,13 +72,14 @@ class EessiTarball:
             try:
                 self.git_repo.get_contents(state + '/' + self.metadata_file)
                 return state
-            except github.UnknownObjectException:
-                # no metadata file found in this state's directory, so keep searching...
-                continue
-            except github.GithubException:
-                # if there was some other (e.g. connection) issue, abort the search for this tarball
-                logging.warning(f'Unable to determine the state of {self.object}!')
-                return "unknown"
+            except github.GithubException as e:
+                if e.status == 404:
+                    # no metadata file found in this state's directory, so keep searching...
+                    continue
+                else:
+                    # if there was some other (e.g. connection) issue, abort the search for this tarball
+                    logging.warning(f'Unable to determine the state of {self.object}, the GitHub API returned status {e.status}!')
+                    return "unknown"
         else:
             # if no state was found, we assume this is a new tarball that was ingested to the bucket
             return "new"
