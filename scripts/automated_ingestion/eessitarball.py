@@ -72,6 +72,9 @@ class EessiTarball:
             try:
                 self.git_repo.get_contents(state + '/' + self.metadata_file)
                 return state
+            except github.UnknownObjectException:
+                # no metadata file found in this state's directory, so keep searching...
+                continue
             except github.GithubException as e:
                 if e.status == 404:
                     # no metadata file found in this state's directory, so keep searching...
