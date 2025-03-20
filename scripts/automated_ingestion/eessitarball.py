@@ -231,7 +231,7 @@ class EessiTarball:
         self.download()
         logging.info('Verifying its signature...')
         if not self.verify_signatures():
-            issue_msg = f'Failed to verify signatures for {self.object}'
+            issue_msg = f'Failed to verify signatures for `{self.object}`'
             logging.error(issue_msg)
             if not self.issue_exists(issue_msg, state='open'):
                 self.git_repo.create_issue(title=issue_msg, body=issue_msg)
@@ -241,7 +241,7 @@ class EessiTarball:
 
         logging.info('Verifying its checksum...')
         if not self.verify_checksum():
-            issue_msg = f'Failed to verify checksum for {self.object}'
+            issue_msg = f'Failed to verify checksum for `{self.object}`'
             logging.error(issue_msg)
             if not self.issue_exists(issue_msg, state='open'):
                 self.git_repo.create_issue(title=issue_msg, body=issue_msg)
