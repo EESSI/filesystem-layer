@@ -231,18 +231,24 @@ class EessiTarball:
         self.download()
         logging.info('Verifying its signature...')
         if not self.verify_signatures():
-            logging.error('Signature of tarball (or its metadata file) could not be verified!')
-            # Open issue?
+            issue_msg = f'Failed to verify signatures for {self.object}'
+            logging.error(issue_msg)
+            if not self.issue_exists(issue_msg, state='open'):
+                self.git_repo.create_issue(title=issue_msg, body=issue_msg)
             return
         else:
             logging.debug(f'Signatures of {self.object} and its metadata file successfully verified.')
+
         logging.info('Verifying its checksum...')
         if not self.verify_checksum():
-            logging.error('Checksum of downloaded tarball does not match the one in its metadata file!')
-            # Open issue?
+            issue_msg = f'Failed to verify checksum for {self.object}'
+            logging.error(issue_msg)
+            if not self.issue_exists(issue_msg, state='open'):
+                self.git_repo.create_issue(title=issue_msg, body=issue_msg)
             return
         else:
             logging.debug(f'Checksum of {self.object} matches the one in its metadata file.')
+
         script = self.config['paths']['ingestion_script']
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
         logging.info(f'Running the ingestion script for {self.object}...')
