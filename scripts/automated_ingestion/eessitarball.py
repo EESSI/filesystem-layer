@@ -203,7 +203,7 @@ class EessiTarball:
 
         for (file, sig_file) in [(self.local_path, self.local_sig_path), (self.local_metadata_path, self.local_metadata_sig_path)]:
             verify_cmd = subprocess.run(
-                [verify_script, 'verify', file, allowed_signers_file, sig_file],
+                [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file, '--file', file, '--signature-file', sig_file],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             if verify_cmd.returncode == 0:
