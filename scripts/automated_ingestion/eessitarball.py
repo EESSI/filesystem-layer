@@ -56,31 +56,38 @@ class EessiTarball:
             (self.object, self.local_path, self.object_sig, self.local_sig_path),
             (self.metadata_file, self.local_metadata_path, self.metadata_sig_file, self.local_metadata_sig_path),
         ]
+        skip = False
         for (object, local_file, sig_object, local_sig_file) in files:
             if force or not os.path.exists(local_file):
+                # First we try to download signature file, which may or may not be available
+                # and may be optional or required.
+                try:
+                    self.s3.download_file(self.bucket, sig_object, local_sig_file)
+                except:
+                    if self.config['signatures'].getboolean('signatures_required', True):
+                        logging.error(
+                            f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}.'
+                        )
+                        skip = True
+                        break
+                    else:
+                        logging.warning(
+                            f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}. ' +
+                             'Ignoring this, because signatures are not required with the current configuration.'
+                        )
+                # Npw we download the file itself.
                 try:
                     self.s3.download_file(self.bucket, object, local_file)
-                    # Also try to download the corresponding signature file; they may be optional.
-                    try:
-                        self.s3.download_file(self.bucket, sig_object, local_sig_file)
-                    except:
-                        if config['signatures'].getboolean('signatures_required', True):
-                            logging.error(
-                                f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}.'
-                            )
-                        else:
-                            logging.warning(
-                                f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}.' +
-                                 'Ignoring this, because signatures are not required with the current configuration.'
-                            )
                 except:
                     logging.error(
                         f'Failed to download {object} from {self.bucket} to {local_file}.'
                     )
-                    # If either the tarball itself or its metadata cannot be downloaded, set both to None
-                    # to make sure that this tarball is completely ignored/skipped.
-                    self.local_path = None
-                    self.local_metadata_path = None
+                    skip = True
+                    break
+        # If any required download failed, make sure to skip this tarball completely.
+        if skip:
+            self.local_path = None
+            self.local_metadata_path = None
 
     def find_state(self):
         """Find the state of this tarball by searching through the state directories in the git repository."""
