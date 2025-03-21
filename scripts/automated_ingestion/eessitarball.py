@@ -198,6 +198,8 @@ class EessiTarball:
             else:
                 return True
 
+        # If signatures are provided, we should always verify them, regardless of the signatures_required.
+        # In order to do so, we need the verification script and an allowed signers file.
         verify_script = self.config['signatures']['signature_verification_script']
         allowed_signers_file = self.config['signatures']['allowed_signers_file']
         if not os.path.exists(verify_script):
