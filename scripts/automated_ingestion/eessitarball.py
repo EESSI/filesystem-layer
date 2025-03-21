@@ -75,7 +75,7 @@ class EessiTarball:
                             f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}. ' +
                              'Ignoring this, because signatures are not required with the current configuration.'
                         )
-                # Npw we download the file itself.
+                # Now we download the file itself.
                 try:
                     self.s3.download_file(self.bucket, object, local_file)
                 except:
