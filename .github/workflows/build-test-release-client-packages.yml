@@ -64,7 +64,7 @@ jobs:
           fpm_opts: "--debug -n cvmfs-config-eessi-${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
 
       - name: Upload packages as build artifacts
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v3.1.0
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: linux_packages
           path: cvmfs-config-eessi*
@@ -135,7 +135,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install cvmfs
 
       - name: Download cvmfs-config-eessi package
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           name: linux_packages
 
@@ -174,7 +174,7 @@ jobs:
           dnf install -y cvmfs cvmfs-config-none
 
       - name: Download cvmfs-config-eessi package
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           name: linux_packages
 
@@ -215,7 +215,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install cvmfs
 
       - name: Download cvmfs-config-eessi package
-        uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+        uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           name: linux_packages
 
@@ -288,7 +288,7 @@ jobs:
         run: |
           echo ::set-output name=version::${GITHUB_REF#refs/tags/}
 
-      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           path: ./build_artifacts
 
@@ -319,7 +319,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
 
-      - uses: actions/download-artifact@9782bd6a9848b53b110e712e20e42d89988822b7 # v3.0.1
+      - uses: actions/download-artifact@95815c38cf2ff2164869cbab79da8d1f422bc89e # v4.2.1
         with:
           path: ./build_artifacts
 

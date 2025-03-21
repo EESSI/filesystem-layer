@@ -9,6 +9,12 @@ download_dir = /where/to/store/download/tarballs
 ingestion_script = /absolute/path/to/ingest-tarball.sh
 metadata_file_extension = .meta.txt
 
+[signatures]
+signatures_required = no
+signature_file_extension = .sig
+signature_verification_script = /absolute/path/to/sign_verify_file_ssh.sh
+allowed_signers_file = /path/to/allowed_signers
+
 [aws]
 staging_buckets = {
     "software.eessi.io-2023.06": "software.eessi.io",

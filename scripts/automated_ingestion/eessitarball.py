@@ -24,12 +24,16 @@ class EessiTarball:
         self.config = config
         self.git_repo = git_staging_repo
         self.metadata_file = object_name + config['paths']['metadata_file_extension']
+        self.metadata_sig_file = self.metadata_file + config['signatures']['signature_file_extension']
         self.object = object_name
+        self.object_sig = object_name + config['signatures']['signature_file_extension']
         self.s3 = s3
         self.bucket = bucket
         self.cvmfs_repo = cvmfs_repo
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
+        self.local_sig_path = self.local_path + config['signatures']['signature_file_extension']
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
+        self.local_metadata_sig_path = self.local_metadata_path + config['signatures']['signature_file_extension']
         self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
 
         self.states = {
@@ -48,22 +52,42 @@ class EessiTarball:
         """
         Download this tarball and its corresponding metadata file, if this hasn't been already done.
         """
-        if force or not os.path.exists(self.local_path):
-            try:
-                self.s3.download_file(self.bucket, self.object, self.local_path)
-            except:
-                logging.error(
-                    f'Failed to download tarball {self.object} from {self.bucket} to {self.local_path}.'
-                )
-                self.local_path = None
-        if force or not os.path.exists(self.local_metadata_path):
-            try:
-                self.s3.download_file(self.bucket, self.metadata_file, self.local_metadata_path)
-            except:
-                logging.error(
-                    f'Failed to download metadata file {self.metadata_file} from {self.bucket} to {self.local_metadata_path}.'
-                )
-                self.local_metadata_path = None
+        files = [
+            (self.object, self.local_path, self.object_sig, self.local_sig_path),
+            (self.metadata_file, self.local_metadata_path, self.metadata_sig_file, self.local_metadata_sig_path),
+        ]
+        skip = False
+        for (object, local_file, sig_object, local_sig_file) in files:
+            if force or not os.path.exists(local_file):
+                # First we try to download signature file, which may or may not be available
+                # and may be optional or required.
+                try:
+                    self.s3.download_file(self.bucket, sig_object, local_sig_file)
+                except:
+                    if self.config['signatures'].getboolean('signatures_required', True):
+                        logging.error(
+                            f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}.'
+                        )
+                        skip = True
+                        break
+                    else:
+                        logging.warning(
+                            f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}. ' +
+                             'Ignoring this, because signatures are not required with the current configuration.'
+                        )
+                # Now we download the file itself.
+                try:
+                    self.s3.download_file(self.bucket, object, local_file)
+                except:
+                    logging.error(
+                        f'Failed to download {object} from {self.bucket} to {local_file}.'
+                    )
+                    skip = True
+                    break
+        # If any required download failed, make sure to skip this tarball completely.
+        if skip:
+            self.local_path = None
+            self.local_metadata_path = None
 
     def find_state(self):
         """Find the state of this tarball by searching through the state directories in the git repository."""
@@ -156,6 +180,49 @@ class EessiTarball:
         handler = self.states[self.state]['handler']
         handler()
 
+    def verify_signatures(self):
+        """Verify the signatures of the downloaded tarball and metadata file using the corresponding signature files."""
+
+        sig_missing_msg = 'Signature file %s is missing.'
+        sig_missing = False
+        for sig_file in [self.local_sig_path, self.local_metadata_sig_path]:
+            if not os.path.exists(sig_file):
+                logging.warning(sig_missing_msg % sig_file)
+                sig_missing = True
+
+        if sig_missing:
+            # If signature files are missing, we return a failure,
+            # unless the configuration specifies that signatures are not required.
+            if self.config['signatures'].getboolean('signatures_required', True):
+                return False
+            else:
+                return True
+
+        # If signatures are provided, we should always verify them, regardless of the signatures_required.
+        # In order to do so, we need the verification script and an allowed signers file.
+        verify_script = self.config['signatures']['signature_verification_script']
+        allowed_signers_file = self.config['signatures']['allowed_signers_file']
+        if not os.path.exists(verify_script):
+            logging.error(f'Unable to verify signatures, the specified signature verification script does not exist!')
+            return False
+
+        if not os.path.exists(allowed_signers_file):
+            logging.error(f'Unable to verify signatures, the specified allowed signers file does not exist!')
+            return False
+
+        for (file, sig_file) in [(self.local_path, self.local_sig_path), (self.local_metadata_path, self.local_metadata_sig_path)]:
+            verify_cmd = subprocess.run(
+                [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file, '--file', file, '--signature-file', sig_file],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+            if verify_cmd.returncode == 0:
+                logging.debug(f'Signature for {file} successfully verified.')
+            else:
+                logging.error(f'Failed to verify signature for {file}.')
+                return False
+
+        return True
+
     def verify_checksum(self):
         """Verify the checksum of the downloaded tarball with the one in its metadata file."""
         local_sha256 = sha256sum(self.local_path)
@@ -171,13 +238,26 @@ class EessiTarball:
         #TODO: check if there is an open issue for this tarball, and if there is, skip it.
         logging.info(f'Tarball {self.object} is ready to be ingested.')
         self.download()
+        logging.info('Verifying its signature...')
+        if not self.verify_signatures():
+            issue_msg = f'Failed to verify signatures for `{self.object}`'
+            logging.error(issue_msg)
+            if not self.issue_exists(issue_msg, state='open'):
+                self.git_repo.create_issue(title=issue_msg, body=issue_msg)
+            return
+        else:
+            logging.debug(f'Signatures of {self.object} and its metadata file successfully verified.')
+
         logging.info('Verifying its checksum...')
         if not self.verify_checksum():
-            logging.error('Checksum of downloaded tarball does not match the one in its metadata file!')
-            # Open issue?
+            issue_msg = f'Failed to verify checksum for `{self.object}`'
+            logging.error(issue_msg)
+            if not self.issue_exists(issue_msg, state='open'):
+                self.git_repo.create_issue(title=issue_msg, body=issue_msg)
             return
         else:
             logging.debug(f'Checksum of {self.object} matches the one in its metadata file.')
+
         script = self.config['paths']['ingestion_script']
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
         logging.info(f'Running the ingestion script for {self.object}...')
@@ -221,6 +301,10 @@ class EessiTarball:
         if not self.local_path or not self.local_metadata_path:
             logging.warn('Skipping this tarball...')
             return
+
+        # Verify the signatures of the tarball and metadata file.
+        if not self.verify_signatures():
+            logging.warn('Signature verification of the tarball or its metadata failed, skipping this tarball...')
 
         contents = ''
         with open(self.local_metadata_path, 'r') as meta:
