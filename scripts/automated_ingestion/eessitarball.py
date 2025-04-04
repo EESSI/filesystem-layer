@@ -34,6 +34,7 @@ class EessiTarball:
         self.local_sig_path = self.local_path + config['signatures']['signature_file_extension']
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
         self.local_metadata_sig_path = self.local_metadata_path + config['signatures']['signature_file_extension']
+        self.sig_verified = False
         self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
 
         self.states = {
@@ -221,6 +222,7 @@ class EessiTarball:
                 logging.error(f'Failed to verify signature for {file}.')
                 return False
 
+        self.sig_verified = True
         return True
 
     def verify_checksum(self):
@@ -390,6 +392,9 @@ class EessiTarball:
                 metadata=metadata,
             )
             pr_title = '[%s] Ingest %s' % (self.cvmfs_repo, filename)
+            if self.sig_verified:
+                pr_body += "\n\n:heavy_check_mark: :closed_lock_with_key: The signature of this tarball has been successfully verified."
+                pr_title += ' :closed_lock_with_key:'
             self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
         except Exception as err:
             issue_title = f'Failed to get contents of {self.object}'
