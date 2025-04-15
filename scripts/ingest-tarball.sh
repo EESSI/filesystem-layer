@@ -261,12 +261,12 @@ tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 # Handle longer prefix with project name in dev.eessi.io and
 # get the right basedir from the tarball name
 if [ "${cvmfs_repo}" = "dev.eessi.io" ]; then
-    tar_contents_start_level=3
-    basedir=$(echo "${tar_file_basename}" | cut -d- -f7)
+    basedir=versions/$(echo "${tar_file_basename}" | cut -d- -f7)
 else
-    tar_contents_start_level=2
     basedir=versions
 fi
+
+tar_contents_start_level=2
 tar_contents_type_dir=$(tar tf "${tar_file}" | head -n 2 | tail -n 1 | cut -d/ -f${tar_contents_start_level})
 
 # Check if we are running as the CVMFS repo owner, otherwise run cvmfs_server with sudo
