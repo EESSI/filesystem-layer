@@ -261,7 +261,8 @@ tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 # Handle longer prefix with project name in dev.eessi.io and
 # get the right basedir from the tarball name
 if [ "${cvmfs_repo}" = "dev.eessi.io" ]; then
-    basedir=$(echo "${tar_file_basename}"/versions | cut -d- -f7)
+    project_name=$(echo "${tar_file_basename}" | rev | cut -d- -f2 | rev)
+    basedir="${project_name}"/versions
 else
     basedir=versions
 fi
