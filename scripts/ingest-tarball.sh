@@ -258,12 +258,17 @@ version=$(echo "${tar_file_basename}" | cut -d- -f2)
 contents_type_dir=$(echo "${tar_file_basename}" | cut -d- -f3)
 tar_first_file=$(tar tf "${tar_file}" | head -n 1)
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
-# Handle longer prefix with project name in dev.eessi.io
+# Handle longer prefix with project name in dev.eessi.io and
+# get the right basedir from the tarball name
 if [ "${cvmfs_repo}" = "dev.eessi.io" ]; then
-    tar_contents_start_level=3
+    # the project name is the second to last field in the filename (e.g. eessi-2023.06-software-linux-x86_64-amd-zen4-myproject-1744725142.tar.gz)
+    project_name=$(echo "${tar_file_basename}" | rev | cut -d- -f2 | rev)
+    basedir="${project_name}"/versions
 else
-    tar_contents_start_level=2
+    basedir=versions
 fi
+
+tar_contents_start_level=2
 tar_contents_type_dir=$(tar tf "${tar_file}" | head -n 2 | tail -n 1 | cut -d/ -f${tar_contents_start_level})
 
 # Check if we are running as the CVMFS repo owner, otherwise run cvmfs_server with sudo
