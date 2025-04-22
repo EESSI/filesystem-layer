@@ -51,6 +51,37 @@ def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt
     ]
     return tarballs
 
+def find_tarball_groups(s3, bucket, config, extension='.tar.gz', metadata_extension='.meta.txt'):
+    """Return a dictionary of tarball groups, keyed by (repo, pr_number)."""
+    tarballs = find_tarballs(s3, bucket, extension, metadata_extension)
+    groups = {}
+
+    for tarball in tarballs:
+        # Download metadata to get link2pr info
+        metadata_file = tarball + metadata_extension
+        local_metadata = os.path.join(config['paths']['download_dir'], os.path.basename(metadata_file))
+
+        try:
+            s3.download_file(bucket, metadata_file, local_metadata)
+            with open(local_metadata, 'r') as meta:
+                metadata = json.load(meta)
+                repo = metadata['link2pr']['repo']
+                pr = metadata['link2pr']['pr']
+                group_key = (repo, pr)
+
+                if group_key not in groups:
+                    groups[group_key] = []
+                groups[group_key].append(tarball)
+        except Exception as err:
+            logging.error(f"Failed to process metadata for {tarball}: {err}")
+            continue
+        finally:
+            # Clean up downloaded metadata file
+            if os.path.exists(local_metadata):
+                os.remove(local_metadata)
+
+    return groups
+
 
 def parse_config(path):
     """Parse the configuration file."""
@@ -102,14 +133,24 @@ def main():
 
     buckets = json.loads(config['aws']['staging_buckets'])
     for bucket, cvmfs_repo in buckets.items():
-        tarballs = find_tarballs(s3, bucket)
-        if args.list_only:
-            for num, tarball in enumerate(tarballs):
-                print(f'[{bucket}] {num}: {tarball}')
+        if config['github'].get('staging_pr_method', 'individual') == 'grouped':
+            # use new grouped PR method
+            tarball_groups = find_tarball_groups(s3, bucket, config)
+            for (repo, pr_id), tarballs in tarball_groups.items():
+                if tarballs:
+                    # Create a group handler for these tarballs
+                    group_handler = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
+                    group_handler.process_group(tarballs)
         else:
-            for tarball in tarballs:
-                tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket, cvmfs_repo)
-                tar.run_handler()
+            # use old individual PR method
+            tarballs = find_tarballs(s3, bucket)
+            if args.list_only:
+                for num, tarball in enumerate(tarballs):
+                    print(f'[{bucket}] {num}: {tarball}')
+            else:
+                for tarball in tarballs:
+                    tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket, cvmfs_repo)
+                    tar.run_handler()
 
 
 if __name__ == '__main__':

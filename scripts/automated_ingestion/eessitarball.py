@@ -434,3 +434,42 @@ class EessiTarball:
                 return True
         else:
             return False
+
+    def get_link2pr_info(self):
+        """Get the link2pr information from the metadata file."""
+        with open(self.local_metadata_path, 'r') as meta:
+            metadata = json.load(meta)
+        return metadata['link2pr']['repo'], metadata['link2pr']['pr']
+
+class EessiTarballGroup:
+    """Class to handle a group of tarballs that share the same link2pr information."""
+
+    def __init__(self, first_tarball, config, git_staging_repo, s3, bucket, cvmfs_repo):
+        """Initialize with the first tarball in the group."""
+        self.first_tar = EessiTarball(first_tarball, config, git_staging_repo, s3, bucket, cvmfs_repo)
+        self.config = config
+        self.git_repo = git_staging_repo
+        self.s3 = s3
+        self.bucket = bucket
+        self.cvmfs_repo = cvmfs_repo
+
+    def process_group(self, tarballs):
+        """Process a group of tarballs together."""
+        # Verify all tarballs have the same link2pr info
+        if not self.verify_group_consistency(tarballs):
+            logging.error("Tarballs in group have inconsistent link2pr information")
+            return
+
+        # Process the group
+        self.first_tar.make_approval_request(tarballs)
+
+    def verify_group_consistency(self, tarballs):
+        """Verify all tarballs in the group have the same link2pr information."""
+        first_repo, first_pr = self.first_tar.get_link2pr_info()
+
+        for tarball in tarballs[1:]:  # Skip first tarball as we already have its info
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+            repo, pr = temp_tar.get_link2pr_info()
+            if repo != first_repo or pr != first_pr:
+                return False
+        return True
