@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 
-from eessitarball import EessiTarball
-from pid.decorator import pidfile
+from eessitarball import EessiTarball, EessiTarballGroup
+from pid.decorator import pidfile  # noqa: F401
 from pid import PidFileError
 
 import argparse
 import boto3
-import botocore
 import configparser
 import github
 import json
@@ -38,7 +37,10 @@ def error(msg, code=1):
 
 
 def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt'):
-    """Return a list of all tarballs in an S3 bucket that have a metadata file with the given extension (and same filename)."""
+    """
+    Return a list of all tarballs in an S3 bucket that have a metadata file with
+    the given extension (and same filename).
+    """
     # TODO: list_objects_v2 only returns up to 1000 objects
     s3_objects = s3.list_objects_v2(Bucket=bucket).get('Contents', [])
     files = [obj['Key'] for obj in s3_objects]
@@ -46,10 +48,10 @@ def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt
     tarballs = [
         file
         for file in files
-        if file.endswith(extension)
-           and file + metadata_extension in files
+        if file.endswith(extension) and file + metadata_extension in files
     ]
     return tarballs
+
 
 def find_tarball_groups(s3, bucket, config, extension='.tar.gz', metadata_extension='.meta.txt'):
     """Return a dictionary of tarball groups, keyed by (repo, pr_number)."""
@@ -88,15 +90,15 @@ def parse_config(path):
     config = configparser.ConfigParser()
     try:
         config.read(path)
-    except:
-        error(f'Unable to read configuration file {path}!')
+    except Exception as err:
+        error(f'Unable to read configuration file {path}!\nException: {err}')
 
     # Check if all required configuration parameters/sections can be found.
     for section in REQUIRED_CONFIG.keys():
-        if not section in config:
+        if section not in config:
             error(f'Missing section "{section}" in configuration file {path}.')
         for item in REQUIRED_CONFIG[section]:
-            if not item in config[section]:
+            if item not in config[section]:
                 error(f'Missing configuration item "{item}" in section "{section}" of configuration file {path}.')
     return config
 
