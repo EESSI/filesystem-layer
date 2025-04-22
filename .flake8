@@ -1,0 +1,14 @@
+# This file is part of the EESSI filesystem layer,
+# see https://github.com/EESSI/filesystem-layer
+#
+# author: Thomas Roeblitz (@trz42)
+#
+# license: GPLv2
+#
+
+[flake8]
+max-line-length = 120
+
+# ignore "Black would make changes" produced by flake8-black
+# see also https://github.com/houndci/hound/issues/1769
+extend-ignore = BLK100
