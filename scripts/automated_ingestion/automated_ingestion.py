@@ -131,6 +131,8 @@ def main():
         's3',
         aws_access_key_id=config['secrets']['aws_access_key_id'],
         aws_secret_access_key=config['secrets']['aws_secret_access_key'],
+        endpoint_url=config['aws']['endpoint_url'],
+        verify=config['aws']['verify_cert_path'],
     )
 
     buckets = json.loads(config['aws']['staging_buckets'])
@@ -138,11 +140,17 @@ def main():
         if config['github'].get('staging_pr_method', 'individual') == 'grouped':
             # use new grouped PR method
             tarball_groups = find_tarball_groups(s3, bucket, config)
-            for (repo, pr_id), tarballs in tarball_groups.items():
-                if tarballs:
-                    # Create a group handler for these tarballs
-                    group_handler = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
-                    group_handler.process_group(tarballs)
+            if args.list_only:
+                print(f"#tarball_groups: {len(tarball_groups)}")
+                for (repo, pr_id), tarballs in tarball_groups.items():
+                    print(f"  {repo}#{pr_id}: #tarballs {len(tarballs)}")
+            else:
+                for (repo, pr_id), tarballs in tarball_groups.items():
+                    if tarballs:
+                        # Create a group handler for these tarballs
+                        group_handler = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
+                        print(f"group_handler created\n{group_handler.to_string()}")
+                        group_handler.process_group(tarballs)
         else:
             # use old individual PR method
             tarballs = find_tarballs(s3, bucket)

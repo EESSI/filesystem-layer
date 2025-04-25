@@ -181,6 +181,17 @@ class EessiTarball:
         handler = self.states[self.state]['handler']
         handler()
 
+    def to_string(self):
+        """Serialize tarball info so it can be printed."""
+        str = f"tarball: {self.object}"
+        str += f"\n   metadt: {self.metadata_file}"
+        str += f"\n   config: {self.config}"
+        str += f"\n   s3....: {self.s3}"
+        str += f"\n   bucket: {self.bucket}"
+        str += f"\n   cvmfs.: {self.cvmfs_repo}"
+        str += f"\n   GHrepo: {self.git_repo}"
+        return str
+
     def verify_signatures(self):
         """Verify the signatures of the downloaded tarball and metadata file using the corresponding signature files."""
 
@@ -333,6 +344,35 @@ class EessiTarball:
     def print_unknown(self):
         """Process a tarball which has an unknown state."""
         logging.info("The state of this tarball could not be determined, so we're skipping it.")
+
+    def find_next_sequence_number(self, repo, pr_id):
+        """Find the next available sequence number for staging PRs of a source PR."""
+        # Search for existing branches for this source PR
+        base_branch = f'staging-{repo.replace("/", "-")}-{pr_id}'
+        existing_branches = [
+            ref.ref for ref in self.git_repo.get_git_refs()
+            if ref.ref.startswith(f'refs/heads/{base_branch}')
+        ]
+
+        if not existing_branches:
+            return 1
+
+        # Extract sequence numbers from existing branches
+        sequence_numbers = []
+        for branch in existing_branches:
+            try:
+                # Extract the sequence number from branch name
+                # Format: staging-repo-pr_id-sequence
+                sequence = int(branch.split('-')[-1])
+                sequence_numbers.append(sequence)
+            except (ValueError, IndexError):
+                continue
+
+        if not sequence_numbers:
+            return 1
+
+        # Return next available sequence number
+        return max(sequence_numbers) + 1
 
     def make_approval_request(self, tarballs_in_group=None):
         """Process a staged tarball by opening a pull request for ingestion approval."""
@@ -494,8 +534,24 @@ class EessiTarballGroup:
         self.bucket = bucket
         self.cvmfs_repo = cvmfs_repo
 
+    def download_tarballs_and_more(self, tarballs):
+        """Download all files associated with this group of tarballs."""
+        for tarball in tarballs:
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+            print(f"downloading files for '{temp_tar.object}'")
+            temp_tar.download(force=True)
+            if not temp_tar.local_path or not temp_tar.local_metadata_path:
+                logging.warn(f"Skipping this tarball: {temp_tar.object}")
+                return False
+        return True
+
     def process_group(self, tarballs):
         """Process a group of tarballs together."""
+        # download tarballs, metadata files and their signatures
+        if not self.download_tarballs_and_more(tarballs):
+            logging.error("Downloading tarballs, metadata files and/or their signatures failed")
+            return
+
         # Verify all tarballs have the same link2pr info
         if not self.verify_group_consistency(tarballs):
             logging.error("Tarballs in group have inconsistent link2pr information")
@@ -504,12 +560,23 @@ class EessiTarballGroup:
         # Process the group
         self.first_tar.make_approval_request(tarballs)
 
+    def to_string(self):
+        """Serialize tarball group info so it can be printed."""
+        str = f"first tarball: {self.first_tar.to_string()}"
+        str += f"\n   config: {self.config}"
+        str += f"\n   GHrepo: {self.git_repo}"
+        str += f"\n   s3....: {self.s3}"
+        str += f"\n   bucket: {self.bucket}"
+        str += f"\n   cvmfs.: {self.cvmfs_repo}"
+        return str
+
     def verify_group_consistency(self, tarballs):
         """Verify all tarballs in the group have the same link2pr information."""
         first_repo, first_pr = self.first_tar.get_link2pr_info()
 
         for tarball in tarballs[1:]:  # Skip first tarball as we already have its info
             temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+            print(f"temp tar: {temp_tar.to_string()}")
             repo, pr = temp_tar.get_link2pr_info()
             if repo != first_repo or pr != first_pr:
                 return False
