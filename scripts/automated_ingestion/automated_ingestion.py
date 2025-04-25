@@ -100,6 +100,18 @@ def parse_config(path):
         for item in REQUIRED_CONFIG[section]:
             if item not in config[section]:
                 error(f'Missing configuration item "{item}" in section "{section}" of configuration file {path}.')
+
+    # Validate staging_pr_method
+    staging_method = config['github'].get('staging_pr_method', 'individual')
+    if staging_method not in ['individual', 'grouped']:
+        error(f'Invalid staging_pr_method: "{staging_method}" in configuration file {path}. Must be either "individual" or "grouped".')
+
+    # Validate PR body templates
+    if staging_method == 'individual' and 'individual_pr_body' not in config['github']:
+        error(f'Missing "individual_pr_body" in configuration file {path}.')
+    if staging_method == 'grouped' and 'grouped_pr_body' not in config['github']:
+        error(f'Missing "grouped_pr_body" in configuration file {path}.')
+
     return config
 
 

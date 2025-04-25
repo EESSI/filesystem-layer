@@ -487,6 +487,22 @@ class EessiTarball:
             else:
                 logging.info('Failed to create tarball overview, but an issue already exists.')
 
+    def format_tarball_list(self, tarballs):
+        """Format a list of tarballs with checkboxes for approval."""
+        formatted = "### Tarballs to be ingested\n\n"
+        for tarball in tarballs:
+            formatted += f"- [ ] {tarball}\n"
+        return formatted
+
+    def format_metadata_list(self, tarballs):
+        """Format metadata for all tarballs in collapsible sections."""
+        formatted = "### Metadata\n\n"
+        for tarball in tarballs:
+            with open(self.get_metadata_path(tarball), 'r') as meta:
+                metadata = meta.read()
+                formatted += f"<details>\n<summary>Metadata for {tarball}</summary>\n\n```\n{metadata}\n```\n</details>\n\n"
+        return formatted
+
     def move_metadata_file(self, old_state, new_state, branch='main'):
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
         file_path_old = old_state + '/' + self.metadata_file
@@ -499,6 +515,52 @@ class EessiTarball:
         self.git_repo.create_file(file_path_new, 'move to ' + new_state, tarball_metadata.decoded_content,
                                   branch=branch)
 
+    def process_pr_merge(self, pr_number):
+        """Process a merged PR by handling the checkboxes and moving tarballs to appropriate states."""
+        pr = self.git_repo.get_pull(pr_number)
+
+        # Get the branch name
+        branch_name = pr.head.ref
+
+        # Get the list of tarballs from the PR body
+        tarballs = self.extract_tarballs_from_pr_body(pr.body)
+
+        # Get the checked status for each tarball
+        checked_tarballs = self.extract_checked_tarballs(pr.body)
+
+        # Process each tarball
+        for tarball in tarballs:
+            if tarball in checked_tarballs:
+                # Move to approved state
+                self.move_metadata_file('staged', 'approved', branch=branch_name)
+            else:
+                # Move to rejected state
+                self.move_metadata_file('staged', 'rejected', branch=branch_name)
+
+        # Delete the branch after processing
+        ref = self.git_repo.get_git_ref(f'heads/{branch_name}')
+        ref.delete()
+
+    def extract_checked_tarballs(self, pr_body):
+        """Extract list of checked tarballs from PR body."""
+        checked_tarballs = []
+        for line in pr_body.split('\n'):
+            if line.strip().startswith('- [x] '):
+                tarball = line.strip()[6:] # Remove '- [x] ' prefix
+                checked_tarballs.append(tarball)
+        return checked_tarballs
+
+    def extract_tarballs_from_pr_body(self, pr_body):
+        """Extract list of all tarballs from PR body."""
+        tarballs = []
+        for line in pr_body.split('\n'):
+            if line.strip().startswith('- ['):
+                tarball = line.strip()[6:] # Remove '- [ ] ' or '- [x] ' prefix
+                tarballs.append(tarball)
+        return tarballs
+
+    def reject(self):
+        """Reject a tarball for ingestion."""
     def reject(self):
         """Reject a tarball for ingestion."""
         # Let's move the the tarball to the directory for rejected tarballs.
