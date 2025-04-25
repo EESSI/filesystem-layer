@@ -310,7 +310,7 @@ class EessiTarball:
         """Process a tarball that has already been ingested."""
         logging.info(f'{self.object} has already been ingested, skipping...')
 
-    def mark_new_tarball_as_staged(self):
+    def mark_new_tarball_as_staged(self, branch=None):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
         logging.info(f'Found new tarball {self.object}, downloading it...')
@@ -331,10 +331,14 @@ class EessiTarball:
 
         logging.info(f'Adding tarball\'s metadata to the "{next_state}" folder of the git repository.')
         file_path_staged = next_state + '/' + self.metadata_file
-        self.git_repo.create_file(file_path_staged, 'new tarball', contents, branch='main')
+
+        # If no branch is provided, use the main branch
+        target_branch = branch if branch else 'main'
+        self.git_repo.create_file(file_path_staged, 'new tarball', contents, branch=target_branch)
 
         self.state = next_state
-        self.run_handler()
+        if not branch:  # Only run handler if we're not part of a group
+            self.run_handler()
 
     def print_rejected(self):
         """Process a (rejected) tarball for which the corresponding PR has been closed witout merging."""
@@ -377,7 +381,6 @@ class EessiTarball:
     def make_approval_request(self, tarballs_in_group=None):
         """Process a staged tarball by opening a pull request for ingestion approval."""
         next_state = self.next_state(self.state)
-        # file_path_staged = self.state + '/' + self.metadata_file
         filename = os.path.basename(self.object)
 
         # Get link2pr info from metadata
@@ -387,14 +390,9 @@ class EessiTarball:
         repo, pr_id = meta_dict['link2pr']['repo'], meta_dict['link2pr']['pr']
         pr_url = f"https://github.com/{repo}/pull/{pr_id}"
 
-        # Create branch name based on whether we're handling a group
-        if tarballs_in_group is None:
-            # Individual tarball
-            git_branch = filename + '_' + next_state
-        else:
-            # Group of tarballs
-            sequence = self.find_next_sequence_number(repo, pr_id)
-            git_branch = f'staging-{repo.replace("/", "-")}-{pr_id}-{sequence}'
+        # Always use the consistent branch naming scheme
+        sequence = self.find_next_sequence_number(repo, pr_id)
+        git_branch = f'staging-{repo.replace("/", "-")}-{pr_id}-{sequence}'
 
         # Check for existing branch and PR
         main_branch = self.git_repo.get_branch('main')
