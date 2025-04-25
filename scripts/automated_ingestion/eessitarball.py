@@ -92,6 +92,7 @@ class EessiTarball:
         for state in list(self.states.keys()):
             # iterate through the state dirs and try to find the tarball's metadata file
             try:
+                print(f"Checking {state} for {self.metadata_file}")
                 self.git_repo.get_contents(state + '/' + self.metadata_file)
                 return state
             except github.UnknownObjectException:
@@ -330,6 +331,7 @@ class EessiTarball:
             contents = meta.read()
 
         logging.info(f'Adding tarball\'s metadata to the "{next_state}" folder of the git repository.')
+        print(f'Adding tarball\'s metadata ({self.metadata_file}) to the "{next_state}" folder of the git repository.')
         file_path_staged = next_state + '/' + self.metadata_file
 
         # If no branch is provided, use the main branch
