@@ -561,8 +561,6 @@ class EessiTarball:
 
     def reject(self):
         """Reject a tarball for ingestion."""
-    def reject(self):
-        """Reject a tarball for ingestion."""
         # Let's move the the tarball to the directory for rejected tarballs.
         logging.info(f'Marking tarball {self.object} as rejected...')
         next_state = 'rejected'
@@ -619,7 +617,12 @@ class EessiTarballGroup:
             logging.error("Tarballs in group have inconsistent link2pr information")
             return
 
-        # Process the group
+        # First mark all tarballs as staged by creating their metadata files in the GitHub repository
+        for tarball in tarballs:
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+            temp_tar.mark_new_tarball_as_staged()
+
+        # Then process the group for approval
         self.first_tar.make_approval_request(tarballs)
 
     def to_string(self):

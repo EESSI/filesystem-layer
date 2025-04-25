@@ -159,10 +159,10 @@ def main():
             else:
                 for (repo, pr_id), tarballs in tarball_groups.items():
                     if tarballs:
-                        # Create a group handler for these tarballs
-                        group_handler = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
-                        print(f"group_handler created\n{group_handler.to_string()}")
-                        group_handler.process_group(tarballs)
+                        # Create a group for these tarballs
+                        group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
+                        print(f"group created\n{group.to_string()}")
+                        group.process_group(tarballs)
         else:
             # use old individual PR method
             tarballs = find_tarballs(s3, bucket)
