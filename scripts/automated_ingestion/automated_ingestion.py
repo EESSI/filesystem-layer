@@ -220,22 +220,22 @@ def main():
             # use new grouped PR method
             tarball_groups = find_tarball_groups(s3, bucket, config)
             if args.list_only:
-                print(f"#tarball_groups: {len(tarball_groups)}")
+                logging.info(f"#tarball_groups: {len(tarball_groups)}")
                 for (repo, pr_id), tarballs in tarball_groups.items():
-                    print(f"  {repo}#{pr_id}: #tarballs {len(tarballs)}")
+                    logging.info(f"  {repo}#{pr_id}: #tarballs {len(tarballs)}")
             else:
                 for (repo, pr_id), tarballs in tarball_groups.items():
                     if tarballs:
                         # Create a group for these tarballs
                         group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
-                        print(f"group created\n{group.to_string()}")
+                        logging.info(f"group created\n{group.to_string()}")
                         group.process_group(tarballs)
         else:
             # use old individual PR method
             tarballs = find_tarballs(s3, bucket)
             if args.list_only:
                 for num, tarball in enumerate(tarballs):
-                    print(f'[{bucket}] {num}: {tarball}')
+                    logging.info(f'[{bucket}] {num}: {tarball}')
             else:
                 for tarball in tarballs:
                     tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket, cvmfs_repo)

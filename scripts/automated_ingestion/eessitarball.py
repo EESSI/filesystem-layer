@@ -181,15 +181,16 @@ class EessiTarball:
         handler = self.states[self.state]['handler']
         handler()
 
-    def to_string(self):
+    def to_string(self, oneline=False):
         """Serialize tarball info so it can be printed."""
         str = f"tarball: {self.object}"
-        str += f"\n   metadt: {self.metadata_file}"
-        str += f"\n   config: {self.config}"
-        str += f"\n   s3....: {self.s3}"
-        str += f"\n   bucket: {self.bucket}"
-        str += f"\n   cvmfs.: {self.cvmfs_repo}"
-        str += f"\n   GHrepo: {self.git_repo}"
+        sep = "\n" if not oneline else ","
+        str += f"{sep} metadt: {self.metadata_file}"
+        str += f"{sep} config: {self.config}"
+        str += f"{sep} s3....: {self.s3}"
+        str += f"{sep} bucket: {self.bucket}"
+        str += f"{sep} cvmfs.: {self.cvmfs_repo}"
+        str += f"{sep} GHrepo: {self.git_repo}"
         return str
 
     def verify_signatures(self):
@@ -601,7 +602,7 @@ class EessiTarballGroup:
         """Download all files associated with this group of tarballs."""
         for tarball in tarballs:
             temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
-            print(f"downloading files for '{temp_tar.object}'")
+            logging.info(f"downloading files for '{temp_tar.object}'")
             temp_tar.download(force=True)
             if not temp_tar.local_path or not temp_tar.local_metadata_path:
                 logging.warn(f"Skipping this tarball: {temp_tar.object}")
@@ -639,14 +640,15 @@ class EessiTarballGroup:
         # Process the group for approval
         self.first_tar.make_approval_request(tarballs)
 
-    def to_string(self):
+    def to_string(self, oneline=False):
         """Serialize tarball group info so it can be printed."""
-        str = f"first tarball: {self.first_tar.to_string()}"
-        str += f"\n   config: {self.config}"
-        str += f"\n   GHrepo: {self.git_repo}"
-        str += f"\n   s3....: {self.s3}"
-        str += f"\n   bucket: {self.bucket}"
-        str += f"\n   cvmfs.: {self.cvmfs_repo}"
+        str = f"first tarball: {self.first_tar.to_string(oneline)}"
+        sep = "\n" if not oneline else ","
+        str += f"{sep} config: {self.config}"
+        str += f"{sep} GHrepo: {self.git_repo}"
+        str += f"{sep} s3....: {self.s3}"
+        str += f"{sep} bucket: {self.bucket}"
+        str += f"{sep} cvmfs.: {self.cvmfs_repo}"
         return str
 
     def verify_group_consistency(self, tarballs):
@@ -655,7 +657,7 @@ class EessiTarballGroup:
 
         for tarball in tarballs[1:]:  # Skip first tarball as we already have its info
             temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
-            print(f"temp tar: {temp_tar.to_string()}")
+            logging.debug(f"temp tar: {temp_tar.to_string()}")
             repo, pr = temp_tar.get_link2pr_info()
             if repo != first_repo or pr != first_pr:
                 return False
