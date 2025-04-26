@@ -89,11 +89,11 @@ class EessiTarball:
 
     def find_state(self):
         """Find the state of this tarball by searching through the state directories in the git repository."""
+        logging.debug(f"Find state for {self.object}")
         for state in list(self.states.keys()):
-            # iterate through the state dirs and try to find the tarball's metadata file
             try:
-                print(f"Checking {state} for {self.metadata_file}")
                 self.git_repo.get_contents(state + '/' + self.metadata_file)
+                logging.info(f"Found metadata file {self.metadata_file} in state: {state}")
                 return state
             except github.UnknownObjectException:
                 # no metadata file found in this state's directory, so keep searching...
@@ -107,9 +107,8 @@ class EessiTarball:
                     log_msg = 'Unable to determine the state of %s, the GitHub API returned status %s!'
                     logging.warning(log_msg, self.object, err.status)
                     return "unknown"
-        else:
-            # if no state was found, we assume this is a new tarball that was ingested to the bucket
-            return "new"
+        logging.info(f"Tarball {self.metadata_file} is new")
+        return "new"
 
     def get_contents_overview(self):
         """Return an overview of what is included in the tarball."""
@@ -319,23 +318,22 @@ class EessiTarball:
         # Use force as it may be a new attempt for an existing tarball that failed before.
         self.download(force=True)
         if not self.local_path or not self.local_metadata_path:
-            logging.warn('Skipping this tarball...')
+            logging.warning(f"Skipping tarball {self.object} - download failed")
             return
 
         # Verify the signatures of the tarball and metadata file.
         if not self.verify_signatures():
-            logging.warn('Signature verification of the tarball or its metadata failed, skipping this tarball...')
-
-        contents = ''
-        with open(self.local_metadata_path, 'r') as meta:
-            contents = meta.read()
-
-        logging.info(f'Adding tarball\'s metadata to the "{next_state}" folder of the git repository.')
-        print(f'Adding tarball\'s metadata ({self.metadata_file}) to the "{next_state}" folder of the git repository.')
-        file_path_staged = next_state + '/' + self.metadata_file
+            logging.warning(f"Skipping tarball {self.object} - signature verification failed")
+            return
 
         # If no branch is provided, use the main branch
         target_branch = branch if branch else 'main'
+        logging.info(f"Adding metadata to '{next_state}' folder in {target_branch} branch")
+
+        file_path_staged = next_state + '/' + self.metadata_file
+        contents = ''
+        with open(self.local_metadata_path, 'r') as meta:
+            contents = meta.read()
         self.git_repo.create_file(file_path_staged, 'new tarball', contents, branch=target_branch)
 
         self.state = next_state
@@ -383,22 +381,21 @@ class EessiTarball:
     def make_approval_request(self, tarballs_in_group=None):
         """Process a staged tarball by opening a pull request for ingestion approval."""
         next_state = self.next_state(self.state)
-        filename = os.path.basename(self.object)
 
-        # Get link2pr info from metadata
+        # obtain link2pr information (repo and pr_id) from metadata file
         with open(self.local_metadata_path, 'r') as meta:
             metadata = meta.read()
         meta_dict = json.loads(metadata)
         repo, pr_id = meta_dict['link2pr']['repo'], meta_dict['link2pr']['pr']
-        pr_url = f"https://github.com/{repo}/pull/{pr_id}"
 
-        # Always use the consistent branch naming scheme
+        # find next sequence number for staging PRs of this source PR
         sequence = self.find_next_sequence_number(repo, pr_id)
         git_branch = f'staging-{repo.replace("/", "-")}-{pr_id}-{sequence}'
 
-        # Check for existing branch and PR
+        # Check if git_branch exists and what the status of the corressponding PR is
         main_branch = self.git_repo.get_branch('main')
         if git_branch in [branch.name for branch in self.git_repo.get_branches()]:
+            logging.info(f"Branch {git_branch} already exists, checking the status of the corresponding PR...")
             find_pr = [pr for pr in self.git_repo.get_pulls(head=git_branch, state='all')
                        if pr.head.ref == git_branch]
             if find_pr:
@@ -413,6 +410,8 @@ class EessiTarball:
                 else:
                     logging.warn(f'Warning, tarball {self.object} is in a weird state:')
                     logging.warn(f'Branch: {git_branch}\nPR: {pr}\nPR state: {pr.state}\nPR merged: {pr.merged}')
+                    # TODO:  should we delete the branch or open an issue? 
+                    return
             else:
                 logging.info(f'Tarball {self.object} has a branch, but no PR.')
                 logging.info('Removing existing branch...')
@@ -424,16 +423,19 @@ class EessiTarball:
 
         # Move metadata file(s) to staged directory
         if tarballs_in_group is None:
+            logging.info(f"Moving metadata for individual tarball to staged")
             self.move_metadata_file(self.state, next_state, branch=git_branch)
         else:
+            logging.info(f"Moving metadata for {len(tarballs_in_group)} tarballs to staged")
             for tarball in tarballs_in_group:
                 temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
                 temp_tar.move_metadata_file('new', 'staged', branch=git_branch)
 
         # Create PR with appropriate template
         try:
+            pr_url=f"https://github.com/{repo}/pull/{pr_id}",
             if tarballs_in_group is None:
-                # Individual tarball
+                logging.info(f"Creating PR for individual tarball: {self.object}")
                 tarball_contents = self.get_contents_overview()
                 pr_body = self.config['github']['individual_pr_body'].format(
                     cvmfs_repo=self.cvmfs_repo,
@@ -441,7 +443,7 @@ class EessiTarball:
                     tar_overview=tarball_contents,
                     metadata=metadata,
                 )
-                pr_title = f'[{self.cvmfs_repo}] Ingest {filename}'
+                pr_title = f'[{self.cvmfs_repo}] Ingest {os.path.basename(self.object)}'
             else:
                 # Group of tarballs
                 tar_overviews = []
@@ -475,17 +477,18 @@ class EessiTarball:
                 pr_title += ' :closed_lock_with_key:'
 
             self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
+            logging.info(f"Created PR: {pr_title}")
 
         except Exception as err:
-            issue_title = f'Failed to get contents of {self.object}'
-            issue_body = self.config['github']['failed_tarball_overview_issue_body'].format(
-                tarball=self.object,
-                error=err
-            )
-            if not self.issue_exists(issue_title, state='open'):
-                self.git_repo.create_issue(title=issue_title, body=issue_body)
-            else:
-                logging.info('Failed to create tarball overview, but an issue already exists.')
+            logging.error(f"Failed to create PR: {err}")
+            if not self.issue_exists(f'Failed to get contents of {self.object}', state='open'):
+                self.git_repo.create_issue(
+                    title=f'Failed to get contents of {self.object}',
+                    body=self.config['github']['failed_tarball_overview_issue_body'].format(
+                        tarball=self.object,
+                        error=err
+                    )
+                )
 
     def format_tarball_list(self, tarballs):
         """Format a list of tarballs with checkboxes for approval."""
@@ -607,22 +610,33 @@ class EessiTarballGroup:
 
     def process_group(self, tarballs):
         """Process a group of tarballs together."""
-        # download tarballs, metadata files and their signatures
+        logging.info(f"Processing group of {len(tarballs)} tarballs")
+
         if not self.download_tarballs_and_more(tarballs):
             logging.error("Downloading tarballs, metadata files and/or their signatures failed")
             return
 
         # Verify all tarballs have the same link2pr info
         if not self.verify_group_consistency(tarballs):
-            logging.error("Tarballs in group have inconsistent link2pr information")
+            logging.error("Tarballs have inconsistent link2pr information")
             return
 
-        # First mark all tarballs as staged by creating their metadata files in the GitHub repository
-        for tarball in tarballs:
-            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
-            temp_tar.mark_new_tarball_as_staged()
+        # Get branch name from first tarball
+        with open(self.first_tar.local_metadata_path, 'r') as meta:
+            metadata = json.load(meta)
+        repo, pr_id = metadata['link2pr']['repo'], metadata['link2pr']['pr']
+        sequence = self.first_tar.find_next_sequence_number(repo, pr_id)
+        git_branch = f'staging-{repo.replace("/", "-")}-{pr_id}-{sequence}'
 
-        # Then process the group for approval
+        logging.info(f"Creating group branch: {git_branch}")
+
+        # Mark all tarballs as staged in the group branch
+        for tarball in tarballs:
+            logging.info(f"Processing tarball in group: {tarball}")
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+            temp_tar.mark_new_tarball_as_staged(branch=git_branch)
+
+        # Process the group for approval
         self.first_tar.make_approval_request(tarballs)
 
     def to_string(self):

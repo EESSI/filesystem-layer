@@ -13,6 +13,7 @@ import logging
 import os
 import pid
 import sys
+from pathlib import Path
 
 REQUIRED_CONFIG = {
     'secrets': ['aws_secret_access_key', 'aws_access_key_id', 'github_pat'],
@@ -118,12 +119,81 @@ def parse_config(path):
 def parse_args():
     """Parse the command-line arguments."""
     parser = argparse.ArgumentParser()
+
+    # Logging options
+    logging_group = parser.add_argument_group('Logging options')
+    logging_group.add_argument('--log-file',
+                             help='Path to log file (overrides config file setting)')
+    logging_group.add_argument('--console-level',
+                             choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                             help='Logging level for console output (overrides config file setting)')
+    logging_group.add_argument('--file-level',
+                             choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                             help='Logging level for file output (overrides config file setting)')
+    logging_group.add_argument('--quiet',
+                             action='store_true',
+                             help='Suppress console output (overrides all other console settings)')
+
+    # Existing arguments
     parser.add_argument('-c', '--config', type=str, help='path to configuration file',
-                        default='automated_ingestion.cfg', dest='config')
+                       default='automated_ingestion.cfg', dest='config')
     parser.add_argument('-d', '--debug', help='enable debug mode', action='store_true', dest='debug')
     parser.add_argument('-l', '--list', help='only list available tarballs', action='store_true', dest='list_only')
-    args = parser.parse_args()
-    return args
+
+    return parser.parse_args()
+
+
+def setup_logging(config, args):
+    """
+    Configure logging based on configuration file and command line arguments.
+    Command line arguments take precedence over config file settings.
+
+    Args:
+        config: Configuration dictionary
+        args: Parsed command line arguments
+    """
+    # Get settings from config file
+    log_file = config['logging'].get('filename')
+    log_format = config['logging'].get('format', '%(levelname)s:%(message)s')
+    config_console_level = LOG_LEVELS.get(config['logging'].get('level', 'INFO').upper(), logging.INFO)
+    config_file_level = LOG_LEVELS.get(config['logging'].get('file_level', 'DEBUG').upper(), logging.DEBUG)
+
+    # Override with command line arguments if provided
+    log_file = args.log_file if args.log_file else log_file
+    console_level = getattr(logging, args.console_level) if args.console_level else config_console_level
+    file_level = getattr(logging, args.file_level) if args.file_level else config_file_level
+
+    # Debug mode overrides console level
+    if args.debug:
+        console_level = logging.DEBUG
+
+    # Create logger
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)  # Set root logger to lowest level
+
+    # Create formatters
+    console_formatter = logging.Formatter(log_format)
+    file_formatter = logging.Formatter('%(asctime)s - ' + log_format)
+
+    # Console handler (only if not quiet)
+    if not args.quiet:
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(console_level)
+        console_handler.setFormatter(console_formatter)
+        logger.addHandler(console_handler)
+
+    # File handler (if log file is specified)
+    if log_file:
+        # Ensure log directory exists
+        log_path = Path(log_file)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+
+        file_handler = logging.FileHandler(log_file)
+        file_handler.setLevel(file_level)
+        file_handler.setFormatter(file_formatter)
+        logger.addHandler(file_handler)
+
+    return logger
 
 
 @pid.decorator.pidfile('automated_ingestion.pid')
@@ -131,11 +201,8 @@ def main():
     """Main function."""
     args = parse_args()
     config = parse_config(args.config)
-    log_file = config['logging'].get('filename', None)
-    log_format = config['logging'].get('format', '%(levelname)s:%(message)s')
-    log_level = LOG_LEVELS.get(config['logging'].get('level', 'INFO').upper(), logging.WARN)
-    log_level = logging.DEBUG if args.debug else log_level
-    logging.basicConfig(filename=log_file, format=log_format, level=log_level)
+    setup_logging(config, args)
+
     # TODO: check configuration: secrets, paths, permissions on dirs, etc
     gh_pat = config['secrets']['github_pat']
     gh_staging_repo = github.Github(gh_pat).get_repo(config['github']['staging_repo'])
