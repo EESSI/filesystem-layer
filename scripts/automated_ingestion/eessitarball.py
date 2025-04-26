@@ -56,12 +56,14 @@ class EessiTarball:
             (self.object, self.local_path, self.object_sig, self.local_sig_path),
             (self.metadata_file, self.local_metadata_path, self.metadata_sig_file, self.local_metadata_sig_path),
         ]
+        logging.info(f"Downloading {files}")
         skip = False
         for (object, local_file, sig_object, local_sig_file) in files:
             if force or not os.path.exists(local_file):
                 # First we try to download signature file, which may or may not be available
                 # and may be optional or required.
                 try:
+                    logging.info(f"Downloading signature file {sig_object} to {local_sig_file}")
                     self.s3.download_file(self.bucket, sig_object, local_sig_file)
                 except Exception as err:
                     log_msg = 'Failed to download signature file %s for %s from %s to %s.'
@@ -76,6 +78,7 @@ class EessiTarball:
                         logging.warning(log_msg, sig_object, object, self.bucket, local_sig_file, err)
                 # Now we download the file itself.
                 try:
+                    logging.info(f"Downloading file {object} to {local_file}")
                     self.s3.download_file(self.bucket, object, local_file)
                 except Exception as err:
                     log_msg = 'Failed to download %s from %s to %s.\nException: %s'
@@ -200,13 +203,16 @@ class EessiTarball:
             if not os.path.exists(sig_file):
                 logging.warning(sig_missing_msg % sig_file)
                 sig_missing = True
+                logging.info(f"Signature file {sig_file} is missing.")
 
         if sig_missing:
             # If signature files are missing, we return a failure,
             # unless the configuration specifies that signatures are not required.
             if self.config['signatures'].getboolean('signatures_required', True):
+                logging.error(f"Signature file {sig_file} is missing.")
                 return False
             else:
+                logging.info(f"Signature file {sig_file} is missing, but signatures are not required.")
                 return True
 
         # If signatures are provided, we should always verify them, regardless of the signatures_required.
@@ -234,6 +240,8 @@ class EessiTarball:
                 logging.debug(f'Signature for {file} successfully verified.')
             else:
                 logging.error(f'Failed to verify signature for {file}.')
+                logging.error(f"  stdout: {verify_cmd.stdout.decode('UTF-8')}")
+                logging.error(f"  stderr: {verify_cmd.stderr.decode('UTF-8')}")
                 return False
 
         self.sig_verified = True
