@@ -154,7 +154,7 @@ def setup_logging(config, args):
     """
     # Get settings from config file
     log_file = config['logging'].get('filename')
-    log_format = config['logging'].get('format', '%(levelname)s:%(message)s')
+    log_format = config['logging'].get('format', '%(levelname)s: %(message)s')
     config_console_level = LOG_LEVELS.get(config['logging'].get('level', 'INFO').upper(), logging.INFO)
     config_file_level = LOG_LEVELS.get(config['logging'].get('file_level', 'DEBUG').upper(), logging.DEBUG)
 
@@ -228,7 +228,7 @@ def main():
                     if tarballs:
                         # Create a group for these tarballs
                         group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
-                        logging.info(f"group created\n{group.to_string()}")
+                        logging.info(f"group created\n{group.to_string(oneline=True)}")
                         group.process_group(tarballs)
         else:
             # use old individual PR method

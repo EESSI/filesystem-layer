@@ -186,8 +186,6 @@ class EessiTarball:
         str = f"tarball: {self.object}"
         sep = "\n" if not oneline else ","
         str += f"{sep} metadt: {self.metadata_file}"
-        str += f"{sep} config: {self.config}"
-        str += f"{sep} s3....: {self.s3}"
         str += f"{sep} bucket: {self.bucket}"
         str += f"{sep} cvmfs.: {self.cvmfs_repo}"
         str += f"{sep} GHrepo: {self.git_repo}"
