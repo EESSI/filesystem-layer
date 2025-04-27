@@ -513,10 +513,33 @@ class EessiTarball:
         """Format metadata for all tarballs in collapsible sections."""
         formatted = "### Metadata\n\n"
         for tarball in tarballs:
-            with open(self.metadata_file, 'r') as meta:
+            with open(self.get_metadata_path(tarball), 'r') as meta:
                 metadata = meta.read()
                 formatted += f"<details>\n<summary>Metadata for {tarball}</summary>\n\n```\n{metadata}\n```\n</details>\n\n"
         return formatted
+
+    def get_metadata_path(self, tarball=None):
+        """
+        Return the local path of the metadata file.
+
+        Args:
+            tarball (str, optional): Name of the tarball to get metadata path for.
+                                   If None, use the current tarball's metadata file.
+        """
+        if tarball is None:
+            # For single tarball, use the instance's metadata file
+            if not self.local_metadata_path:
+                self.local_metadata_path = os.path.join(
+                    self.config['paths']['download_dir'],
+                    os.path.basename(self.metadata_file)
+                )
+            return self.local_metadata_path
+        else:
+            # For group of tarballs, construct path from tarball name
+            return os.path.join(
+                self.config['paths']['download_dir'],
+                os.path.basename(tarball) + self.config['paths']['metadata_file_extension']
+            )
 
     def move_metadata_file(self, old_state, new_state, branch='main'):
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
