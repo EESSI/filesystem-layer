@@ -363,7 +363,7 @@ class EessiTarball:
     def find_next_sequence_number(self, repo, pr_id):
         """Find the next available sequence number for staging PRs of a source PR."""
         # Search for existing branches for this source PR
-        base_branch = f'staging-{repo.replace("/", "-")}-{pr_id}'
+        base_branch = f'staging-{repo.replace("/", "-")}-pr-{pr_id}-seq-'
         existing_branches = [
             ref.ref for ref in self.git_repo.get_git_refs()
             if ref.ref.startswith(f'refs/heads/{base_branch}')
@@ -377,7 +377,7 @@ class EessiTarball:
         for branch in existing_branches:
             try:
                 # Extract the sequence number from branch name
-                # Format: staging-repo-pr_id-sequence
+                # Format: staging-<repo>-pr-<pr_id>-seq-<sequence>
                 sequence = int(branch.split('-')[-1])
                 sequence_numbers.append(sequence)
             except (ValueError, IndexError):
@@ -401,7 +401,7 @@ class EessiTarball:
 
         # find next sequence number for staging PRs of this source PR
         sequence = self.find_next_sequence_number(repo, pr_id)
-        git_branch = f'staging-{repo.replace("/", "-")}-{pr_id}-{sequence}'
+        git_branch = f'staging-{repo.replace("/", "-")}-pr-{pr_id}-seq-{sequence}'
 
         # Check if git_branch exists and what the status of the corressponding PR is
         main_branch = self.git_repo.get_branch('main')
@@ -633,19 +633,22 @@ class EessiTarballGroup:
             return
 
         # Get branch name from first tarball
-        with open(self.first_tar.local_metadata_path, 'r') as meta:
-            metadata = json.load(meta)
-        repo, pr_id = metadata['link2pr']['repo'], metadata['link2pr']['pr']
-        sequence = self.first_tar.find_next_sequence_number(repo, pr_id)
-        git_branch = f'staging-{repo.replace("/", "-")}-{pr_id}-{sequence}'
+        # with open(self.first_tar.local_metadata_path, 'r') as meta:
+        #     metadata = json.load(meta)
+        # repo, pr_id = metadata['link2pr']['repo'], metadata['link2pr']['pr']
+        # sequence = self.first_tar.find_next_sequence_number(repo, pr_id)
+        # git_branch = f'staging-{repo.replace("/", "-")}-pr-{pr_id}-seq-{sequence}'
 
-        logging.info(f"Creating group branch: {git_branch}")
+        # logging.info(f"Creating group branch: {git_branch}")
 
         # Mark all tarballs as staged in the group branch
         for tarball in tarballs:
             logging.info(f"Processing tarball in group: {tarball}")
             temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
-            temp_tar.mark_new_tarball_as_staged(branch=git_branch)
+            # temp_tar.mark_new_tarball_as_staged(branch=git_branch)
+            temp_tar.mark_new_tarball_as_staged('main')
+
+        exit()
 
         # Process the group for approval
         self.first_tar.make_approval_request(tarballs)
