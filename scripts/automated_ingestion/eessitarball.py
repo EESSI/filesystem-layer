@@ -513,7 +513,7 @@ class EessiTarball:
         """Format metadata for all tarballs in collapsible sections."""
         formatted = "### Metadata\n\n"
         for tarball in tarballs:
-            with open(self.get_metadata_path(tarball), 'r') as meta:
+            with open(self.metadata_file, 'r') as meta:
                 metadata = meta.read()
                 formatted += f"<details>\n<summary>Metadata for {tarball}</summary>\n\n```\n{metadata}\n```\n</details>\n\n"
         return formatted
