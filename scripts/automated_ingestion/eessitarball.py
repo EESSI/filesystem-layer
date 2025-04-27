@@ -648,8 +648,6 @@ class EessiTarballGroup:
             # temp_tar.mark_new_tarball_as_staged(branch=git_branch)
             temp_tar.mark_new_tarball_as_staged('main')
 
-        exit()
-
         # Process the group for approval
         self.first_tar.make_approval_request(tarballs)
 
