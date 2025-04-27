@@ -432,7 +432,7 @@ class EessiTarball:
         # Create new branch
         self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
 
-        # Move metadata file(s) to staged directory
+        # Move metadata file(s) to approved directory
         logging.info(f"Moving metadata for {self.object} from {self.state} to {next_state} in branch {git_branch}")
         if tarballs_in_group is None:
             logging.info(f"Moving metadata for individual tarball to staged")
@@ -633,23 +633,15 @@ class EessiTarballGroup:
             logging.error("Tarballs have inconsistent link2pr information")
             return
 
-        # Get branch name from first tarball
-        # with open(self.first_tar.local_metadata_path, 'r') as meta:
-        #     metadata = json.load(meta)
-        # repo, pr_id = metadata['link2pr']['repo'], metadata['link2pr']['pr']
-        # sequence = self.first_tar.find_next_sequence_number(repo, pr_id)
-        # git_branch = f'staging-{repo.replace("/", "-")}-pr-{pr_id}-seq-{sequence}'
-
-        # logging.info(f"Creating group branch: {git_branch}")
-
-        # Mark all tarballs as staged in the group branch
-        for tarball in tarballs:
+        # Mark all tarballs as staged in the group branch, however need to handle first tarball differently
+        logging.info(f"Processing first tarball in group: {self.first_tar.object}")
+        self.first_tar.mark_new_tarball_as_staged('main') # this sets the state of the first tarball to 'staged'
+        for tarball in tarballs[1:]:
             logging.info(f"Processing tarball in group: {tarball}")
             temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
-            # temp_tar.mark_new_tarball_as_staged(branch=git_branch)
             temp_tar.mark_new_tarball_as_staged('main')
 
-        # Process the group for approval
+        # Process the group for approval, only works correctly if first tarball is already in state 'staged'
         self.first_tar.make_approval_request(tarballs)
 
     def to_string(self, oneline=False):
