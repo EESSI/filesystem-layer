@@ -217,6 +217,7 @@ class EessiTarball:
 
         # If signatures are provided, we should always verify them, regardless of the signatures_required.
         # In order to do so, we need the verification script and an allowed signers file.
+        verify_runenv = self.config['signatures']['signature_verification_runenv'].split()
         verify_script = self.config['signatures']['signature_verification_script']
         allowed_signers_file = self.config['signatures']['allowed_signers_file']
         if not os.path.exists(verify_script):
@@ -231,9 +232,12 @@ class EessiTarball:
             (self.local_path, self.local_sig_path),
             (self.local_metadata_path, self.local_metadata_sig_path)
         ]:
+            command = verify_runenv + [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file,
+                 '--file', file, '--signature-file', sig_file]
+            logging.info(f"Running command: {' '.join(command)}")
+
             verify_cmd = subprocess.run(
-                [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file,
-                 '--file', file, '--signature-file', sig_file],
+                command, 
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             if verify_cmd.returncode == 0:
