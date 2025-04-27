@@ -433,6 +433,7 @@ class EessiTarball:
         self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
 
         # Move metadata file(s) to staged directory
+        logging.info(f"Moving metadata for {self.object} from {self.state} to {next_state} in branch {git_branch}")
         if tarballs_in_group is None:
             logging.info(f"Moving metadata for individual tarball to staged")
             self.move_metadata_file(self.state, next_state, branch=git_branch)
@@ -521,7 +522,7 @@ class EessiTarball:
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
         file_path_old = old_state + '/' + self.metadata_file
         file_path_new = new_state + '/' + self.metadata_file
-        logging.debug(f'Moving metadata file {self.metadata_file} from {file_path_old} to {file_path_new}.')
+        logging.info(f'Moving metadata file {self.metadata_file} from {file_path_old} to {file_path_new} in branch {branch}')
         tarball_metadata = self.git_repo.get_contents(file_path_old)
         # Remove the metadata file from the old state's directory...
         self.git_repo.delete_file(file_path_old, 'remove from ' + old_state, sha=tarball_metadata.sha, branch=branch)
