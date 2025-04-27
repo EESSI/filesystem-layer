@@ -392,7 +392,7 @@ class EessiTarball:
     def make_approval_request(self, tarballs_in_group=None):
         """Process a staged tarball by opening a pull request for ingestion approval."""
         next_state = self.next_state(self.state)
-
+        logging.info(f"Making approval request for tarball {self.object} in state {self.state} to {next_state}")
         # obtain link2pr information (repo and pr_id) from metadata file
         with open(self.local_metadata_path, 'r') as meta:
             metadata = meta.read()
@@ -441,7 +441,7 @@ class EessiTarball:
             logging.info(f"Moving metadata for {len(tarballs_in_group)} tarballs to staged")
             for tarball in tarballs_in_group:
                 temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
-                temp_tar.move_metadata_file('new', 'staged', branch=git_branch)
+                temp_tar.move_metadata_file(self.state, next_state, branch=git_branch)
 
         # Create PR with appropriate template
         try:
