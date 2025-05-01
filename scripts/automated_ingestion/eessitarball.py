@@ -1,4 +1,4 @@
-from utils import send_slack_message, sha256sum, log_function_entry_exit
+from utils import send_slack_message, sha256sum, log_function_entry_exit, log_message, LoggingScope
 
 from pathlib import PurePosixPath
 
@@ -58,33 +58,41 @@ class EessiTarball:
             (self.object, self.local_path, self.object_sig, self.local_sig_path),
             (self.metadata_file, self.local_metadata_path, self.metadata_sig_file, self.local_metadata_sig_path),
         ]
-        logging.info(f"Downloading {files}")
+        log_message(LoggingScope.DOWNLOAD, 'INFO', "Downloading %s", files)
         skip = False
         for (object, local_file, sig_object, local_sig_file) in files:
             if force or not os.path.exists(local_file):
                 # First we try to download signature file, which may or may not be available
                 # and may be optional or required.
                 try:
-                    logging.info(f"Downloading signature file {sig_object} to {local_sig_file}")
+                    log_msg = "Downloading signature file %s to %s"
+                    log_message(LoggingScope.DOWNLOAD, 'INFO', log_msg, sig_object, local_sig_file)
                     self.s3.download_file(self.bucket, sig_object, local_sig_file)
                 except Exception as err:
                     log_msg = 'Failed to download signature file %s for %s from %s to %s.'
                     if self.config['signatures'].getboolean('signatures_required', True):
                         log_msg += '\nException: %s'
-                        logging.error(log_msg, sig_object, object, self.bucket, local_sig_file, err)
+                        log_message(
+                            LoggingScope.ERROR, 'ERROR', log_msg,
+                            sig_object, object, self.bucket, local_sig_file, err
+                        )
                         skip = True
                         break
                     else:
-                        log_msg += ' Ignoring this, because signatures are not required with the current configuration.'
+                        log_msg += ' Ignoring this, because signatures are not required'
+                        log_msg += ' with the current configuration.'
                         log_msg += '\nException: %s'
-                        logging.warning(log_msg, sig_object, object, self.bucket, local_sig_file, err)
+                        log_message(
+                            LoggingScope.DOWNLOAD, 'WARNING', log_msg,
+                            sig_object, object, self.bucket, local_sig_file, err
+                        )
                 # Now we download the file itself.
                 try:
-                    logging.info(f"Downloading file {object} to {local_file}")
+                    log_message(LoggingScope.DOWNLOAD, 'INFO', "Downloading file %s to %s", object, local_file)
                     self.s3.download_file(self.bucket, object, local_file)
                 except Exception as err:
                     log_msg = 'Failed to download %s from %s to %s.\nException: %s'
-                    logging.error(log_msg, object, self.bucket, local_file, err)
+                    log_message(LoggingScope.ERROR, 'ERROR', log_msg, object, self.bucket, local_file, err)
                     skip = True
                     break
         # If any required download failed, make sure to skip this tarball completely.
@@ -95,11 +103,12 @@ class EessiTarball:
     @log_function_entry_exit()
     def find_state(self):
         """Find the state of this tarball by searching through the state directories in the git repository."""
-        logging.debug(f"Find state for {self.object}")
+        log_message(LoggingScope.DEBUG, 'DEBUG', "Find state for %s", self.object)
         for state in list(self.states.keys()):
             try:
                 self.git_repo.get_contents(state + '/' + self.metadata_file)
-                logging.info(f"Found metadata file {self.metadata_file} in state: {state}")
+                log_msg = "Found metadata file %s in state: %s"
+                log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg, self.metadata_file, state)
                 return state
             except github.UnknownObjectException:
                 # no metadata file found in this state's directory, so keep searching...
@@ -111,9 +120,9 @@ class EessiTarball:
                 else:
                     # if there was some other (e.g. connection) issue, abort the search for this tarball
                     log_msg = 'Unable to determine the state of %s, the GitHub API returned status %s!'
-                    logging.warning(log_msg, self.object, err.status)
+                    log_message(LoggingScope.ERROR, 'WARNING', log_msg, self.object, err.status)
                     return "unknown"
-        logging.info(f"Tarball {self.metadata_file} is new")
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', "Tarball %s is new", self.metadata_file)
         return "new"
 
     def get_contents_overview(self):
@@ -199,24 +208,27 @@ class EessiTarball:
 
     @log_function_entry_exit()
     def verify_signatures(self):
-        """Verify the signatures of the downloaded tarball and metadata file using the corresponding signature files."""
-
+        """
+        Verify the signatures of the downloaded tarball and metadata file
+        using the corresponding signature files.
+        """
         sig_missing_msg = 'Signature file %s is missing.'
         sig_missing = False
         for sig_file in [self.local_sig_path, self.local_metadata_sig_path]:
             if not os.path.exists(sig_file):
-                logging.warning(sig_missing_msg % sig_file)
+                log_message(LoggingScope.VERIFICATION, 'WARNING', sig_missing_msg, sig_file)
                 sig_missing = True
-                logging.info(f"Signature file {sig_file} is missing.")
+                log_message(LoggingScope.VERIFICATION, 'INFO', "Signature file %s is missing.", sig_file)
 
         if sig_missing:
             # If signature files are missing, we return a failure,
             # unless the configuration specifies that signatures are not required.
             if self.config['signatures'].getboolean('signatures_required', True):
-                logging.error(f"Signature file {sig_file} is missing.")
+                log_message(LoggingScope.ERROR, 'ERROR', "Signature file %s is missing.", sig_file)
                 return False
             else:
-                logging.info(f"Signature file {sig_file} is missing, but signatures are not required.")
+                log_msg = "Signature file %s is missing, but signatures are not required."
+                log_message(LoggingScope.VERIFICATION, 'INFO', log_msg, sig_file)
                 return True
 
         # If signatures are provided, we should always verify them, regardless of the signatures_required.
@@ -225,11 +237,13 @@ class EessiTarball:
         verify_script = self.config['signatures']['signature_verification_script']
         allowed_signers_file = self.config['signatures']['allowed_signers_file']
         if not os.path.exists(verify_script):
-            logging.error('Unable to verify signatures, the specified signature verification script does not exist!')
+            log_msg = 'Unable to verify signatures, the specified signature verification script does not exist!'
+            log_message(LoggingScope.ERROR, 'ERROR', log_msg)
             return False
 
         if not os.path.exists(allowed_signers_file):
-            logging.error('Unable to verify signatures, the specified allowed signers file does not exist!')
+            log_msg = 'Unable to verify signatures, the specified allowed signers file does not exist!'
+            log_message(LoggingScope.ERROR, 'ERROR', log_msg)
             return False
 
         for (file, sig_file) in [
@@ -238,18 +252,18 @@ class EessiTarball:
         ]:
             command = verify_runenv + [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file,
                  '--file', file, '--signature-file', sig_file]
-            logging.info(f"Running command: {' '.join(command)}")
+            log_message(LoggingScope.VERIFICATION, 'INFO', "Running command: %s", ' '.join(command))
 
             verify_cmd = subprocess.run(
                 command, 
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             if verify_cmd.returncode == 0:
-                logging.debug(f'Signature for {file} successfully verified.')
+                log_message(LoggingScope.VERIFICATION, 'DEBUG', 'Signature for %s successfully verified.', file)
             else:
-                logging.error(f'Failed to verify signature for {file}.')
-                logging.error(f"  stdout: {verify_cmd.stdout.decode('UTF-8')}")
-                logging.error(f"  stderr: {verify_cmd.stderr.decode('UTF-8')}")
+                log_message(LoggingScope.ERROR, 'ERROR', 'Failed to verify signature for %s.', file)
+                log_message(LoggingScope.ERROR, 'ERROR', "  stdout: %s", verify_cmd.stdout.decode('UTF-8'))
+                log_message(LoggingScope.ERROR, 'ERROR', "  stderr: %s", verify_cmd.stderr.decode('UTF-8'))
                 return False
 
         self.sig_verified = True
@@ -262,39 +276,41 @@ class EessiTarball:
         meta_sha256 = None
         with open(self.local_metadata_path, 'r') as meta:
             meta_sha256 = json.load(meta)['payload']['sha256sum']
-        logging.debug(f'Checksum of downloaded tarball: {local_sha256}')
-        logging.debug(f'Checksum stored in metadata file: {meta_sha256}')
+        log_message(LoggingScope.VERIFICATION, 'DEBUG', 'Checksum of downloaded tarball: %s', local_sha256)
+        log_message(LoggingScope.VERIFICATION, 'DEBUG', 'Checksum stored in metadata file: %s', meta_sha256)
         return local_sha256 == meta_sha256
 
     @log_function_entry_exit()
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
         # TODO: check if there is an open issue for this tarball, and if there is, skip it.
-        logging.info(f'Tarball {self.object} is ready to be ingested.')
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', 'Tarball %s is ready to be ingested.', self.object)
         self.download()
-        logging.info('Verifying its signature...')
+        log_message(LoggingScope.VERIFICATION, 'INFO', 'Verifying its signature...')
         if not self.verify_signatures():
             issue_msg = f'Failed to verify signatures for `{self.object}`'
-            logging.error(issue_msg)
+            log_message(LoggingScope.ERROR, 'ERROR', issue_msg)
             if not self.issue_exists(issue_msg, state='open'):
                 self.git_repo.create_issue(title=issue_msg, body=issue_msg)
             return
         else:
-            logging.debug(f'Signatures of {self.object} and its metadata file successfully verified.')
+            log_msg = 'Signatures of %s and its metadata file successfully verified.'
+            log_message(LoggingScope.VERIFICATION, 'DEBUG', log_msg, self.object)
 
-        logging.info('Verifying its checksum...')
+        log_message(LoggingScope.VERIFICATION, 'INFO', 'Verifying its checksum...')
         if not self.verify_checksum():
             issue_msg = f'Failed to verify checksum for `{self.object}`'
-            logging.error(issue_msg)
+            log_message(LoggingScope.ERROR, 'ERROR', issue_msg)
             if not self.issue_exists(issue_msg, state='open'):
                 self.git_repo.create_issue(title=issue_msg, body=issue_msg)
             return
         else:
-            logging.debug(f'Checksum of {self.object} matches the one in its metadata file.')
+            log_msg = 'Checksum of %s matches the one in its metadata file.'
+            log_message(LoggingScope.VERIFICATION, 'DEBUG', log_msg, self.object)
 
         script = self.config['paths']['ingestion_script']
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
-        logging.info(f'Running the ingestion script for {self.object}...')
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', 'Running the ingestion script for %s...', self.object)
         ingest_cmd = subprocess.run(
             sudo + [script, self.cvmfs_repo, self.local_path],
             stdout=subprocess.PIPE,
@@ -319,34 +335,39 @@ class EessiTarball:
                 stderr=ingest_cmd.stderr.decode('UTF-8'),
             )
             if self.issue_exists(issue_title, state='open'):
-                logging.info(f'Failed to ingest {self.object}, but an open issue already exists, skipping...')
+                log_msg = 'Failed to ingest %s, but an open issue already exists, skipping...'
+                log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg, self.object)
             else:
                 self.git_repo.create_issue(title=issue_title, body=issue_body)
 
     def print_ingested(self):
         """Process a tarball that has already been ingested."""
-        logging.info(f'{self.object} has already been ingested, skipping...')
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', '%s has already been ingested, skipping...', self.object)
 
     @log_function_entry_exit()
     def mark_new_tarball_as_staged(self, branch=None):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
-        logging.info(f'Found new tarball {self.object}, downloading it...')
+        log_msg = 'Found new tarball %s, downloading it...'
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg, self.object)
         # Download the tarball and its metadata file.
         # Use force as it may be a new attempt for an existing tarball that failed before.
         self.download(force=True)
         if not self.local_path or not self.local_metadata_path:
-            logging.warning(f"Skipping tarball {self.object} - download failed")
+            log_msg = "Skipping tarball %s - download failed"
+            log_message(LoggingScope.STATE_CHANGE, 'WARNING', log_msg, self.object)
             return
 
         # Verify the signatures of the tarball and metadata file.
         if not self.verify_signatures():
-            logging.warning(f"Skipping tarball {self.object} - signature verification failed")
+            log_msg = "Skipping tarball %s - signature verification failed"
+            log_message(LoggingScope.STATE_CHANGE, 'WARNING', log_msg, self.object)
             return
 
         # If no branch is provided, use the main branch
         target_branch = branch if branch else 'main'
-        logging.info(f"Adding metadata to '{next_state}' folder in {target_branch} branch")
+        log_msg = "Adding metadata to '%s' folder in %s branch"
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg, next_state, target_branch)
 
         file_path_staged = next_state + '/' + self.metadata_file
         contents = ''
@@ -360,12 +381,14 @@ class EessiTarball:
 
     def print_rejected(self):
         """Process a (rejected) tarball for which the corresponding PR has been closed witout merging."""
-        logging.info("This tarball was rejected, so we're skipping it.")
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', "This tarball was rejected, so we're skipping it.")
         # Do we want to delete rejected tarballs at some point?
 
     def print_unknown(self):
         """Process a tarball which has an unknown state."""
-        logging.info("The state of this tarball could not be determined, so we're skipping it.")
+        log_msg = "The state of this tarball could not be determined,"
+        log_msg += " so we're skipping it."
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg)
 
     def find_next_sequence_number(self, repo, pr_id):
         """Find the next available sequence number for staging PRs of a source PR."""
@@ -400,7 +423,8 @@ class EessiTarball:
     def make_approval_request(self, tarballs_in_group=None):
         """Process a staged tarball by opening a pull request for ingestion approval."""
         next_state = self.next_state(self.state)
-        logging.info(f"Making approval request for tarball {self.object} in state {self.state} to {next_state}")
+        log_msg = "Making approval request for tarball %s in state %s to %s"
+        log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, self.object, self.state, next_state)
         # obtain link2pr information (repo and pr_id) from metadata file
         with open(self.local_metadata_path, 'r') as meta:
             metadata = meta.read()
@@ -414,26 +438,31 @@ class EessiTarball:
         # Check if git_branch exists and what the status of the corressponding PR is
         main_branch = self.git_repo.get_branch('main')
         if git_branch in [branch.name for branch in self.git_repo.get_branches()]:
-            logging.info(f"Branch {git_branch} already exists, checking the status of the corresponding PR...")
+            log_msg = "Branch %s already exists, checking the status of the corresponding PR..."
+            log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, git_branch)
             find_pr = [pr for pr in self.git_repo.get_pulls(head=git_branch, state='all')
                        if pr.head.ref == git_branch]
             if find_pr:
                 pr = find_pr.pop(0)
                 if pr.state == 'open':
-                    logging.info('PR is still open, skipping this tarball...')
+                    log_message(LoggingScope.GITHUB_OPS, 'INFO', 'PR is still open, skipping this tarball...')
                     return
                 elif pr.state == 'closed' and not pr.merged:
-                    logging.info('PR was rejected')
+                    log_message(LoggingScope.GITHUB_OPS, 'INFO', 'PR was rejected')
                     self.reject()
                     return
                 else:
-                    logging.warn(f'Warning, tarball {self.object} is in a weird state:')
-                    logging.warn(f'Branch: {git_branch}\nPR: {pr}\nPR state: {pr.state}\nPR merged: {pr.merged}')
+                    log_msg = 'Warning, tarball %s is in a weird state:'
+                    log_message(LoggingScope.GITHUB_OPS, 'WARNING', log_msg, self.object)
+                    log_msg = 'Branch: %s\nPR: %s\nPR state: %s\nPR merged: %s'
+                    log_message(LoggingScope.GITHUB_OPS, 'WARNING', log_msg, 
+                              git_branch, pr, pr.state, pr.merged)
                     # TODO:  should we delete the branch or open an issue? 
                     return
             else:
-                logging.info(f'Tarball {self.object} has a branch, but no PR.')
-                logging.info('Removing existing branch...')
+                log_msg = 'Tarball %s has a branch, but no PR.'
+                log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, self.object)
+                log_message(LoggingScope.GITHUB_OPS, 'INFO', 'Removing existing branch...')
                 ref = self.git_repo.get_git_ref(f'heads/{git_branch}')
                 ref.delete()
 
@@ -441,12 +470,15 @@ class EessiTarball:
         self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
 
         # Move metadata file(s) to approved directory
-        logging.info(f"Moving metadata for {self.object} from {self.state} to {next_state} in branch {git_branch}")
+        log_msg = "Moving metadata for %s from %s to %s in branch %s"
+        log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, 
+                   self.object, self.state, next_state, git_branch)
         if tarballs_in_group is None:
-            logging.info(f"Moving metadata for individual tarball to staged")
+            log_message(LoggingScope.GITHUB_OPS, 'INFO', "Moving metadata for individual tarball to staged")
             self.move_metadata_file(self.state, next_state, branch=git_branch)
         else:
-            logging.info(f"Moving metadata for {len(tarballs_in_group)} tarballs to staged")
+            log_msg = "Moving metadata for %d tarballs to staged"
+            log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, len(tarballs_in_group))
             for tarball in tarballs_in_group:
                 temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
                 temp_tar.move_metadata_file(self.state, next_state, branch=git_branch)
@@ -455,7 +487,8 @@ class EessiTarball:
         try:
             pr_url=f"https://github.com/{repo}/pull/{pr_id}",
             if tarballs_in_group is None:
-                logging.info(f"Creating PR for individual tarball: {self.object}")
+                log_msg = "Creating PR for individual tarball: %s"
+                log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, self.object)
                 tarball_contents = self.get_contents_overview()
                 pr_body = self.config['github']['individual_pr_body'].format(
                     cvmfs_repo=self.cvmfs_repo,
@@ -476,7 +509,8 @@ class EessiTarball:
                         tar_details_tpl = "<details>\n<summary>Contents of %s</summary>\n\n%s\n</details>\n"
                         tar_overviews.append(tar_details_tpl % (tarball, overview))
                     except Exception as err:
-                        logging.error(f"Failed to get contents overview for {tarball}: {err}")
+                        log_msg = "Failed to get contents overview for %s: %s"
+                        log_message(LoggingScope.ERROR, 'ERROR', log_msg, tarball, err)
                         tar_details_tpl = "<details>\n<summary>Contents of %s</summary>\n\n"
                         tar_details_tpl += "Failed to get contents overview: %s\n</details>\n"
                         tar_overviews.append(tar_details_tpl % (tarball, err))
@@ -497,10 +531,10 @@ class EessiTarball:
                 pr_title += ' :closed_lock_with_key:'
 
             self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
-            logging.info(f"Created PR: {pr_title}")
+            log_message(LoggingScope.GITHUB_OPS, 'INFO', "Created PR: %s", pr_title)
 
         except Exception as err:
-            logging.error(f"Failed to create PR: {err}")
+            log_message(LoggingScope.ERROR, 'ERROR', "Failed to create PR: %s", err)
             if not self.issue_exists(f'Failed to get contents of {self.object}', state='open'):
                 self.git_repo.create_issue(
                     title=f'Failed to get contents of {self.object}',
@@ -523,7 +557,10 @@ class EessiTarball:
         for tarball in tarballs:
             with open(self.get_metadata_path(tarball), 'r') as meta:
                 metadata = meta.read()
-                formatted += f"<details>\n<summary>Metadata for {tarball}</summary>\n\n```\n{metadata}\n```\n</details>\n\n"
+                formatted += (
+                    f"<details>\n<summary>Metadata for {tarball}</summary>\n\n"
+                    f"```\n{metadata}\n```\n</details>\n\n"
+                )
         return formatted
 
     def get_metadata_path(self, tarball=None):
@@ -553,7 +590,8 @@ class EessiTarball:
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
         file_path_old = old_state + '/' + self.metadata_file
         file_path_new = new_state + '/' + self.metadata_file
-        logging.info(f'Moving metadata file {self.metadata_file} from {file_path_old} to {file_path_new} in branch {branch}')
+        log_message(LoggingScope.GITHUB_OPS, 'INFO', 'Moving metadata file %s from %s to %s in branch %s', 
+                   self.metadata_file, file_path_old, file_path_new, branch)
         tarball_metadata = self.git_repo.get_contents(file_path_old)
         # Remove the metadata file from the old state's directory...
         self.git_repo.delete_file(file_path_old, 'remove from ' + old_state, sha=tarball_metadata.sha, branch=branch)
@@ -608,7 +646,7 @@ class EessiTarball:
     def reject(self):
         """Reject a tarball for ingestion."""
         # Let's move the the tarball to the directory for rejected tarballs.
-        logging.info(f'Marking tarball {self.object} as rejected...')
+        log_message(LoggingScope.STATE_CHANGE, 'INFO', 'Marking tarball %s as rejected...', self.object)
         next_state = 'rejected'
         self.move_metadata_file(self.state, next_state)
 
@@ -644,31 +682,34 @@ class EessiTarballGroup:
         """Download all files associated with this group of tarballs."""
         for tarball in tarballs:
             temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
-            logging.info(f"downloading files for '{temp_tar.object}'")
+            log_message(LoggingScope.GROUP_OPS, 'INFO', "downloading files for '%s'", temp_tar.object)
             temp_tar.download(force=True)
             if not temp_tar.local_path or not temp_tar.local_metadata_path:
-                logging.warn(f"Skipping this tarball: {temp_tar.object}")
+                log_message(LoggingScope.GROUP_OPS, 'WARNING', "Skipping this tarball: %s", temp_tar.object)
                 return False
         return True
 
     def process_group(self, tarballs):
         """Process a group of tarballs together."""
-        logging.info(f"Processing group of {len(tarballs)} tarballs")
+        log_message(LoggingScope.GROUP_OPS, 'INFO', "Processing group of %d tarballs", len(tarballs))
 
         if not self.download_tarballs_and_more(tarballs):
-            logging.error("Downloading tarballs, metadata files and/or their signatures failed")
+            log_msg = "Downloading tarballs, metadata files and/or their signatures failed"
+            log_message(LoggingScope.ERROR, 'ERROR', log_msg)
             return
 
         # Verify all tarballs have the same link2pr info
         if not self.verify_group_consistency(tarballs):
-            logging.error("Tarballs have inconsistent link2pr information")
+            log_message(LoggingScope.ERROR, 'ERROR', "Tarballs have inconsistent link2pr information")
             return
 
         # Mark all tarballs as staged in the group branch, however need to handle first tarball differently
-        logging.info(f"Processing first tarball in group: {self.first_tar.object}")
+        log_msg = "Processing first tarball in group: %s"
+        log_message(LoggingScope.GROUP_OPS, 'INFO', log_msg, self.first_tar.object)
         self.first_tar.mark_new_tarball_as_staged('main') # this sets the state of the first tarball to 'staged'
         for tarball in tarballs[1:]:
-            logging.info(f"Processing tarball in group: {tarball}")
+            log_msg = "Processing tarball in group: %s"
+            log_message(LoggingScope.GROUP_OPS, 'INFO', log_msg, tarball)
             temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
             temp_tar.mark_new_tarball_as_staged('main')
 
@@ -692,7 +733,7 @@ class EessiTarballGroup:
 
         for tarball in tarballs[1:]:  # Skip first tarball as we already have its info
             temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
-            logging.debug(f"temp tar: {temp_tar.to_string()}")
+            log_message(LoggingScope.DEBUG, 'DEBUG', "temp tar: %s", temp_tar.to_string())
             repo, pr = temp_tar.get_link2pr_info()
             if repo != first_repo or pr != first_pr:
                 return False

@@ -3,7 +3,7 @@
 from eessitarball import EessiTarball, EessiTarballGroup
 from pid.decorator import pidfile  # noqa: F401
 from pid import PidFileError
-from utils import log_function_entry_exit
+from utils import log_function_entry_exit, log_message, LoggingScope, set_logging_scopes
 
 import argparse
 import boto3
@@ -108,7 +108,10 @@ def parse_config(path):
     # Validate staging_pr_method
     staging_method = config['github'].get('staging_pr_method', 'individual')
     if staging_method not in ['individual', 'grouped']:
-        error(f'Invalid staging_pr_method: "{staging_method}" in configuration file {path}. Must be either "individual" or "grouped".')
+        error(
+            f'Invalid staging_pr_method: "{staging_method}" in configuration file {path}. '
+            'Must be either "individual" or "grouped".'
+        )
 
     # Validate PR body templates
     if staging_method == 'individual' and 'individual_pr_body' not in config['github']:
@@ -179,8 +182,8 @@ def setup_logging(config, args):
 
     # Set up logging scopes
     if args.log_scopes:
-        from utils import set_logging_scopes
         set_logging_scopes(args.log_scopes)
+        log_message(LoggingScope.DEBUG, 'DEBUG', "Enabled logging scopes: %s", args.log_scopes)
 
     # Create logger
     logger = logging.getLogger()

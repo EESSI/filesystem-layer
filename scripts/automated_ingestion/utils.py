@@ -10,10 +10,15 @@ class LoggingScope(IntFlag):
     """Enumeration of different logging scopes."""
     NONE = 0
     FUNC_ENTRY_EXIT = auto()  # Function entry/exit logging
-    # Add more scopes here as needed
-    # EXAMPLE_SCOPE = auto()
-    # ANOTHER_SCOPE = auto()
-    ALL = FUNC_ENTRY_EXIT  # Update this when adding new scopes
+    DOWNLOAD = auto()         # Logging related to file downloads
+    VERIFICATION = auto()     # Logging related to signature and checksum verification
+    STATE_CHANGE = auto()     # Logging related to tarball state changes
+    GITHUB_OPS = auto()       # Logging related to GitHub operations (PRs, issues, etc.)
+    GROUP_OPS = auto()        # Logging related to tarball group operations
+    ERROR = auto()           # Error logging (separate from other scopes for easier filtering)
+    DEBUG = auto()           # Debug-level logging (separate from other scopes for easier filtering)
+    ALL = (FUNC_ENTRY_EXIT | DOWNLOAD | VERIFICATION | STATE_CHANGE | 
+           GITHUB_OPS | GROUP_OPS | ERROR | DEBUG)
 
 # Global setting for logging scopes
 ENABLED_LOGGING_SCOPES = LoggingScope.NONE
@@ -145,3 +150,42 @@ def log_function_entry_exit(logger=None):
 
         return wrapper
     return decorator
+
+def log_with_scope(scope, logger=None):
+    """
+    Decorator that checks if a specific logging scope is enabled before logging.
+
+    Args:
+        scope: LoggingScope value indicating which scope this logging belongs to
+        logger: Optional logger instance. If not provided, uses the root logger.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if not is_logging_scope_enabled(scope):
+                return func(*args, **kwargs)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator
+
+def log_message(scope, level, msg, *args, logger=None, **kwargs):
+    """
+    Log a message if the specified scope is enabled.
+
+    Args:
+        scope: LoggingScope value indicating which scope this logging belongs to
+        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+        msg: Message to log
+        logger: Optional logger instance. If not provided, uses the root logger.
+        *args, **kwargs: Additional arguments to pass to the logging function
+    """
+    if not is_logging_scope_enabled(scope):
+        return
+
+    log = logger or logging.getLogger()
+    log_func = getattr(log, level.lower())
+    log_func(msg, *args, **kwargs)
+
+# Example usage:
+# log_message(LoggingScope.DOWNLOAD, 'INFO', "Downloading file: %s", filename)
+# log_message(LoggingScope.ERROR, 'ERROR', "Failed to download: %s", error_msg)
