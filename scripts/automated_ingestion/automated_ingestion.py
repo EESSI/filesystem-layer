@@ -34,7 +34,7 @@ LOG_LEVELS = {
 
 def error(msg, code=1):
     """Print an error and exit."""
-    logging.error(msg)
+    log_message(LoggingScope.ERROR, 'ERROR', msg)
     sys.exit(code)
 
 
@@ -78,7 +78,7 @@ def find_tarball_groups(s3, bucket, config, extension='.tar.gz', metadata_extens
                     groups[group_key] = []
                 groups[group_key].append(tarball)
         except Exception as err:
-            logging.error(f"Failed to process metadata for {tarball}: {err}")
+            log_message(LoggingScope.ERROR, 'ERROR', "Failed to process metadata for %s: %s", tarball, err)
             continue
         finally:
             # Clean up downloaded metadata file
@@ -239,22 +239,22 @@ def main():
             # use new grouped PR method
             tarball_groups = find_tarball_groups(s3, bucket, config)
             if args.list_only:
-                logging.info(f"#tarball_groups: {len(tarball_groups)}")
+                log_message(LoggingScope.GROUP_OPS, 'INFO', "#tarball_groups: %d", len(tarball_groups))
                 for (repo, pr_id), tarballs in tarball_groups.items():
-                    logging.info(f"  {repo}#{pr_id}: #tarballs {len(tarballs)}")
+                    log_message(LoggingScope.GROUP_OPS, 'INFO', "  %s#%s: #tarballs %d", repo, pr_id, len(tarballs))
             else:
                 for (repo, pr_id), tarballs in tarball_groups.items():
                     if tarballs:
                         # Create a group for these tarballs
                         group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
-                        logging.info(f"group created\n{group.to_string(oneline=True)}")
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "group created\n%s", group.to_string(oneline=True))
                         group.process_group(tarballs)
         else:
             # use old individual PR method
             tarballs = find_tarballs(s3, bucket)
             if args.list_only:
                 for num, tarball in enumerate(tarballs):
-                    logging.info(f'[{bucket}] {num}: {tarball}')
+                    log_message(LoggingScope.GROUP_OPS, 'INFO', "[%s] %d: %s", bucket, num, tarball)
             else:
                 for tarball in tarballs:
                     tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket, cvmfs_repo)
