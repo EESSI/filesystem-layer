@@ -5,6 +5,7 @@ import logging
 import functools
 import time
 import os
+import inspect
 from enum import IntFlag, auto
 
 class LoggingScope(IntFlag):
@@ -23,6 +24,9 @@ class LoggingScope(IntFlag):
 
 # Global setting for logging scopes
 ENABLED_LOGGING_SCOPES = LoggingScope.NONE
+
+# Global variable to track call stack depth
+_call_stack_depth = 0
 
 def set_logging_scopes(scopes):
     """
@@ -124,6 +128,8 @@ def log_function_entry_exit(logger=None):
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
+            global _call_stack_depth
+
             if not is_logging_scope_enabled(LoggingScope.FUNC_ENTRY_EXIT):
                 return func(*args, **kwargs)
 
@@ -146,9 +152,9 @@ def log_function_entry_exit(logger=None):
                         # Get version, component, last part of architecture, and epoch
                         version = parts[1]
                         component = parts[2]
-                        arch_last = parts[-3].split('-')[-1]  # Last part of architecture
-                        epoch = parts[-2]
-                        filename = f"{version}-{component}-{arch_last}-{epoch}.tar.gz"
+                        arch_last = parts[-2].split('-')[-1]  # Last part of architecture
+                        epoch = parts[-1]  # includes file extension
+                        filename = f"{version}-{component}-{arch_last}-{epoch}"
                     else:
                         # Fallback to simple truncation if format doesn't match
                         filename = f"{filename[:15]}...{filename[-12:]}"
@@ -158,16 +164,22 @@ def log_function_entry_exit(logger=None):
                     context += f" in {tarball.state}"
                 context += "]"
 
+            # Create indentation based on call stack depth
+            indent = "  " * _call_stack_depth
+
             start_time = time.time()
-            log.info(f"Entering {func.__name__}{context}")
+            log.info(f"{indent}Entering {func.__name__}{context}")
+            _call_stack_depth += 1
             try:
                 result = func(*args, **kwargs)
+                _call_stack_depth -= 1
                 end_time = time.time()
-                log.info(f"Leaving {func.__name__}{context} (took {end_time - start_time:.2f}s)")
+                log.info(f"{indent}Leaving {func.__name__}{context} (took {end_time - start_time:.2f}s)")
                 return result
             except Exception as err:
+                _call_stack_depth -= 1
                 end_time = time.time()
-                log.info(f"Leaving {func.__name__}{context} with exception (took {end_time - start_time:.2f}s)")
+                log.info(f"{indent}Leaving {func.__name__}{context} with exception (took {end_time - start_time:.2f}s)")
                 raise err
         return wrapper
     return decorator
