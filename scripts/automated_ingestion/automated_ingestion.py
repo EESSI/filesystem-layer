@@ -3,6 +3,7 @@
 from eessitarball import EessiTarball, EessiTarballGroup
 from pid.decorator import pidfile  # noqa: F401
 from pid import PidFileError
+from utils import log_function_entry_exit
 
 import argparse
 import boto3
@@ -54,6 +55,7 @@ def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt
     return tarballs
 
 
+@log_function_entry_exit()
 def find_tarball_groups(s3, bucket, config, extension='.tar.gz', metadata_extension='.meta.txt'):
     """Return a dictionary of tarball groups, keyed by (repo, pr_number)."""
     tarballs = find_tarballs(s3, bucket, extension, metadata_extension)
@@ -86,6 +88,7 @@ def find_tarball_groups(s3, bucket, config, extension='.tar.gz', metadata_extens
     return groups
 
 
+@log_function_entry_exit()
 def parse_config(path):
     """Parse the configuration file."""
     config = configparser.ConfigParser()
@@ -116,6 +119,7 @@ def parse_config(path):
     return config
 
 
+@log_function_entry_exit()
 def parse_args():
     """Parse the command-line arguments."""
     parser = argparse.ArgumentParser()
@@ -133,6 +137,11 @@ def parse_args():
     logging_group.add_argument('--quiet',
                              action='store_true',
                              help='Suppress console output (overrides all other console settings)')
+    logging_group.add_argument('--log-scopes',
+                             help='Comma-separated list of logging scopes using +/- syntax. '
+                                  'Examples: "+FUNC_ENTRY_EXIT" (enable only function entry/exit), '
+                                  '"+ALL,-FUNC_ENTRY_EXIT" (enable all except function entry/exit), '
+                                  '"+FUNC_ENTRY_EXIT,-EXAMPLE_SCOPE" (enable function entry/exit but disable example)')
 
     # Existing arguments
     parser.add_argument('-c', '--config', type=str, help='path to configuration file',
@@ -143,6 +152,7 @@ def parse_args():
     return parser.parse_args()
 
 
+@log_function_entry_exit()
 def setup_logging(config, args):
     """
     Configure logging based on configuration file and command line arguments.
@@ -166,6 +176,11 @@ def setup_logging(config, args):
     # Debug mode overrides console level
     if args.debug:
         console_level = logging.DEBUG
+
+    # Set up logging scopes
+    if args.log_scopes:
+        from utils import set_logging_scopes
+        set_logging_scopes(args.log_scopes)
 
     # Create logger
     logger = logging.getLogger()
@@ -197,6 +212,7 @@ def setup_logging(config, args):
 
 
 @pid.decorator.pidfile('automated_ingestion.pid')
+@log_function_entry_exit()
 def main():
     """Main function."""
     args = parse_args()

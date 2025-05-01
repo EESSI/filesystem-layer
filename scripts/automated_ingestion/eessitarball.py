@@ -1,4 +1,4 @@
-from utils import send_slack_message, sha256sum
+from utils import send_slack_message, sha256sum, log_function_entry_exit
 
 from pathlib import PurePosixPath
 
@@ -18,6 +18,7 @@ class EessiTarball:
     for which it interfaces with the S3 bucket, GitHub, and CVMFS.
     """
 
+    @log_function_entry_exit()
     def __init__(self, object_name, config, git_staging_repo, s3, bucket, cvmfs_repo):
         """Initialize the tarball object."""
         self.config = config
@@ -48,6 +49,7 @@ class EessiTarball:
         # Find the initial state of this tarball.
         self.state = self.find_state()
 
+    @log_function_entry_exit()
     def download(self, force=False):
         """
         Download this tarball and its corresponding metadata file, if this hasn't been already done.
@@ -90,6 +92,7 @@ class EessiTarball:
             self.local_path = None
             self.local_metadata_path = None
 
+    @log_function_entry_exit()
     def find_state(self):
         """Find the state of this tarball by searching through the state directories in the git repository."""
         logging.debug(f"Find state for {self.object}")
@@ -194,6 +197,7 @@ class EessiTarball:
         str += f"{sep} GHrepo: {self.git_repo}"
         return str
 
+    @log_function_entry_exit()
     def verify_signatures(self):
         """Verify the signatures of the downloaded tarball and metadata file using the corresponding signature files."""
 
@@ -251,6 +255,7 @@ class EessiTarball:
         self.sig_verified = True
         return True
 
+    @log_function_entry_exit()
     def verify_checksum(self):
         """Verify the checksum of the downloaded tarball with the one in its metadata file."""
         local_sha256 = sha256sum(self.local_path)
@@ -261,6 +266,7 @@ class EessiTarball:
         logging.debug(f'Checksum stored in metadata file: {meta_sha256}')
         return local_sha256 == meta_sha256
 
+    @log_function_entry_exit()
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
         # TODO: check if there is an open issue for this tarball, and if there is, skip it.
@@ -321,6 +327,7 @@ class EessiTarball:
         """Process a tarball that has already been ingested."""
         logging.info(f'{self.object} has already been ingested, skipping...')
 
+    @log_function_entry_exit()
     def mark_new_tarball_as_staged(self, branch=None):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
@@ -389,6 +396,7 @@ class EessiTarball:
         # Return next available sequence number
         return max(sequence_numbers) + 1
 
+    @log_function_entry_exit()
     def make_approval_request(self, tarballs_in_group=None):
         """Process a staged tarball by opening a pull request for ingestion approval."""
         next_state = self.next_state(self.state)

@@ -1,7 +1,87 @@
 import hashlib
 import json
 import requests
+import logging
+import functools
+import time
+from enum import IntFlag, auto
 
+class LoggingScope(IntFlag):
+    """Enumeration of different logging scopes."""
+    NONE = 0
+    FUNC_ENTRY_EXIT = auto()  # Function entry/exit logging
+    # Add more scopes here as needed
+    # EXAMPLE_SCOPE = auto()
+    # ANOTHER_SCOPE = auto()
+    ALL = FUNC_ENTRY_EXIT  # Update this when adding new scopes
+
+# Global setting for logging scopes
+ENABLED_LOGGING_SCOPES = LoggingScope.NONE
+
+def set_logging_scopes(scopes):
+    """
+    Set the enabled logging scopes.
+
+    Args:
+        scopes: Can be:
+            - A LoggingScope value
+            - A string with comma-separated values using +/- syntax:
+              - "+SCOPE" to enable a scope
+              - "-SCOPE" to disable a scope
+              - "ALL" or "+ALL" to enable all scopes
+              - "-ALL" to disable all scopes
+              Examples:
+                "+FUNC_ENTRY_EXIT"  # Enable only function entry/exit
+                "+FUNC_ENTRY_EXIT,-EXAMPLE_SCOPE"  # Enable function entry/exit but disable example
+                "+ALL,-FUNC_ENTRY_EXIT"  # Enable all scopes except function entry/exit
+    """
+    global ENABLED_LOGGING_SCOPES
+
+    if isinstance(scopes, LoggingScope):
+        ENABLED_LOGGING_SCOPES = scopes
+        return
+
+    if isinstance(scopes, str):
+        # Start with no scopes enabled
+        ENABLED_LOGGING_SCOPES = LoggingScope.NONE
+
+        # Split into individual scope specifications
+        scope_specs = [s.strip() for s in scopes.split(",")]
+
+        for spec in scope_specs:
+            if not spec:
+                continue
+
+            # Check for ALL special case
+            if spec.upper() in ["ALL", "+ALL"]:
+                ENABLED_LOGGING_SCOPES = LoggingScope.ALL
+                continue
+            elif spec.upper() == "-ALL":
+                ENABLED_LOGGING_SCOPES = LoggingScope.NONE
+                continue
+
+            # Parse scope name and operation
+            operation = spec[0]
+            scope_name = spec[1:].strip().upper()
+
+            try:
+                scope_enum = LoggingScope[scope_name]
+                if operation == '+':
+                    ENABLED_LOGGING_SCOPES |= scope_enum
+                elif operation == '-':
+                    ENABLED_LOGGING_SCOPES &= ~scope_enum
+                else:
+                    logging.warning(f"Invalid operation '{operation}' in scope specification: {spec}")
+            except KeyError:
+                logging.warning(f"Unknown logging scope: {scope_name}")
+
+    elif isinstance(scopes, list):
+        # Convert list to comma-separated string and process
+        set_logging_scopes(",".join(scopes))
+
+def is_logging_scope_enabled(scope):
+    """Check if a specific logging scope is enabled."""
+    return bool(ENABLED_LOGGING_SCOPES & scope)
 
 def send_slack_message(webhook, msg):
     """Send a Slack message."""
@@ -25,3 +105,43 @@ def sha256sum(path):
         for byte_block in iter(lambda: f.read(8192), b''):
             sha256_hash.update(byte_block)
         return sha256_hash.hexdigest()
+
+
+def log_function_entry_exit(logger=None):
+    """
+    Decorator that logs function entry and exit with timing information.
+    Only logs if function entry/exit logging is enabled.
+
+    Args:
+        logger: Optional logger instance. If not provided, uses the root logger.
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            if not is_logging_scope_enabled(LoggingScope.FUNC_ENTRY_EXIT):
+                return func(*args, **kwargs)
+
+            # Use provided logger or get root logger
+            log = logger or logging.getLogger()
+
+            # Log function entry
+            log.debug(f"Entering {func.__name__}")
+            start_time = time.time()
+
+            try:
+                # Execute the function
+                result = func(*args, **kwargs)
+
+                # Log successful exit
+                duration = time.time() - start_time
+                log.debug(f"Exiting {func.__name__} (took {duration:.3f}s)")
+                return result
+
+            except Exception as e:
+                # Log error exit
+                duration = time.time() - start_time
+                log.error(f"Error in {func.__name__} after {duration:.3f}s: {str(e)}")
+                raise
+
+        return wrapper
+    return decorator
