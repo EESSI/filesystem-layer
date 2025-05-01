@@ -115,10 +115,10 @@ def sha256sum(path):
 def log_function_entry_exit(logger=None):
     """
     Decorator that logs function entry and exit with timing information.
-    Only logs if function entry/exit logging is enabled.
+    Only logs if the FUNC_ENTRY_EXIT scope is enabled.
 
     Args:
-        logger: Optional logger instance. If not provided, uses the root logger.
+        logger: Optional logger instance. If not provided, uses the module's logger.
     """
     def decorator(func):
         @functools.wraps(func)
@@ -126,28 +126,22 @@ def log_function_entry_exit(logger=None):
             if not is_logging_scope_enabled(LoggingScope.FUNC_ENTRY_EXIT):
                 return func(*args, **kwargs)
 
-            # Use provided logger or get root logger
-            log = logger or logging.getLogger()
+            if logger is None:
+                log = logging.getLogger(func.__module__)
+            else:
+                log = logger
 
-            # Log function entry
-            log.debug(f"Entering {func.__name__}")
             start_time = time.time()
-
+            log.info(f"Entering {func.__name__}")
             try:
-                # Execute the function
                 result = func(*args, **kwargs)
-
-                # Log successful exit
-                duration = time.time() - start_time
-                log.debug(f"Exiting {func.__name__} (took {duration:.3f}s)")
+                end_time = time.time()
+                log.info(f"Exiting {func.__name__} (took {end_time - start_time:.2f}s)")
                 return result
-
-            except Exception as e:
-                # Log error exit
-                duration = time.time() - start_time
-                log.error(f"Error in {func.__name__} after {duration:.3f}s: {str(e)}")
-                raise
-
+            except Exception as err:
+                end_time = time.time()
+                log.info(f"Exiting {func.__name__} with exception (took {end_time - start_time:.2f}s)")
+                raise err
         return wrapper
     return decorator
 
