@@ -4,6 +4,7 @@ import requests
 import logging
 import functools
 import time
+import os
 from enum import IntFlag, auto
 
 class LoggingScope(IntFlag):
@@ -131,16 +132,42 @@ def log_function_entry_exit(logger=None):
             else:
                 log = logger
 
+            # Get context information if available
+            context = ""
+            if len(args) > 0 and hasattr(args[0], 'object'):
+                # For EessiTarball methods, show the tarball name and state
+                tarball = args[0]
+                filename = os.path.basename(tarball.object)
+
+                # Format filename to show important parts
+                if len(filename) > 30:
+                    parts = filename.split('-')
+                    if len(parts) >= 6:  # Ensure we have all required parts
+                        # Get version, component, last part of architecture, and epoch
+                        version = parts[1]
+                        component = parts[2]
+                        arch_last = parts[-3].split('-')[-1]  # Last part of architecture
+                        epoch = parts[-2]
+                        filename = f"{version}-{component}-{arch_last}-{epoch}.tar.gz"
+                    else:
+                        # Fallback to simple truncation if format doesn't match
+                        filename = f"{filename[:15]}...{filename[-12:]}"
+
+                context = f" [{filename}"
+                if hasattr(tarball, 'state'):
+                    context += f" in {tarball.state}"
+                context += "]"
+
             start_time = time.time()
-            log.info(f"Entering {func.__name__}")
+            log.info(f"Entering {func.__name__}{context}")
             try:
                 result = func(*args, **kwargs)
                 end_time = time.time()
-                log.info(f"Exiting {func.__name__} (took {end_time - start_time:.2f}s)")
+                log.info(f"Leaving {func.__name__}{context} (took {end_time - start_time:.2f}s)")
                 return result
             except Exception as err:
                 end_time = time.time()
-                log.info(f"Exiting {func.__name__} with exception (took {end_time - start_time:.2f}s)")
+                log.info(f"Leaving {func.__name__}{context} with exception (took {end_time - start_time:.2f}s)")
                 raise err
         return wrapper
     return decorator
