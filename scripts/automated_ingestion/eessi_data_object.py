@@ -7,7 +7,7 @@ from typing import Optional, Protocol, runtime_checkable
 import boto3
 import configparser
 
-from .utils import log_function_entry_exit, log_message, LoggingScope
+from utils import log_function_entry_exit, log_message, LoggingScope
 
 class DownloadMode(Enum):
     """Enum defining different modes for downloading files."""

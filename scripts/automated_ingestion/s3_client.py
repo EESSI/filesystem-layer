@@ -1,10 +1,11 @@
-import boto3
-from typing import Dict, Optional
 import os
 from pathlib import Path
+from typing import Dict, Optional
 
-from .utils import log_function_entry_exit, log_message, LoggingScope
-from .eessi_data_object import RemoteStorageClient
+import boto3
+
+from utils import log_function_entry_exit, log_message, LoggingScope
+from eessi_data_object import RemoteStorageClient
 
 class EESSIS3Client(RemoteStorageClient):
     """EESSI-specific S3 client implementation of the RemoteStorageClient protocol."""
