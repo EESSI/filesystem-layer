@@ -169,22 +169,31 @@ def log_function_entry_exit(logger=None):
 
             # Get file name and line number where the function is defined
             file_name = os.path.basename(inspect.getsourcefile(func))
-            line_no = inspect.getsourcelines(func)[1]
+            source_lines, start_line = inspect.getsourcelines(func)
+            # Find the line with the actual function definition
+            def_line = next(i for i, line in enumerate(source_lines) if line.strip().startswith('def '))
+            def_line_no = start_line + def_line
 
             start_time = time.time()
-            log.info(f"{indent}Entering {func.__name__} at {file_name}:{line_no}{context}")
+            log.info(f"{indent}Entering {func.__name__} at {file_name}:{def_line_no}{context}")
             _call_stack_depth += 1
             try:
                 result = func(*args, **kwargs)
                 _call_stack_depth -= 1
                 end_time = time.time()
-                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{line_no}"
+                # Get the actual line where the function returned
+                frame = inspect.currentframe()
+                return_line_no = frame.f_back.f_lineno
+                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{return_line_no}"
                         f"{context} (took {end_time - start_time:.2f}s)")
                 return result
             except Exception as err:
                 _call_stack_depth -= 1
                 end_time = time.time()
-                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{line_no}"
+                # Get the actual line where the exception occurred
+                frame = inspect.currentframe()
+                exception_line_no = frame.f_back.f_lineno
+                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{exception_line_no}"
                         f"{context} with exception (took {end_time - start_time:.2f}s)")
                 raise err
         return wrapper
