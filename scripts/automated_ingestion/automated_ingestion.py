@@ -196,8 +196,8 @@ def setup_logging(config, args):
     logger.setLevel(logging.DEBUG)  # Set root logger to lowest level
 
     # Create formatters
-    console_formatter = logging.Formatter(log_format)
-    file_formatter = logging.Formatter('%(asctime)s - ' + log_format)
+    console_formatter = logging.Formatter('%(levelname)-8s: %(message)s')
+    file_formatter = logging.Formatter('%(asctime)s - %(levelname)-8s: %(message)s')
 
     # Console handler (only if not quiet)
     if not args.quiet:
