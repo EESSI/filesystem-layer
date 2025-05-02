@@ -232,11 +232,15 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
         # Create a temporary handler that accepts all levels
         temp_handler = logging.StreamHandler(sys.stdout)
         temp_handler.setLevel(logging.DEBUG)
-        # Use the same format as the root logger's handlers
+        # Use the same format as the root logger's handlers but with fixed-width level names
         if log.handlers:
-            temp_handler.setFormatter(log.handlers[0].formatter)
+            # Get the original format string
+            orig_format = log.handlers[0].formatter._fmt
+            # Replace %(levelname)s with %(levelname)-8s to make it fixed width
+            new_format = orig_format.replace('%(levelname)s', '%(levelname)-8s')
+            temp_handler.setFormatter(logging.Formatter(new_format))
         else:
-            temp_handler.setFormatter(logging.Formatter('%(levelname)s: %(message)s'))
+            temp_handler.setFormatter(logging.Formatter('%(levelname)-8s: %(message)s'))
         log.addHandler(temp_handler)
         try:
             log_func = getattr(log, level.lower())
