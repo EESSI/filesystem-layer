@@ -167,19 +167,28 @@ def log_function_entry_exit(logger=None):
             # Create indentation based on call stack depth
             indent = "  " * _call_stack_depth
 
+            # Get file name and line number
+            frame = inspect.currentframe()
+            while frame.f_back:  # Walk up the call stack to find the caller
+                frame = frame.f_back
+            file_name = os.path.basename(frame.f_code.co_filename)
+            line_no = frame.f_lineno
+
             start_time = time.time()
-            log.info(f"{indent}Entering {func.__name__}{context}")
+            log.info(f"{indent}Entering {func.__name__} at {file_name}:{line_no}{context}")
             _call_stack_depth += 1
             try:
                 result = func(*args, **kwargs)
                 _call_stack_depth -= 1
                 end_time = time.time()
-                log.info(f"{indent}Leaving {func.__name__}{context} (took {end_time - start_time:.2f}s)")
+                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{line_no}"
+                        f"{context} (took {end_time - start_time:.2f}s)")
                 return result
             except Exception as err:
                 _call_stack_depth -= 1
                 end_time = time.time()
-                log.info(f"{indent}Leaving {func.__name__}{context} with exception (took {end_time - start_time:.2f}s)")
+                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{line_no}"
+                        f"{context} with exception (took {end_time - start_time:.2f}s)")
                 raise err
         return wrapper
     return decorator
