@@ -29,8 +29,8 @@ class EESSIS3Bucket(RemoteStorageClient):
         self.bucket = bucket_name
 
         # Get AWS credentials from environment or config
-        aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID') or config.get('aws', 'aws_access_key_id')
-        aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY') or config.get('aws', 'aws_secret_access_key')
+        aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID') or config.get('secrets', 'aws_access_key_id')
+        aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY') or config.get('secrets', 'aws_secret_access_key')
 
         # Configure boto3 client
         client_config = {}
