@@ -2,6 +2,7 @@
 
 from eessitarball import EessiTarball, EessiTarballGroup
 from eessi_data_object import EESSIDataAndSignatureObject, DownloadMode
+from s3_bucket import EESSIS3Bucket
 from pid.decorator import pidfile  # noqa: F401
 from pid import PidFileError
 from utils import log_function_entry_exit, log_message, LoggingScope, set_logging_scopes
@@ -40,13 +41,13 @@ def error(msg, code=1):
     sys.exit(code)
 
 
-def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt'):
+def find_tarballs(s3_bucket, extension='.tar.gz', metadata_extension='.meta.txt'):
     """
     Return a list of all tarballs in an S3 bucket that have a metadata file with
     the given extension (and same filename).
     """
     # TODO: list_objects_v2 only returns up to 1000 objects
-    s3_objects = s3.list_objects_v2(Bucket=bucket).get('Contents', [])
+    s3_objects = s3_bucket.list_objects_v2().get('Contents', [])
     files = [obj['Key'] for obj in s3_objects]
 
     tarballs = [
@@ -58,9 +59,9 @@ def find_tarballs(s3, bucket, extension='.tar.gz', metadata_extension='.meta.txt
 
 
 @log_function_entry_exit()
-def find_tarball_groups(s3, bucket, config, extension='.tar.gz', metadata_extension='.meta.txt'):
+def find_tarball_groups(s3_bucket, config, extension='.tar.gz', metadata_extension='.meta.txt'):
     """Return a dictionary of tarball groups, keyed by (repo, pr_number)."""
-    tarballs = find_tarballs(s3, bucket, extension, metadata_extension)
+    tarballs = find_tarballs(s3_bucket, extension, metadata_extension)
     groups = {}
 
     for tarball in tarballs:
@@ -69,7 +70,7 @@ def find_tarball_groups(s3, bucket, config, extension='.tar.gz', metadata_extens
         local_metadata = os.path.join(config['paths']['download_dir'], os.path.basename(metadata_file))
 
         try:
-            s3.download_file(bucket, metadata_file, local_metadata)
+            s3_bucket.download_file(metadata_file, local_metadata)
             with open(local_metadata, 'r') as meta:
                 metadata = json.load(meta)
                 repo = metadata['link2pr']['repo']
@@ -230,20 +231,16 @@ def main():
     # TODO: check configuration: secrets, paths, permissions on dirs, etc
     gh_pat = config['secrets']['github_pat']
     gh_staging_repo = github.Github(gh_pat).get_repo(config['github']['staging_repo'])
-    s3 = boto3.client(
-        's3',
-        aws_access_key_id=config['secrets']['aws_access_key_id'],
-        aws_secret_access_key=config['secrets']['aws_secret_access_key'],
-        endpoint_url=config['aws']['endpoint_url'],
-        verify=config['aws']['verify_cert_path'],
-    )
 
     buckets = json.loads(config['aws']['staging_buckets'])
     for bucket, cvmfs_repo in buckets.items():
+        # Create our custom S3 bucket for this bucket
+        s3_bucket = EESSIS3Bucket(config, bucket)
+
         if args.task_based:
             # Task-based listing
             extensions = args.task_based.split(',')
-            tasks = find_deployment_tasks(s3, bucket, extensions)
+            tasks = find_deployment_tasks(s3_bucket, extensions)
             if args.list_only:
                 log_message(LoggingScope.GROUP_OPS, 'INFO', "#tasks: %d", len(tasks))
                 for num, task in enumerate(tasks):
@@ -253,7 +250,7 @@ def main():
                 for task_path in tasks:
                     try:
                         # Create EESSIDataAndSignatureObject for the task file
-                        task_obj = EESSIDataAndSignatureObject(config, task_path, s3)
+                        task_obj = EESSIDataAndSignatureObject(config, task_path, s3_bucket)
 
                         # Download the task file and its signature
                         task_obj.download(mode=DownloadMode.CHECK_REMOTE)
@@ -277,7 +274,7 @@ def main():
             # Original tarball-based processing
             if config['github'].get('staging_pr_method', 'individual') == 'grouped':
                 # use new grouped PR method
-                tarball_groups = find_tarball_groups(s3, bucket, config)
+                tarball_groups = find_tarball_groups(s3_bucket, config)
                 if args.list_only:
                     log_message(LoggingScope.GROUP_OPS, 'INFO', "#tarball_groups: %d", len(tarball_groups))
                     for (repo, pr_id), tarballs in tarball_groups.items():
@@ -286,30 +283,29 @@ def main():
                     for (repo, pr_id), tarballs in tarball_groups.items():
                         if tarballs:
                             # Create a group for these tarballs
-                            group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
+                            group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3_bucket, cvmfs_repo)
                             log_message(LoggingScope.GROUP_OPS, 'INFO', "group created\n%s", group.to_string(oneline=True))
                             group.process_group(tarballs)
             else:
                 # use old individual PR method
-                tarballs = find_tarballs(s3, bucket)
+                tarballs = find_tarballs(s3_bucket)
                 if args.list_only:
                     for num, tarball in enumerate(tarballs):
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "[%s] %d: %s", bucket, num, tarball)
                 else:
                     for tarball in tarballs:
-                        tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket, cvmfs_repo)
+                        tar = EessiTarball(tarball, config, gh_staging_repo, s3_bucket, cvmfs_repo)
                         tar.run_handler()
 
 
 @log_function_entry_exit()
-def find_deployment_tasks(s3, bucket: str, extensions: List[str] = None) -> List[str]:
+def find_deployment_tasks(s3_bucket, extensions: List[str] = None) -> List[str]:
     """
     Return a list of all task files in an S3 bucket with the given extensions,
     but only if a corresponding payload file exists (same name without extension).
 
     Args:
-        s3: boto3 S3 client
-        bucket: Name of the S3 bucket to scan
+        s3_bucket: EESSIS3Bucket instance
         extensions: List of file extensions to look for (default: ['.task'])
 
     Returns:
@@ -324,12 +320,11 @@ def find_deployment_tasks(s3, bucket: str, extensions: List[str] = None) -> List
     while True:
         # List objects with pagination
         if continuation_token:
-            response = s3.list_objects_v2(
-                Bucket=bucket,
+            response = s3_bucket.list_objects_v2(
                 ContinuationToken=continuation_token
             )
         else:
-            response = s3.list_objects_v2(Bucket=bucket)
+            response = s3_bucket.list_objects_v2()
 
         # Add files from this page
         files.extend([obj['Key'] for obj in response.get('Contents', [])])

@@ -5,15 +5,15 @@ from typing import Dict, Optional
 import boto3
 
 from utils import log_function_entry_exit, log_message, LoggingScope
-from eessi_data_object import RemoteStorageClient
+from remote_storage import RemoteStorageClient
 
-class EESSIS3Client(RemoteStorageClient):
-    """EESSI-specific S3 client implementation of the RemoteStorageClient protocol."""
+class EESSIS3Bucket(RemoteStorageClient):
+    """EESSI-specific S3 bucket implementation of the RemoteStorageClient protocol."""
 
     @log_function_entry_exit()
     def __init__(self, config, bucket_name: str):
         """
-        Initialize the EESSI S3 client.
+        Initialize the EESSI S3 bucket.
 
         Args:
             config: Configuration object containing:
@@ -59,6 +59,28 @@ class EESSIS3Client(RemoteStorageClient):
             **client_config
         )
         log_message(LoggingScope.DEBUG, 'INFO', "Initialized S3 client for bucket: %s", self.bucket)
+
+    def list_objects_v2(self, **kwargs):
+        """
+        List objects in the bucket using the underlying boto3 client.
+
+        Args:
+            **kwargs: Additional arguments to pass to boto3.client.list_objects_v2
+
+        Returns:
+            Response from boto3.client.list_objects_v2
+        """
+        return self.client.list_objects_v2(Bucket=self.bucket, **kwargs)
+
+    def download_file(self, key: str, filename: str) -> None:
+        """
+        Download a file from S3 to a local file.
+
+        Args:
+            key: The S3 key of the file to download
+            filename: The local path where the file should be saved
+        """
+        self.client.download_file(self.bucket, key, filename)
 
     @log_function_entry_exit()
     def get_metadata(self, remote_path: str) -> Dict:

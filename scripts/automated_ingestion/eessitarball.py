@@ -1,4 +1,5 @@
 from utils import send_slack_message, sha256sum, log_function_entry_exit, log_message, LoggingScope
+from s3_bucket import EESSIS3Bucket
 
 from pathlib import PurePosixPath
 
@@ -19,7 +20,7 @@ class EessiTarball:
     """
 
     @log_function_entry_exit()
-    def __init__(self, object_name, config, git_staging_repo, s3, bucket, cvmfs_repo):
+    def __init__(self, object_name, config, git_staging_repo, s3_bucket, cvmfs_repo):
         """Initialize the tarball object."""
         self.config = config
         self.git_repo = git_staging_repo
@@ -27,15 +28,14 @@ class EessiTarball:
         self.metadata_sig_file = self.metadata_file + config['signatures']['signature_file_extension']
         self.object = object_name
         self.object_sig = object_name + config['signatures']['signature_file_extension']
-        self.s3 = s3
-        self.bucket = bucket
+        self.s3_bucket = s3_bucket
         self.cvmfs_repo = cvmfs_repo
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
         self.local_sig_path = self.local_path + config['signatures']['signature_file_extension']
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
         self.local_metadata_sig_path = self.local_metadata_path + config['signatures']['signature_file_extension']
         self.sig_verified = False
-        self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
+        self.url = f'https://{s3_bucket.bucket}.s3.amazonaws.com/{object_name}'
 
         self.states = {
             'new': {'handler': self.mark_new_tarball_as_staged, 'next_state': 'staged'},
@@ -67,14 +67,14 @@ class EessiTarball:
                 try:
                     log_msg = "Downloading signature file %s to %s"
                     log_message(LoggingScope.DOWNLOAD, 'INFO', log_msg, sig_object, local_sig_file)
-                    self.s3.download_file(self.bucket, sig_object, local_sig_file)
+                    self.s3_bucket.download_file(self.s3_bucket.bucket, sig_object, local_sig_file)
                 except Exception as err:
                     log_msg = 'Failed to download signature file %s for %s from %s to %s.'
                     if self.config['signatures'].getboolean('signatures_required', True):
                         log_msg += '\nException: %s'
                         log_message(
                             LoggingScope.ERROR, 'ERROR', log_msg,
-                            sig_object, object, self.bucket, local_sig_file, err
+                            sig_object, object, self.s3_bucket.bucket, local_sig_file, err
                         )
                         skip = True
                         break
@@ -84,15 +84,15 @@ class EessiTarball:
                         log_msg += '\nException: %s'
                         log_message(
                             LoggingScope.DOWNLOAD, 'WARNING', log_msg,
-                            sig_object, object, self.bucket, local_sig_file, err
+                            sig_object, object, self.s3_bucket.bucket, local_sig_file, err
                         )
                 # Now we download the file itself.
                 try:
                     log_message(LoggingScope.DOWNLOAD, 'INFO', "Downloading file %s to %s", object, local_file)
-                    self.s3.download_file(self.bucket, object, local_file)
+                    self.s3_bucket.download_file(self.s3_bucket.bucket, object, local_file)
                 except Exception as err:
                     log_msg = 'Failed to download %s from %s to %s.\nException: %s'
-                    log_message(LoggingScope.ERROR, 'ERROR', log_msg, object, self.bucket, local_file, err)
+                    log_message(LoggingScope.ERROR, 'ERROR', log_msg, object, self.s3_bucket.bucket, local_file, err)
                     skip = True
                     break
         # If any required download failed, make sure to skip this tarball completely.
@@ -201,7 +201,7 @@ class EessiTarball:
         str = f"tarball: {self.object}"
         sep = "\n" if not oneline else ","
         str += f"{sep} metadt: {self.metadata_file}"
-        str += f"{sep} bucket: {self.bucket}"
+        str += f"{sep} bucket: {self.s3_bucket.bucket}"
         str += f"{sep} cvmfs.: {self.cvmfs_repo}"
         str += f"{sep} GHrepo: {self.git_repo}"
         return str
@@ -480,7 +480,7 @@ class EessiTarball:
             log_msg = "Moving metadata for %d tarballs to staged"
             log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, len(tarballs_in_group))
             for tarball in tarballs_in_group:
-                temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+                temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
                 temp_tar.move_metadata_file(self.state, next_state, branch=git_branch)
 
         # Create PR with appropriate template
@@ -502,8 +502,7 @@ class EessiTarball:
                 tar_overviews = []
                 for tarball in tarballs_in_group:
                     try:
-                        temp_tar = EessiTarball(
-                            tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+                        temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
                         temp_tar.download()
                         overview = temp_tar.get_contents_overview()
                         tar_details_tpl = "<details>\n<summary>Contents of %s</summary>\n\n%s\n</details>\n"
@@ -669,19 +668,18 @@ class EessiTarball:
 class EessiTarballGroup:
     """Class to handle a group of tarballs that share the same link2pr information."""
 
-    def __init__(self, first_tarball, config, git_staging_repo, s3, bucket, cvmfs_repo):
+    def __init__(self, first_tarball, config, git_staging_repo, s3_bucket, cvmfs_repo):
         """Initialize with the first tarball in the group."""
-        self.first_tar = EessiTarball(first_tarball, config, git_staging_repo, s3, bucket, cvmfs_repo)
+        self.first_tar = EessiTarball(first_tarball, config, git_staging_repo, s3_bucket, cvmfs_repo)
         self.config = config
         self.git_repo = git_staging_repo
-        self.s3 = s3
-        self.bucket = bucket
+        self.s3_bucket = s3_bucket
         self.cvmfs_repo = cvmfs_repo
 
     def download_tarballs_and_more(self, tarballs):
         """Download all files associated with this group of tarballs."""
         for tarball in tarballs:
-            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
             log_message(LoggingScope.GROUP_OPS, 'INFO', "downloading files for '%s'", temp_tar.object)
             temp_tar.download(force=True)
             if not temp_tar.local_path or not temp_tar.local_metadata_path:
@@ -710,7 +708,7 @@ class EessiTarballGroup:
         for tarball in tarballs[1:]:
             log_msg = "Processing tarball in group: %s"
             log_message(LoggingScope.GROUP_OPS, 'INFO', log_msg, tarball)
-            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
             temp_tar.mark_new_tarball_as_staged('main')
 
         # Process the group for approval, only works correctly if first tarball is already in state 'staged'
@@ -722,8 +720,8 @@ class EessiTarballGroup:
         sep = "\n" if not oneline else ","
         str += f"{sep} config: {self.config}"
         str += f"{sep} GHrepo: {self.git_repo}"
-        str += f"{sep} s3....: {self.s3}"
-        str += f"{sep} bucket: {self.bucket}"
+        str += f"{sep} s3....: {self.s3_bucket}"
+        str += f"{sep} bucket: {self.s3_bucket.bucket}"
         str += f"{sep} cvmfs.: {self.cvmfs_repo}"
         return str
 
@@ -732,7 +730,7 @@ class EessiTarballGroup:
         first_repo, first_pr = self.first_tar.get_link2pr_info()
 
         for tarball in tarballs[1:]:  # Skip first tarball as we already have its info
-            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3, self.bucket, self.cvmfs_repo)
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
             log_message(LoggingScope.DEBUG, 'DEBUG', "temp tar: %s", temp_tar.to_string())
             repo, pr = temp_tar.get_link2pr_info()
             if repo != first_repo or pr != first_pr:
