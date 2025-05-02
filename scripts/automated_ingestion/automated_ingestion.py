@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from eessitarball import EessiTarball, EessiTarballGroup
+from eessi_data_object import EESSIDataAndSignatureObject, DownloadMode
 from pid.decorator import pidfile  # noqa: F401
 from pid import PidFileError
 from utils import log_function_entry_exit, log_message, LoggingScope, set_logging_scopes
@@ -248,8 +249,30 @@ def main():
                 for num, task in enumerate(tasks):
                     log_message(LoggingScope.GROUP_OPS, 'INFO', "[%s] %d: %s", bucket, num, task)
             else:
-                # TODO: Implement task processing
-                pass
+                # Process each task file
+                for task_path in tasks:
+                    try:
+                        # Create EESSIDataAndSignatureObject for the task file
+                        task_obj = EESSIDataAndSignatureObject(config, task_path, s3)
+
+                        # Download the task file and its signature
+                        task_obj.download(mode=DownloadMode.CHECK_REMOTE)
+
+                        # Log the ETags of the downloaded task file
+                        file_etag, sig_etag = task_obj.get_etags()
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file %s has ETag: %s", task_path, file_etag)
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', 
+                                  "Task signature %s has ETag: %s", 
+                                  task_obj.remote_sig_path, sig_etag)
+
+                        # TODO: Process the task file contents
+                        # This would involve reading the task file, parsing its contents,
+                        # and performing the required actions based on the task type
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Processing task file: %s", task_path)
+
+                    except Exception as err:
+                        log_message(LoggingScope.ERROR, 'ERROR', "Failed to process task %s: %s", task_path, str(err))
+                        continue
         else:
             # Original tarball-based processing
             if config['github'].get('staging_pr_method', 'individual') == 'grouped':
