@@ -167,12 +167,12 @@ def log_function_entry_exit(logger=None):
             # Create indentation based on call stack depth
             indent = "  " * _call_stack_depth
 
-            # Get file name and line number
+            # Get file name and line number of the decorated function
             frame = inspect.currentframe()
-            while frame.f_back:  # Walk up the call stack to find the caller
-                frame = frame.f_back
-            file_name = os.path.basename(frame.f_code.co_filename)
-            line_no = frame.f_lineno
+            # Get the frame of the decorated function (one level up from the wrapper)
+            func_frame = frame.f_back
+            file_name = os.path.basename(func_frame.f_code.co_filename)
+            line_no = func_frame.f_lineno
 
             start_time = time.time()
             log.info(f"{indent}Entering {func.__name__} at {file_name}:{line_no}{context}")
