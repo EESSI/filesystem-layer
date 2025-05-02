@@ -1,4 +1,5 @@
 import os
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
@@ -82,6 +83,74 @@ class EESSIDataAndSignatureObject:
             self._get_local_etag(self.local_file_path),
             self._get_local_etag(self.local_sig_path)
         )
+
+    @log_function_entry_exit()
+    def verify_signature(self) -> bool:
+        """
+        Verify the signature of the data file using the corresponding signature file.
+        
+        Returns:
+            bool: True if the signature is valid or if signatures are not required, False otherwise
+        """
+        # Check if signature file exists
+        if not self.local_sig_path.exists():
+            log_message(LoggingScope.VERIFICATION, 'WARNING', "Signature file %s is missing", 
+                       self.local_sig_path)
+            
+            # If signatures are required, return failure
+            if self.config['signatures'].getboolean('signatures_required', True):
+                log_message(LoggingScope.ERROR, 'ERROR', "Signature file %s is missing and signatures are required", 
+                           self.local_sig_path)
+                return False
+            else:
+                log_message(LoggingScope.VERIFICATION, 'INFO', 
+                           "Signature file %s is missing, but signatures are not required", 
+                           self.local_sig_path)
+                return True
+
+        # If signatures are provided, we should always verify them, regardless of the signatures_required setting
+        verify_runenv = self.config['signatures']['signature_verification_runenv'].split()
+        verify_script = self.config['signatures']['signature_verification_script']
+        allowed_signers_file = self.config['signatures']['allowed_signers_file']
+
+        # Check if verification tools exist
+        if not Path(verify_script).exists():
+            log_message(LoggingScope.ERROR, 'ERROR', 
+                       "Unable to verify signature: verification script %s does not exist", verify_script)
+            return False
+
+        if not Path(allowed_signers_file).exists():
+            log_message(LoggingScope.ERROR, 'ERROR', 
+                       "Unable to verify signature: allowed signers file %s does not exist", allowed_signers_file)
+            return False
+
+        # Run the verification command with named parameters
+        cmd = verify_runenv + [
+            verify_script,
+            '--verify',
+            '--allowed-signers-file', allowed_signers_file,
+            '--file', str(self.local_file_path),
+            '--signature-file', str(self.local_sig_path)
+        ]
+        log_message(LoggingScope.VERIFICATION, 'INFO', "Running command: %s", ' '.join(cmd))
+        
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            if result.returncode == 0:
+                log_message(LoggingScope.VERIFICATION, 'INFO', 
+                           "Successfully verified signature for %s", self.local_file_path)
+                return True
+            else:
+                log_message(LoggingScope.ERROR, 'ERROR', 
+                           "Signature verification failed for %s", self.local_file_path)
+                log_message(LoggingScope.ERROR, 'ERROR', "  stdout: %s", result.stdout)
+                log_message(LoggingScope.ERROR, 'ERROR', "  stderr: %s", result.stderr)
+                return False
+        except Exception as e:
+            log_message(LoggingScope.ERROR, 'ERROR', 
+                       "Error during signature verification for %s: %s", 
+                       self.local_file_path, str(e))
+            return False
 
     @log_function_entry_exit()
     def download(self, mode: DownloadMode = DownloadMode.CHECK_LOCAL) -> bool:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from eessitarball import EessiTarball, EessiTarballGroup
-from eessi_data_object import EESSIDataAndSignatureObject, DownloadMode
+from eessi_data_object import EESSIDataAndSignatureObject, DownloadMode, EESSITaskDescription
 from s3_bucket import EESSIS3Bucket
 from pid.decorator import pidfile  # noqa: F401
 from pid import PidFileError
@@ -249,18 +249,22 @@ def main():
                 # Process each task file
                 for task_path in tasks:
                     try:
-                        # Create EESSIDataAndSignatureObject for the task file
-                        task_obj = EESSIDataAndSignatureObject(config, task_path, s3_bucket)
+                        # Create EESSITaskDescription for the task file
+                        task_description = EESSITaskDescription(
+                            EESSIDataAndSignatureObject(config, task_path, s3_bucket)
+                        )
 
-                        # Download the task file and its signature
-                        task_obj.download(mode=DownloadMode.CHECK_REMOTE)
+                        # Log information about the task
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file: %s", task_description.task_object.local_file_path)
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature file: %s", task_description.task_object.local_sig_path)
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature verified: %s", task_description.signature_verified)
 
                         # Log the ETags of the downloaded task file
-                        file_etag, sig_etag = task_obj.get_etags()
+                        file_etag, sig_etag = task_description.task_object.get_etags()
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file %s has ETag: %s", task_path, file_etag)
                         log_message(LoggingScope.GROUP_OPS, 'INFO', 
                                   "Task signature %s has ETag: %s", 
-                                  task_obj.remote_sig_path, sig_etag)
+                                  task_description.task_object.remote_sig_path, sig_etag)
 
                         # TODO: Process the task file contents
                         # This would involve reading the task file, parsing its contents,
