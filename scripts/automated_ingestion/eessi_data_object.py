@@ -139,6 +139,8 @@ class EESSIDataAndSignatureObject:
             if result.returncode == 0:
                 log_message(LoggingScope.VERIFICATION, 'INFO', 
                            "Successfully verified signature for %s", self.local_file_path)
+                log_message(LoggingScope.VERIFICATION, 'DEBUG', "  stdout: %s", result.stdout)
+                log_message(LoggingScope.VERIFICATION, 'DEBUG', "  stderr: %s", result.stderr)
                 return True
             else:
                 log_message(LoggingScope.ERROR, 'ERROR', 

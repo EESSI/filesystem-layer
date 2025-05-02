@@ -270,7 +270,7 @@ def main():
                         # TODO: Process the task file contents
                         # This would involve reading the task file, parsing its contents,
                         # and performing the required actions based on the task type
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Processing task file: %s", task_path)
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "TODO: Processing task file: %s", task_path)
 
                     except Exception as err:
                         log_message(LoggingScope.ERROR, 'ERROR', "Failed to process task %s: %s", task_path, str(err))
