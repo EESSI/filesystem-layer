@@ -221,7 +221,9 @@ def log_with_scope(scope, logger=None):
 
 def log_message(scope, level, msg, *args, logger=None, **kwargs):
     """
-    Log a message if the specified scope is enabled.
+    Log a message if either:
+    1. The specified scope is enabled, OR
+    2. The current log level is equal to or higher than the specified level
 
     Args:
         scope: LoggingScope value indicating which scope this logging belongs to
@@ -230,10 +232,13 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
         logger: Optional logger instance. If not provided, uses the root logger.
         *args, **kwargs: Additional arguments to pass to the logging function
     """
-    if not is_logging_scope_enabled(scope):
+    log = logger or logging.getLogger()
+    log_level = getattr(logging, level.upper())
+
+    # Check if either condition is met
+    if not (is_logging_scope_enabled(scope) or log_level >= log.getEffectiveLevel()):
         return
 
-    log = logger or logging.getLogger()
     log_func = getattr(log, level.lower())
     log_func(msg, *args, **kwargs)
 
