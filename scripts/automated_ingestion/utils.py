@@ -229,7 +229,7 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
     scoped_msg = f"[{scope.name}] {msg}"
     indented_msg = f"{indent}{scoped_msg}"
 
-    # If scope is enabled, bypass the logger's level check
+    # If scope is enabled, use the temporary handler
     if is_logging_scope_enabled(scope):
         # Create a temporary handler that accepts all levels
         temp_handler = logging.StreamHandler(sys.stdout)
@@ -249,7 +249,8 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
             log_func(indented_msg, *args, **kwargs)
         finally:
             log.removeHandler(temp_handler)
-    elif log_level >= log.getEffectiveLevel():
+    # Only use normal logging if scope is not enabled AND level is high enough
+    elif not is_logging_scope_enabled(scope) and log_level >= log.getEffectiveLevel():
         # Use normal logging with level check
         log_func = getattr(log, level.lower())
         log_func(indented_msg, *args, **kwargs)
