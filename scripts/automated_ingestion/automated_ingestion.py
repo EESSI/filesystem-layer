@@ -15,6 +15,7 @@ import os
 import pid
 import sys
 from pathlib import Path
+from typing import List, Dict
 
 REQUIRED_CONFIG = {
     'secrets': ['aws_secret_access_key', 'aws_access_key_id', 'github_pat'],
@@ -150,7 +151,8 @@ def parse_args():
     parser.add_argument('-c', '--config', type=str, help='path to configuration file',
                        default='automated_ingestion.cfg', dest='config')
     parser.add_argument('-d', '--debug', help='enable debug mode', action='store_true', dest='debug')
-    parser.add_argument('-l', '--list', help='only list available tarballs', action='store_true', dest='list_only')
+    parser.add_argument('-l', '--list', help='only list available tarballs or tasks', action='store_true', dest='list_only')
+    parser.add_argument('--task-based', help='use task-based ingestion instead of tarball-based', action='store_true')
 
     return parser.parse_args()
 
@@ -235,30 +237,88 @@ def main():
 
     buckets = json.loads(config['aws']['staging_buckets'])
     for bucket, cvmfs_repo in buckets.items():
-        if config['github'].get('staging_pr_method', 'individual') == 'grouped':
-            # use new grouped PR method
-            tarball_groups = find_tarball_groups(s3, bucket, config)
+        if args.task_based:
+            # Task-based listing
+            tasks = find_deployment_tasks(s3, bucket)
             if args.list_only:
-                log_message(LoggingScope.GROUP_OPS, 'INFO', "#tarball_groups: %d", len(tarball_groups))
-                for (repo, pr_id), tarballs in tarball_groups.items():
-                    log_message(LoggingScope.GROUP_OPS, 'INFO', "  %s#%s: #tarballs %d", repo, pr_id, len(tarballs))
+                log_message(LoggingScope.GROUP_OPS, 'INFO', "#tasks: %d", len(tasks))
+                for num, task in enumerate(tasks):
+                    log_message(LoggingScope.GROUP_OPS, 'INFO', "[%s] %d: %s", bucket, num, task)
             else:
-                for (repo, pr_id), tarballs in tarball_groups.items():
-                    if tarballs:
-                        # Create a group for these tarballs
-                        group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "group created\n%s", group.to_string(oneline=True))
-                        group.process_group(tarballs)
+                # TODO: Implement task processing
+                pass
         else:
-            # use old individual PR method
-            tarballs = find_tarballs(s3, bucket)
-            if args.list_only:
-                for num, tarball in enumerate(tarballs):
-                    log_message(LoggingScope.GROUP_OPS, 'INFO', "[%s] %d: %s", bucket, num, tarball)
+            # Original tarball-based processing
+            if config['github'].get('staging_pr_method', 'individual') == 'grouped':
+                # use new grouped PR method
+                tarball_groups = find_tarball_groups(s3, bucket, config)
+                if args.list_only:
+                    log_message(LoggingScope.GROUP_OPS, 'INFO', "#tarball_groups: %d", len(tarball_groups))
+                    for (repo, pr_id), tarballs in tarball_groups.items():
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "  %s#%s: #tarballs %d", repo, pr_id, len(tarballs))
+                else:
+                    for (repo, pr_id), tarballs in tarball_groups.items():
+                        if tarballs:
+                            # Create a group for these tarballs
+                            group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3, bucket, cvmfs_repo)
+                            log_message(LoggingScope.GROUP_OPS, 'INFO', "group created\n%s", group.to_string(oneline=True))
+                            group.process_group(tarballs)
             else:
-                for tarball in tarballs:
-                    tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket, cvmfs_repo)
-                    tar.run_handler()
+                # use old individual PR method
+                tarballs = find_tarballs(s3, bucket)
+                if args.list_only:
+                    for num, tarball in enumerate(tarballs):
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "[%s] %d: %s", bucket, num, tarball)
+                else:
+                    for tarball in tarballs:
+                        tar = EessiTarball(tarball, config, gh_staging_repo, s3, bucket, cvmfs_repo)
+                        tar.run_handler()
+
+
+@log_function_entry_exit()
+def find_deployment_tasks(s3, bucket: str, extension='.task') -> List[str]:
+    """
+    Return a list of all task files in an S3 bucket with the given extension,
+    but only if a corresponding payload file exists (same name without extension).
+
+    Args:
+        s3: boto3 S3 client
+        bucket: Name of the S3 bucket to scan
+        extension: File extension to look for (default: '.task')
+
+    Returns:
+        List of task filenames found in the bucket that have a corresponding payload
+    """
+    files = []
+    continuation_token = None
+
+    while True:
+        # List objects with pagination
+        if continuation_token:
+            response = s3.list_objects_v2(
+                Bucket=bucket,
+                ContinuationToken=continuation_token
+            )
+        else:
+            response = s3.list_objects_v2(Bucket=bucket)
+
+        # Add files from this page
+        files.extend([obj['Key'] for obj in response.get('Contents', [])])
+
+        # Check if there are more pages
+        if response.get('IsTruncated'):
+            continuation_token = response.get('NextContinuationToken')
+        else:
+            break
+
+    # Create a set of all files for faster lookup
+    file_set = set(files)
+
+    # Return only task files that have a corresponding payload
+    return [
+        file for file in files
+        if file.endswith(extension) and file[:-len(extension)] in file_set
+    ]
 
 
 if __name__ == '__main__':
