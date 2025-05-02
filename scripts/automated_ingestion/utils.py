@@ -7,6 +7,7 @@ import time
 import os
 import inspect
 from enum import IntFlag, auto
+import sys
 
 class LoggingScope(IntFlag):
     """Enumeration of different logging scopes."""
@@ -202,23 +203,6 @@ def log_function_entry_exit(logger=None):
         return wrapper
     return decorator
 
-def log_with_scope(scope, logger=None):
-    """
-    Decorator that checks if a specific logging scope is enabled before logging.
-
-    Args:
-        scope: LoggingScope value indicating which scope this logging belongs to
-        logger: Optional logger instance. If not provided, uses the root logger.
-    """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            if not is_logging_scope_enabled(scope):
-                return func(*args, **kwargs)
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
 def log_message(scope, level, msg, *args, logger=None, **kwargs):
     """
     Log a message if either:
@@ -239,8 +223,25 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
     if not (is_logging_scope_enabled(scope) or log_level >= log.getEffectiveLevel()):
         return
 
-    log_func = getattr(log, level.lower())
-    log_func(msg, *args, **kwargs)
+    # Create indentation based on call stack depth
+    indent = "  " * _call_stack_depth
+    indented_msg = f"{indent}{msg}"
+
+    # If scope is enabled, bypass the logger's level check
+    if is_logging_scope_enabled(scope):
+        # Create a temporary handler that accepts all levels
+        temp_handler = logging.StreamHandler(sys.stdout)
+        temp_handler.setLevel(logging.DEBUG)
+        log.addHandler(temp_handler)
+        try:
+            log_func = getattr(log, level.lower())
+            log_func(indented_msg, *args, **kwargs)
+        finally:
+            log.removeHandler(temp_handler)
+    else:
+        # Use normal logging with level check
+        log_func = getattr(log, level.lower())
+        log_func(indented_msg, *args, **kwargs)
 
 # Example usage:
 # log_message(LoggingScope.DOWNLOAD, 'INFO', "Downloading file: %s", filename)
