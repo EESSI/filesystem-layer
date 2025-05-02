@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from eessitarball import EessiTarball, EessiTarballGroup
-from eessi_data_object import EESSIDataAndSignatureObject, DownloadMode, EESSITaskDescription
+from eessi_data_object import EESSIDataAndSignatureObject, DownloadMode
+from eessi_task_description import EESSITaskDescription
 from s3_bucket import EESSIS3Bucket
 from pid.decorator import pidfile  # noqa: F401
 from pid import PidFileError
