@@ -179,14 +179,14 @@ def log_function_entry_exit(logger=None):
             last_line_no = start_line + len(source_lines) - 1 - last_line
 
             start_time = time.time()
-            log.info(f"{indent}Entering {func.__name__} at {file_name}:{def_line_no}{context}")
+            log.info(f"{indent}[FUNC_ENTRY_EXIT] Entering {func.__name__} at {file_name}:{def_line_no}{context}")
             _call_stack_depth += 1
             try:
                 result = func(*args, **kwargs)
                 _call_stack_depth -= 1
                 end_time = time.time()
                 # For normal returns, show the last line of the function
-                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{last_line_no}"
+                log.info(f"{indent}[FUNC_ENTRY_EXIT] Leaving {func.__name__} at {file_name}:{last_line_no}"
                         f"{context} (took {end_time - start_time:.2f}s)")
                 return result
             except Exception as err:
@@ -197,7 +197,7 @@ def log_function_entry_exit(logger=None):
                     exc_line_no = err.__traceback__.tb_lineno
                 except AttributeError:
                     exc_line_no = last_line_no
-                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{exc_line_no}"
+                log.info(f"{indent}[FUNC_ENTRY_EXIT] Leaving {func.__name__} at {file_name}:{exc_line_no}"
                         f"{context} with exception (took {end_time - start_time:.2f}s)")
                 raise err
         return wrapper
@@ -225,7 +225,9 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
 
     # Create indentation based on call stack depth
     indent = "  " * _call_stack_depth
-    indented_msg = f"{indent}{msg}"
+    # Add scope to the message
+    scoped_msg = f"[{scope.name}] {msg}"
+    indented_msg = f"{indent}{scoped_msg}"
 
     # If scope is enabled, bypass the logger's level check
     if is_logging_scope_enabled(scope):
@@ -247,7 +249,7 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
             log_func(indented_msg, *args, **kwargs)
         finally:
             log.removeHandler(temp_handler)
-    else:
+    elif log_level >= log.getEffectiveLevel():
         # Use normal logging with level check
         log_func = getattr(log, level.lower())
         log_func(indented_msg, *args, **kwargs)
