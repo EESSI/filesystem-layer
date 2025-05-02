@@ -173,6 +173,9 @@ def log_function_entry_exit(logger=None):
             # Find the line with the actual function definition
             def_line = next(i for i, line in enumerate(source_lines) if line.strip().startswith('def '))
             def_line_no = start_line + def_line
+            # Find the last non-empty line of the function
+            last_line = next(i for i, line in enumerate(reversed(source_lines)) if line.strip())
+            last_line_no = start_line + len(source_lines) - 1 - last_line
 
             start_time = time.time()
             log.info(f"{indent}Entering {func.__name__} at {file_name}:{def_line_no}{context}")
@@ -181,25 +184,19 @@ def log_function_entry_exit(logger=None):
                 result = func(*args, **kwargs)
                 _call_stack_depth -= 1
                 end_time = time.time()
-                # Get the actual line where the function returned
-                frame = inspect.currentframe()
-                # Walk up the stack to find the frame of the decorated function
-                while frame.f_back and frame.f_back.f_code.co_name != func.__name__:
-                    frame = frame.f_back
-                return_line_no = frame.f_lineno
-                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{return_line_no}"
+                # For normal returns, show the last line of the function
+                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{last_line_no}"
                         f"{context} (took {end_time - start_time:.2f}s)")
                 return result
             except Exception as err:
                 _call_stack_depth -= 1
                 end_time = time.time()
-                # Get the actual line where the exception occurred
-                frame = inspect.currentframe()
-                # Walk up the stack to find the frame of the decorated function
-                while frame.f_back and frame.f_back.f_code.co_name != func.__name__:
-                    frame = frame.f_back
-                exception_line_no = frame.f_lineno
-                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{exception_line_no}"
+                # For exceptions, try to get the line number from the exception
+                try:
+                    exc_line_no = err.__traceback__.tb_lineno
+                except AttributeError:
+                    exc_line_no = last_line_no
+                log.info(f"{indent}Leaving {func.__name__} at {file_name}:{exc_line_no}"
                         f"{context} with exception (took {end_time - start_time:.2f}s)")
                 raise err
         return wrapper
