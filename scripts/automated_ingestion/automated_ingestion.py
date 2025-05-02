@@ -152,7 +152,9 @@ def parse_args():
                        default='automated_ingestion.cfg', dest='config')
     parser.add_argument('-d', '--debug', help='enable debug mode', action='store_true', dest='debug')
     parser.add_argument('-l', '--list', help='only list available tarballs or tasks', action='store_true', dest='list_only')
-    parser.add_argument('--task-based', help='use task-based ingestion instead of tarball-based', action='store_true')
+    parser.add_argument('--task-based', help='use task-based ingestion instead of tarball-based. '
+                       'Optionally specify comma-separated list of extensions (default: .task)',
+                       nargs='?', const='.task', default=False)
 
     return parser.parse_args()
 
@@ -239,7 +241,8 @@ def main():
     for bucket, cvmfs_repo in buckets.items():
         if args.task_based:
             # Task-based listing
-            tasks = find_deployment_tasks(s3, bucket)
+            extensions = args.task_based.split(',')
+            tasks = find_deployment_tasks(s3, bucket, extensions)
             if args.list_only:
                 log_message(LoggingScope.GROUP_OPS, 'INFO', "#tasks: %d", len(tasks))
                 for num, task in enumerate(tasks):
@@ -276,19 +279,22 @@ def main():
 
 
 @log_function_entry_exit()
-def find_deployment_tasks(s3, bucket: str, extension='.task') -> List[str]:
+def find_deployment_tasks(s3, bucket: str, extensions: List[str] = None) -> List[str]:
     """
-    Return a list of all task files in an S3 bucket with the given extension,
+    Return a list of all task files in an S3 bucket with the given extensions,
     but only if a corresponding payload file exists (same name without extension).
 
     Args:
         s3: boto3 S3 client
         bucket: Name of the S3 bucket to scan
-        extension: File extension to look for (default: '.task')
+        extensions: List of file extensions to look for (default: ['.task'])
 
     Returns:
         List of task filenames found in the bucket that have a corresponding payload
     """
+    if extensions is None:
+        extensions = ['.task']
+
     files = []
     continuation_token = None
 
@@ -315,10 +321,14 @@ def find_deployment_tasks(s3, bucket: str, extension='.task') -> List[str]:
     file_set = set(files)
 
     # Return only task files that have a corresponding payload
-    return [
-        file for file in files
-        if file.endswith(extension) and file[:-len(extension)] in file_set
-    ]
+    result = []
+    for file in files:
+        for ext in extensions:
+            if file.endswith(ext) and file[:-len(ext)] in file_set:
+                result.append(file)
+                break  # Found a matching extension, no need to check others
+
+    return result
 
 
 if __name__ == '__main__':
