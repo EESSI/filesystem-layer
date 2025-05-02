@@ -99,46 +99,51 @@ class EESSIDataAndSignatureObject:
             log_message(LoggingScope.DOWNLOAD, 'INFO', "Forcing download of %s", self.remote_file_path)
         elif mode == DownloadMode.CHECK_REMOTE:
             # First check if we have local ETags
-            local_file_etag = self._get_local_etag(self.local_file_path)
-            local_sig_etag = self._get_local_etag(self.local_sig_path)
+            try:
+                local_file_etag = self._get_local_etag(self.local_file_path)
+                local_sig_etag = self._get_local_etag(self.local_sig_path)
 
-            if local_file_etag:
-                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Local file ETag: %s", local_file_etag)
-            else:
-                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "No local file ETag found")
-            if local_sig_etag:
-                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Local signature ETag: %s", local_sig_etag)
-            else:
-                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "No local signature ETag found")
+                if local_file_etag:
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Local file ETag: %s", local_file_etag)
+                else:
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "No local file ETag found")
+                if local_sig_etag:
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Local signature ETag: %s", local_sig_etag)
+                else:
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "No local signature ETag found")
 
-            # If we don't have local ETags, we need to download
-            if not local_file_etag or not local_sig_etag:
-                should_download = True
-                log_message(LoggingScope.DOWNLOAD, 'INFO', "Missing local ETags, downloading %s", 
-                          self.remote_file_path)
-            else:
-                # Get remote ETags and compare
-                remote_file_etag = self.remote_client.get_metadata(self.remote_file_path)['ETag']
-                remote_sig_etag = self.remote_client.get_metadata(self.remote_sig_path)['ETag']
-                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Remote file ETag: %s", remote_file_etag)
-                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Remote signature ETag: %s", remote_sig_etag)
-
-                should_download = (
-                    remote_file_etag != local_file_etag or
-                    remote_sig_etag != local_sig_etag
-                )
-                if should_download:
-                    if remote_file_etag != local_file_etag:
-                        log_message(LoggingScope.DOWNLOAD, 'INFO', "File ETag changed from %s to %s", 
-                                  local_file_etag, remote_file_etag)
-                    if remote_sig_etag != local_sig_etag:
-                        log_message(LoggingScope.DOWNLOAD, 'INFO', "Signature ETag changed from %s to %s", 
-                                  local_sig_etag, remote_sig_etag)
-                    log_message(LoggingScope.DOWNLOAD, 'INFO', "Remote files have changed, downloading %s", 
+                # If we don't have local ETags, we need to download
+                if not local_file_etag or not local_sig_etag:
+                    should_download = True
+                    log_message(LoggingScope.DOWNLOAD, 'INFO', "Missing local ETags, downloading %s", 
                               self.remote_file_path)
                 else:
-                    log_message(LoggingScope.DOWNLOAD, 'INFO', "Remote files unchanged, skipping download of %s", 
-                              self.remote_file_path)
+                    # Get remote ETags and compare
+                    remote_file_etag = self.remote_client.get_metadata(self.remote_file_path)['ETag']
+                    remote_sig_etag = self.remote_client.get_metadata(self.remote_sig_path)['ETag']
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Remote file ETag: %s", remote_file_etag)
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Remote signature ETag: %s", remote_sig_etag)
+
+                    should_download = (
+                        remote_file_etag != local_file_etag or
+                        remote_sig_etag != local_sig_etag
+                    )
+                    if should_download:
+                        if remote_file_etag != local_file_etag:
+                            log_message(LoggingScope.DOWNLOAD, 'INFO', "File ETag changed from %s to %s", 
+                                      local_file_etag, remote_file_etag)
+                        if remote_sig_etag != local_sig_etag:
+                            log_message(LoggingScope.DOWNLOAD, 'INFO', "Signature ETag changed from %s to %s", 
+                                      local_sig_etag, remote_sig_etag)
+                        log_message(LoggingScope.DOWNLOAD, 'INFO', "Remote files have changed, downloading %s", 
+                                  self.remote_file_path)
+                    else:
+                        log_message(LoggingScope.DOWNLOAD, 'INFO', "Remote files unchanged, skipping download of %s", 
+                                  self.remote_file_path)
+            except Exception as etag_err:
+                # If we get any error with ETags, we'll just download the files
+                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error handling ETags, will download files: %s", str(etag_err))
+                should_download = True
         else:  # CHECK_LOCAL
             should_download = (
                 not self.local_file_path.exists() or
@@ -163,24 +168,73 @@ class EESSIDataAndSignatureObject:
 
         # Download files
         try:
+            # Download the main file first
             self.remote_client.download(self.remote_file_path, str(self.local_file_path))
-            self.remote_client.download(self.remote_sig_path, str(self.local_sig_path))
 
-            # Log the ETags of downloaded files
-            file_etag = self._get_local_etag(self.local_file_path)
-            sig_etag = self._get_local_etag(self.local_sig_path)
-            log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Downloaded %s with ETag: %s", self.remote_file_path, file_etag)
-            log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Downloaded %s with ETag: %s", self.remote_sig_path, sig_etag)
+            # Get and log the ETag of the downloaded file
+            try:
+                file_etag = self._get_local_etag(self.local_file_path)
+                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Downloaded %s with ETag: %s", 
+                           self.remote_file_path, file_etag)
+            except Exception as etag_err:
+                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error getting ETag for %s: %s", 
+                           self.remote_file_path, str(etag_err))
 
-            log_msg = "Successfully downloaded %s and its signature"
-            log_message(LoggingScope.DOWNLOAD, 'INFO', log_msg, self.remote_file_path)
+            # Try to download the signature file
+            try:
+                self.remote_client.download(self.remote_sig_path, str(self.local_sig_path))
+                try:
+                    sig_etag = self._get_local_etag(self.local_sig_path)
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Downloaded %s with ETag: %s", 
+                               self.remote_sig_path, sig_etag)
+                except Exception as etag_err:
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error getting ETag for %s: %s", 
+                               self.remote_sig_path, str(etag_err))
+                log_message(LoggingScope.DOWNLOAD, 'INFO', "Successfully downloaded %s and its signature", 
+                           self.remote_file_path)
+            except Exception as sig_err:
+                # Check if signatures are required
+                if self.config['signatures'].getboolean('signatures_required', True):
+                    # If signatures are required, clean up everything since we can't proceed
+                    if self.local_file_path.exists():
+                        self.local_file_path.unlink()
+                    # Clean up etag files regardless of whether their data files exist
+                    file_etag_path = self._get_etag_file_path(self.local_file_path)
+                    if file_etag_path.exists():
+                        file_etag_path.unlink()
+                    sig_etag_path = self._get_etag_file_path(self.local_sig_path)
+                    if sig_etag_path.exists():
+                        sig_etag_path.unlink()
+                    log_message(LoggingScope.ERROR, 'ERROR', "Failed to download required signature for %s: %s", 
+                               self.remote_file_path, str(sig_err))
+                    raise
+                else:
+                    # If signatures are optional, just clean up any partial signature files
+                    if self.local_sig_path.exists():
+                        self.local_sig_path.unlink()
+                    sig_etag_path = self._get_etag_file_path(self.local_sig_path)
+                    if sig_etag_path.exists():
+                        sig_etag_path.unlink()
+                    log_message(LoggingScope.DOWNLOAD, 'WARNING', "Failed to download optional signature for %s: %s", 
+                               self.remote_file_path, str(sig_err))
+                    log_message(LoggingScope.DOWNLOAD, 'INFO', "Successfully downloaded %s (signature optional)", 
+                               self.remote_file_path)
+
             return True
         except Exception as err:
-            # Clean up partially downloaded files
+            # This catch block is only for errors in the main file download
+            # Clean up partially downloaded files and their etags
             if self.local_file_path.exists():
                 self.local_file_path.unlink()
             if self.local_sig_path.exists():
                 self.local_sig_path.unlink()
+            # Clean up etag files regardless of whether their data files exist
+            file_etag_path = self._get_etag_file_path(self.local_file_path)
+            if file_etag_path.exists():
+                file_etag_path.unlink()
+            sig_etag_path = self._get_etag_file_path(self.local_sig_path)
+            if sig_etag_path.exists():
+                sig_etag_path.unlink()
             log_message(LoggingScope.ERROR, 'ERROR', "Failed to download %s: %s", self.remote_file_path, str(err))
             raise
 
