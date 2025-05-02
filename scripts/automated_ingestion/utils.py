@@ -183,7 +183,10 @@ def log_function_entry_exit(logger=None):
                 end_time = time.time()
                 # Get the actual line where the function returned
                 frame = inspect.currentframe()
-                return_line_no = frame.f_back.f_lineno
+                # Walk up the stack to find the frame of the decorated function
+                while frame.f_back and frame.f_back.f_code.co_name != func.__name__:
+                    frame = frame.f_back
+                return_line_no = frame.f_lineno
                 log.info(f"{indent}Leaving {func.__name__} at {file_name}:{return_line_no}"
                         f"{context} (took {end_time - start_time:.2f}s)")
                 return result
@@ -192,7 +195,10 @@ def log_function_entry_exit(logger=None):
                 end_time = time.time()
                 # Get the actual line where the exception occurred
                 frame = inspect.currentframe()
-                exception_line_no = frame.f_back.f_lineno
+                # Walk up the stack to find the frame of the decorated function
+                while frame.f_back and frame.f_back.f_code.co_name != func.__name__:
+                    frame = frame.f_back
+                exception_line_no = frame.f_lineno
                 log.info(f"{indent}Leaving {func.__name__} at {file_name}:{exception_line_no}"
                         f"{context} with exception (took {end_time - start_time:.2f}s)")
                 raise err
