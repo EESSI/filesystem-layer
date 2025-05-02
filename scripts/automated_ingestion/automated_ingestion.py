@@ -196,6 +196,9 @@ def setup_logging(config, args):
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)  # Set root logger to lowest level
 
+    # Store original handlers
+    logger._original_handlers = []
+
     # Create formatters
     console_formatter = logging.Formatter('%(levelname)-8s: %(message)s')
     file_formatter = logging.Formatter('%(asctime)s - %(levelname)-8s: %(message)s')
@@ -206,6 +209,7 @@ def setup_logging(config, args):
         console_handler.setLevel(console_level)
         console_handler.setFormatter(console_formatter)
         logger.addHandler(console_handler)
+        logger._original_handlers.append(console_handler)
 
     # File handler (if log file is specified)
     if log_file:
@@ -217,6 +221,7 @@ def setup_logging(config, args):
         file_handler.setLevel(file_level)
         file_handler.setFormatter(file_formatter)
         logger.addHandler(file_handler)
+        logger._original_handlers.append(file_handler)
 
     return logger
 
