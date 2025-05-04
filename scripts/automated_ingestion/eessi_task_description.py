@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 
 from eessi_data_object import EESSIDataAndSignatureObject
 from utils import log_function_entry_exit, log_message, LoggingScope
+from remote_storage import DownloadMode
 
 
 @dataclass
