@@ -31,7 +31,9 @@ class EESSITaskDescription:
         """
         self.task_object = task_object
         self.metadata = {}
-        
+
+        self.task_object.download(mode=DownloadMode.CHECK_REMOTE)
+
         # Verify signature and set initial state
         self.signature_verified = self.task_object.verify_signature()
         
