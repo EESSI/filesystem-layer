@@ -39,7 +39,7 @@ class EESSITask:
         Determine the action type based on task description metadata.
         """
         if 'task' in self.task_description.metadata and 'action' in self.task_description.metadata['task']:
-            action_str = self.task_description.metadata['action'].lower()
+            action_str = self.task_description.metadata['task']['action'].lower()
             if action_str == "nop":
                 return EESSITaskAction.NOP
             elif action_str == "delete":
