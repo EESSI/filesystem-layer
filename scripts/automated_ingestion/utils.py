@@ -231,27 +231,32 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
 
     # If scope is enabled, use the temporary handler
     if is_logging_scope_enabled(scope):
-        # Remove all existing handlers
-        for handler in log.handlers[:]:
-            log.removeHandler(handler)
+        # Save original handlers
+        original_handlers = list(log.handlers)
 
         # Create a temporary handler that accepts all levels
         temp_handler = logging.StreamHandler(sys.stdout)
         temp_handler.setLevel(logging.DEBUG)
         temp_handler.setFormatter(logging.Formatter('%(levelname)-8s: %(message)s'))
-        log.addHandler(temp_handler)
 
         try:
+            # Remove existing handlers temporarily
+            for handler in original_handlers:
+                log.removeHandler(handler)
+
+            # Add temporary handler
+            log.addHandler(temp_handler)
+
+            # Log the message
             log_func = getattr(log, level.lower())
             log_func(indented_msg, *args, **kwargs)
         finally:
             log.removeHandler(temp_handler)
             # Restore original handlers
-            for handler in log.handlers[:]:
-                log.removeHandler(handler)
-            if hasattr(log, '_original_handlers'):
-                for handler in log._original_handlers:
+            for handler in original_handlers:
+                if handler not in log.handlers:
                     log.addHandler(handler)
+
     # Only use normal logging if scope is not enabled AND level is high enough
     elif not is_logging_scope_enabled(scope) and log_level >= log.getEffectiveLevel():
         # Use normal logging with level check
