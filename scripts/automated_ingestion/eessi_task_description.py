@@ -45,6 +45,13 @@ class EESSITaskDescription:
             # Expected if signature is not verified yet
             pass
 
+        # TODO: Process the task file contents
+        # check if the task file contains a task field and add that to self
+        if 'task' in self.metadata:
+            self.task = self.metadata['task']
+        else:
+            self.task = None
+
     @log_function_entry_exit()
     def _read_metadata(self) -> None:
         """
