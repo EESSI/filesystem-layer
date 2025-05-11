@@ -2,7 +2,7 @@ import json
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from eessi_data_object import EESSIDataAndSignatureObject
 from utils import log_function_entry_exit, log_message, LoggingScope
