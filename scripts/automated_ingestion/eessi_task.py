@@ -126,17 +126,26 @@ class EESSITask:
         sequence_numbers = {}
         repo_pr_dir = f"{repo}/{pr}"
         # iterate over all directories under repo_pr_dir
-        for dir in self._list_directory_contents(repo_pr_dir):
-            # check if the directory is a number
-            if dir.name.isdigit():
-                remote_file_path = self.description.task_object.remote_file_path
-                if self._file_exists_in_repo_branch(f"{repo_pr_dir}/{dir.name}/{remote_file_path}"):
-                    sequence_numbers[int(dir.name)] = True
+        try:
+            directories = self._list_directory_contents(repo_pr_dir)
+            for dir in directories:
+                # check if the directory is a number
+                if dir.name.isdigit():
+                    remote_file_path = self.description.task_object.remote_file_path
+                    if self._file_exists_in_repo_branch(f"{repo_pr_dir}/{dir.name}/{remote_file_path}"):
+                        sequence_numbers[int(dir.name)] = True
+                    else:
+                        sequence_numbers[int(dir.name)] = False
                 else:
-                    sequence_numbers[int(dir.name)] = False
-            else:
-                # directory is not a number, so we skip it
-                continue
+                    # directory is not a number, so we skip it
+                    continue
+        except FileNotFoundError:
+            # repo_pr_dir does not exist, so we return an empty dictionary
+            return {}
+        except GithubException as err:
+            if err.status != 404:  # 404 is catched by FileNotFoundError
+                # some other error than the directory not existing
+                return {}
         return sequence_numbers
 
     @log_function_entry_exit()
