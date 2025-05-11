@@ -150,9 +150,11 @@ class EESSITask:
         task = self.description.metadata['task'] if 'task' in self.description.metadata else None
         link2pr = self.description.metadata['link2pr'] if 'link2pr' in self.description.metadata else None
         if task:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "task found in metadata: %s", task)
             repo = task['repo']
             pr = task['pr']
         elif link2pr:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "link2pr found in metadata: %s", link2pr)
             repo = link2pr['repo']
             pr = link2pr['pr']
         else:
