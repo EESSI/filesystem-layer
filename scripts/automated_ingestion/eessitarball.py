@@ -1,11 +1,9 @@
 from utils import send_slack_message, sha256sum, log_function_entry_exit, log_message, LoggingScope
-from s3_bucket import EESSIS3Bucket
 
 from pathlib import PurePosixPath
 
 import github
 import json
-import logging
 import os
 import subprocess
 import tarfile
@@ -251,11 +249,11 @@ class EessiTarball:
             (self.local_metadata_path, self.local_metadata_sig_path)
         ]:
             command = verify_runenv + [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file,
-                 '--file', file, '--signature-file', sig_file]
+                                       '--file', file, '--signature-file', sig_file]
             log_message(LoggingScope.VERIFICATION, 'INFO', "Running command: %s", ' '.join(command))
 
             verify_cmd = subprocess.run(
-                command, 
+                command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             if verify_cmd.returncode == 0:
@@ -455,9 +453,9 @@ class EessiTarball:
                     log_msg = 'Warning, tarball %s is in a weird state:'
                     log_message(LoggingScope.GITHUB_OPS, 'WARNING', log_msg, self.object)
                     log_msg = 'Branch: %s\nPR: %s\nPR state: %s\nPR merged: %s'
-                    log_message(LoggingScope.GITHUB_OPS, 'WARNING', log_msg, 
-                              git_branch, pr, pr.state, pr.merged)
-                    # TODO:  should we delete the branch or open an issue? 
+                    log_message(LoggingScope.GITHUB_OPS, 'WARNING', log_msg,
+                                git_branch, pr, pr.state, pr.merged)
+                    # TODO: should we delete the branch or open an issue?
                     return
             else:
                 log_msg = 'Tarball %s has a branch, but no PR.'
@@ -471,8 +469,8 @@ class EessiTarball:
 
         # Move metadata file(s) to approved directory
         log_msg = "Moving metadata for %s from %s to %s in branch %s"
-        log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, 
-                   self.object, self.state, next_state, git_branch)
+        log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg,
+                    self.object, self.state, next_state, git_branch)
         if tarballs_in_group is None:
             log_message(LoggingScope.GITHUB_OPS, 'INFO', "Moving metadata for individual tarball to staged")
             self.move_metadata_file(self.state, next_state, branch=git_branch)
@@ -485,7 +483,7 @@ class EessiTarball:
 
         # Create PR with appropriate template
         try:
-            pr_url=f"https://github.com/{repo}/pull/{pr_id}",
+            pr_url = f"https://github.com/{repo}/pull/{pr_id}"
             if tarballs_in_group is None:
                 log_msg = "Creating PR for individual tarball: %s"
                 log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, self.object)
@@ -589,8 +587,8 @@ class EessiTarball:
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
         file_path_old = old_state + '/' + self.metadata_file
         file_path_new = new_state + '/' + self.metadata_file
-        log_message(LoggingScope.GITHUB_OPS, 'INFO', 'Moving metadata file %s from %s to %s in branch %s', 
-                   self.metadata_file, file_path_old, file_path_new, branch)
+        log_message(LoggingScope.GITHUB_OPS, 'INFO', 'Moving metadata file %s from %s to %s in branch %s',
+                    self.metadata_file, file_path_old, file_path_new, branch)
         tarball_metadata = self.git_repo.get_contents(file_path_old)
         # Remove the metadata file from the old state's directory...
         self.git_repo.delete_file(file_path_old, 'remove from ' + old_state, sha=tarball_metadata.sha, branch=branch)
@@ -629,7 +627,7 @@ class EessiTarball:
         checked_tarballs = []
         for line in pr_body.split('\n'):
             if line.strip().startswith('- [x] '):
-                tarball = line.strip()[6:] # Remove '- [x] ' prefix
+                tarball = line.strip()[6:]  # Remove '- [x] ' prefix
                 checked_tarballs.append(tarball)
         return checked_tarballs
 
@@ -638,7 +636,7 @@ class EessiTarball:
         tarballs = []
         for line in pr_body.split('\n'):
             if line.strip().startswith('- ['):
-                tarball = line.strip()[6:] # Remove '- [ ] ' or '- [x] ' prefix
+                tarball = line.strip()[6:]  # Remove '- [ ] ' or '- [x] ' prefix
                 tarballs.append(tarball)
         return tarballs
 
@@ -704,7 +702,7 @@ class EessiTarballGroup:
         # Mark all tarballs as staged in the group branch, however need to handle first tarball differently
         log_msg = "Processing first tarball in group: %s"
         log_message(LoggingScope.GROUP_OPS, 'INFO', log_msg, self.first_tar.object)
-        self.first_tar.mark_new_tarball_as_staged('main') # this sets the state of the first tarball to 'staged'
+        self.first_tar.mark_new_tarball_as_staged('main')  # this sets the state of the first tarball to 'staged'
         for tarball in tarballs[1:]:
             log_msg = "Processing tarball in group: %s"
             log_message(LoggingScope.GROUP_OPS, 'INFO', log_msg, tarball)

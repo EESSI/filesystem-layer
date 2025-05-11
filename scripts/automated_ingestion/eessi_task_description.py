@@ -1,8 +1,7 @@
 import json
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 from eessi_data_object import EESSIDataAndSignatureObject
 from utils import log_function_entry_exit, log_message, LoggingScope
@@ -37,7 +36,7 @@ class EESSITaskDescription:
 
         # Verify signature and set initial state
         self.signature_verified = self.task_object.verify_signature()
-        
+
         # Try to read metadata (will only succeed if signature is verified)
         try:
             self._read_metadata()
@@ -59,21 +58,22 @@ class EESSITaskDescription:
         Only reads metadata if the signature has been verified.
         """
         if not self.signature_verified:
-            log_message(LoggingScope.ERROR, 'ERROR', "Cannot read metadata: signature not verified for %s", 
-                       self.task_object.local_file_path)
+            log_message(LoggingScope.ERROR, 'ERROR', "Cannot read metadata: signature not verified for %s",
+                        self.task_object.local_file_path)
             raise RuntimeError("Cannot read metadata: signature not verified")
 
         try:
-            with open(self.task_object.local_file_path, 'r') as f:
-                self.metadata = json.load(f)
-            log_message(LoggingScope.DEBUG, 'DEBUG', "Successfully read metadata from %s", self.task_object.local_file_path)
-        except json.JSONDecodeError as e:
-            log_message(LoggingScope.ERROR, 'ERROR', "Failed to parse JSON in task description file %s: %s", 
-                       self.task_object.local_file_path, str(e))
+            with open(self.task_object.local_file_path, 'r') as file:
+                self.metadata = json.load(file)
+            log_message(LoggingScope.DEBUG, 'DEBUG', "Successfully read metadata from %s",
+                        self.task_object.local_file_path)
+        except json.JSONDecodeError as err:
+            log_message(LoggingScope.ERROR, 'ERROR', "Failed to parse JSON in task description file %s: %s",
+                        self.task_object.local_file_path, str(err))
             raise
-        except Exception as e:
-            log_message(LoggingScope.ERROR, 'ERROR', "Failed to read task description file %s: %s", 
-                       self.task_object.local_file_path, str(e))
+        except Exception as err:
+            log_message(LoggingScope.ERROR, 'ERROR', "Failed to read task description file %s: %s",
+                        self.task_object.local_file_path, str(err))
             raise
 
     def get_metadata_file_components(self) -> Tuple[str, str, str, str, str, str]:
@@ -98,6 +98,9 @@ class EESSITaskDescription:
         # obtain file name from local file path using basename
         file_name = Path(self.task_object.local_file_path).name
         # split file_name into part before suffix and the suffix
+        #   idea: split on last hyphen, then split on first dot
+        suffix = file_name.split('-')[-1].split('.', 1)[1]
+        file_name_without_suffix = file_name.strip(f".{suffix}")
         # from file_name_without_suffix determine VERSION (2nd element), COMPONENT (3rd element), OS (4th element),
         #  ARCHITECTURE (5th to second last elements) and TIMESTAMP (last element)
         components = file_name_without_suffix.split('-')
@@ -110,4 +113,4 @@ class EESSITaskDescription:
 
     def __str__(self) -> str:
         """Return a string representation of the EESSITaskDescription object."""
-        return f"EESSITaskDescription({self.task_object.local_file_path}, verified={self.signature_verified})" 
+        return f"EESSITaskDescription({self.task_object.local_file_path}, verified={self.signature_verified})"

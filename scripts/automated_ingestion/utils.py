@@ -9,6 +9,7 @@ import inspect
 from enum import IntFlag, auto
 import sys
 
+
 class LoggingScope(IntFlag):
     """Enumeration of different logging scopes."""
     NONE = 0
@@ -20,14 +21,17 @@ class LoggingScope(IntFlag):
     GROUP_OPS = auto()        # Logging related to tarball group operations
     ERROR = auto()           # Error logging (separate from other scopes for easier filtering)
     DEBUG = auto()           # Debug-level logging (separate from other scopes for easier filtering)
-    ALL = (FUNC_ENTRY_EXIT | DOWNLOAD | VERIFICATION | STATE_CHANGE | 
+    ALL = (FUNC_ENTRY_EXIT | DOWNLOAD | VERIFICATION | STATE_CHANGE |
            GITHUB_OPS | GROUP_OPS | ERROR | DEBUG)
+
 
 # Global setting for logging scopes
 ENABLED_LOGGING_SCOPES = LoggingScope.NONE
 
+
 # Global variable to track call stack depth
 _call_stack_depth = 0
+
 
 def set_logging_scopes(scopes):
     """
@@ -90,9 +94,11 @@ def set_logging_scopes(scopes):
         # Convert list to comma-separated string and process
         set_logging_scopes(",".join(scopes))
 
+
 def is_logging_scope_enabled(scope):
     """Check if a specific logging scope is enabled."""
     return bool(ENABLED_LOGGING_SCOPES & scope)
+
 
 def send_slack_message(webhook, msg):
     """Send a Slack message."""
@@ -187,7 +193,7 @@ def log_function_entry_exit(logger=None):
                 end_time = time.time()
                 # For normal returns, show the last line of the function
                 log.info(f"{indent}[FUNC_ENTRY_EXIT] Leaving {func.__name__} at {file_name}:{last_line_no}"
-                        f"{context} (took {end_time - start_time:.2f}s)")
+                         f"{context} (took {end_time - start_time:.2f}s)")
                 return result
             except Exception as err:
                 _call_stack_depth -= 1
@@ -198,10 +204,11 @@ def log_function_entry_exit(logger=None):
                 except AttributeError:
                     exc_line_no = last_line_no
                 log.info(f"{indent}[FUNC_ENTRY_EXIT] Leaving {func.__name__} at {file_name}:{exc_line_no}"
-                        f"{context} with exception (took {end_time - start_time:.2f}s)")
+                         f"{context} with exception (took {end_time - start_time:.2f}s)")
                 raise err
         return wrapper
     return decorator
+
 
 def log_message(scope, level, msg, *args, logger=None, **kwargs):
     """
@@ -256,7 +263,6 @@ def log_message(scope, level, msg, *args, logger=None, **kwargs):
             for handler in original_handlers:
                 if handler not in log.handlers:
                     log.addHandler(handler)
-
     # Only use normal logging if scope is not enabled AND level is high enough
     elif not is_logging_scope_enabled(scope) and log_level >= log.getEffectiveLevel():
         # Use normal logging with level check

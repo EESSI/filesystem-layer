@@ -3,9 +3,10 @@ from pathlib import Path
 from typing import Dict, Optional
 
 import boto3
-
+from botocore.exceptions import ClientError
 from utils import log_function_entry_exit, log_message, LoggingScope
 from remote_storage import RemoteStorageClient
+
 
 class EESSIS3Bucket(RemoteStorageClient):
     """EESSI-specific S3 bucket implementation of the RemoteStorageClient protocol."""
@@ -98,8 +99,8 @@ class EESSIS3Bucket(RemoteStorageClient):
             response = self.client.head_object(Bucket=self.bucket, Key=remote_path)
             log_message(LoggingScope.DEBUG, 'DEBUG', "Retrieved metadata for %s: %s", remote_path, response)
             return response
-        except ClientError as e:
-            log_message(LoggingScope.ERROR, 'ERROR', "Failed to get metadata for %s: %s", remote_path, str(e))
+        except ClientError as err:
+            log_message(LoggingScope.ERROR, 'ERROR', "Failed to get metadata for %s: %s", remote_path, str(err))
             raise
 
     def _get_etag_file_path(self, local_path: str) -> Path:
@@ -143,8 +144,8 @@ class EESSIS3Bucket(RemoteStorageClient):
             log_message(LoggingScope.DOWNLOAD, 'INFO', "Downloading %s to %s", remote_path, local_path)
             self.client.download_file(Bucket=self.bucket, Key=remote_path, Filename=local_path)
             log_message(LoggingScope.DOWNLOAD, 'INFO', "Successfully downloaded %s to %s", remote_path, local_path)
-        except ClientError as e:
-            log_message(LoggingScope.ERROR, 'ERROR', "Failed to download %s: %s", remote_path, str(e))
+        except ClientError as err:
+            log_message(LoggingScope.ERROR, 'ERROR', "Failed to download %s: %s", remote_path, str(err))
             raise
 
         # Get metadata first to obtain the ETag

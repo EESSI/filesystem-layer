@@ -1,10 +1,8 @@
-import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-import boto3
 import configparser
 
 from utils import log_function_entry_exit, log_message, LoggingScope
@@ -88,24 +86,24 @@ class EESSIDataAndSignatureObject:
     def verify_signature(self) -> bool:
         """
         Verify the signature of the data file using the corresponding signature file.
-        
+
         Returns:
             bool: True if the signature is valid or if signatures are not required, False otherwise
         """
         # Check if signature file exists
         if not self.local_sig_path.exists():
-            log_message(LoggingScope.VERIFICATION, 'WARNING', "Signature file %s is missing", 
-                       self.local_sig_path)
-            
+            log_message(LoggingScope.VERIFICATION, 'WARNING', "Signature file %s is missing",
+                        self.local_sig_path)
+
             # If signatures are required, return failure
             if self.config['signatures'].getboolean('signatures_required', True):
-                log_message(LoggingScope.ERROR, 'ERROR', "Signature file %s is missing and signatures are required", 
-                           self.local_sig_path)
+                log_message(LoggingScope.ERROR, 'ERROR', "Signature file %s is missing and signatures are required",
+                            self.local_sig_path)
                 return False
             else:
-                log_message(LoggingScope.VERIFICATION, 'INFO', 
-                           "Signature file %s is missing, but signatures are not required", 
-                           self.local_sig_path)
+                log_message(LoggingScope.VERIFICATION, 'INFO',
+                            "Signature file %s is missing, but signatures are not required",
+                            self.local_sig_path)
                 return True
 
         # If signatures are provided, we should always verify them, regardless of the signatures_required setting
@@ -115,13 +113,13 @@ class EESSIDataAndSignatureObject:
 
         # Check if verification tools exist
         if not Path(verify_script).exists():
-            log_message(LoggingScope.ERROR, 'ERROR', 
-                       "Unable to verify signature: verification script %s does not exist", verify_script)
+            log_message(LoggingScope.ERROR, 'ERROR',
+                        "Unable to verify signature: verification script %s does not exist", verify_script)
             return False
 
         if not Path(allowed_signers_file).exists():
-            log_message(LoggingScope.ERROR, 'ERROR', 
-                       "Unable to verify signature: allowed signers file %s does not exist", allowed_signers_file)
+            log_message(LoggingScope.ERROR, 'ERROR',
+                        "Unable to verify signature: allowed signers file %s does not exist", allowed_signers_file)
             return False
 
         # Run the verification command with named parameters
@@ -133,25 +131,25 @@ class EESSIDataAndSignatureObject:
             '--signature-file', str(self.local_sig_path)
         ]
         log_message(LoggingScope.VERIFICATION, 'INFO', "Running command: %s", ' '.join(cmd))
-        
+
         try:
             result = subprocess.run(cmd, capture_output=True, text=True)
             if result.returncode == 0:
-                log_message(LoggingScope.VERIFICATION, 'INFO', 
-                           "Successfully verified signature for %s", self.local_file_path)
+                log_message(LoggingScope.VERIFICATION, 'INFO',
+                            "Successfully verified signature for %s", self.local_file_path)
                 log_message(LoggingScope.VERIFICATION, 'DEBUG', "  stdout: %s", result.stdout)
                 log_message(LoggingScope.VERIFICATION, 'DEBUG', "  stderr: %s", result.stderr)
                 return True
             else:
-                log_message(LoggingScope.ERROR, 'ERROR', 
-                           "Signature verification failed for %s", self.local_file_path)
+                log_message(LoggingScope.ERROR, 'ERROR',
+                            "Signature verification failed for %s", self.local_file_path)
                 log_message(LoggingScope.ERROR, 'ERROR', "  stdout: %s", result.stdout)
                 log_message(LoggingScope.ERROR, 'ERROR', "  stderr: %s", result.stderr)
                 return False
-        except Exception as e:
-            log_message(LoggingScope.ERROR, 'ERROR', 
-                       "Error during signature verification for %s: %s", 
-                       self.local_file_path, str(e))
+        except Exception as err:
+            log_message(LoggingScope.ERROR, 'ERROR',
+                        "Error during signature verification for %s: %s",
+                        self.local_file_path, str(err))
             return False
 
     @log_function_entry_exit()
@@ -179,8 +177,9 @@ class EESSIDataAndSignatureObject:
 
             # If files don't exist locally, we can skip ETag checks
             if not local_files_exist:
-                log_message(LoggingScope.DOWNLOAD, 'INFO', "Local files missing, skipping ETag checks and downloading %s",
-                           self.remote_file_path)
+                log_message(LoggingScope.DOWNLOAD, 'INFO',
+                            "Local files missing, skipping ETag checks and downloading %s",
+                            self.remote_file_path)
                 should_download = True
             else:
                 # First check if we have local ETags
@@ -201,7 +200,7 @@ class EESSIDataAndSignatureObject:
                     if not local_file_etag or not local_sig_etag:
                         should_download = True
                         log_message(LoggingScope.DOWNLOAD, 'INFO', "Missing local ETags, downloading %s",
-                                  self.remote_file_path)
+                                    self.remote_file_path)
                     else:
                         # Get remote ETags and compare
                         remote_file_etag = self.remote_client.get_metadata(self.remote_file_path)['ETag']
@@ -216,18 +215,20 @@ class EESSIDataAndSignatureObject:
                         if should_download:
                             if remote_file_etag != local_file_etag:
                                 log_message(LoggingScope.DOWNLOAD, 'INFO', "File ETag changed from %s to %s",
-                                          local_file_etag, remote_file_etag)
+                                            local_file_etag, remote_file_etag)
                             if remote_sig_etag != local_sig_etag:
                                 log_message(LoggingScope.DOWNLOAD, 'INFO', "Signature ETag changed from %s to %s",
-                                          local_sig_etag, remote_sig_etag)
+                                            local_sig_etag, remote_sig_etag)
                             log_message(LoggingScope.DOWNLOAD, 'INFO', "Remote files have changed, downloading %s",
-                                      self.remote_file_path)
+                                        self.remote_file_path)
                         else:
-                            log_message(LoggingScope.DOWNLOAD, 'INFO', "Remote files unchanged, skipping download of %s",
-                                      self.remote_file_path)
+                            log_message(LoggingScope.DOWNLOAD, 'INFO',
+                                        "Remote files unchanged, skipping download of %s",
+                                        self.remote_file_path)
                 except Exception as etag_err:
                     # If we get any error with ETags, we'll just download the files
-                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error handling ETags, will download files: %s", str(etag_err))
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error handling ETags, will download files: %s",
+                                str(etag_err))
                     should_download = True
         else:  # CHECK_LOCAL
             should_download = (
@@ -239,11 +240,11 @@ class EESSIDataAndSignatureObject:
                     log_message(LoggingScope.DOWNLOAD, 'INFO', "Local file missing: %s", self.local_file_path)
                 if not self.local_sig_path.exists():
                     log_message(LoggingScope.DOWNLOAD, 'INFO', "Local signature missing: %s", self.local_sig_path)
-                log_message(LoggingScope.DOWNLOAD, 'INFO', "Local files missing, downloading %s", 
-                          self.remote_file_path)
+                log_message(LoggingScope.DOWNLOAD, 'INFO', "Local files missing, downloading %s",
+                            self.remote_file_path)
             else:
-                log_message(LoggingScope.DOWNLOAD, 'INFO', "Local files exist, skipping download of %s", 
-                          self.remote_file_path)
+                log_message(LoggingScope.DOWNLOAD, 'INFO', "Local files exist, skipping download of %s",
+                            self.remote_file_path)
 
         if not should_download:
             return False
@@ -259,24 +260,24 @@ class EESSIDataAndSignatureObject:
             # Get and log the ETag of the downloaded file
             try:
                 file_etag = self._get_local_etag(self.local_file_path)
-                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Downloaded %s with ETag: %s", 
-                           self.remote_file_path, file_etag)
+                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Downloaded %s with ETag: %s",
+                            self.remote_file_path, file_etag)
             except Exception as etag_err:
-                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error getting ETag for %s: %s", 
-                           self.remote_file_path, str(etag_err))
+                log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error getting ETag for %s: %s",
+                            self.remote_file_path, str(etag_err))
 
             # Try to download the signature file
             try:
                 self.remote_client.download(self.remote_sig_path, str(self.local_sig_path))
                 try:
                     sig_etag = self._get_local_etag(self.local_sig_path)
-                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Downloaded %s with ETag: %s", 
-                               self.remote_sig_path, sig_etag)
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Downloaded %s with ETag: %s",
+                                self.remote_sig_path, sig_etag)
                 except Exception as etag_err:
-                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error getting ETag for %s: %s", 
-                               self.remote_sig_path, str(etag_err))
-                log_message(LoggingScope.DOWNLOAD, 'INFO', "Successfully downloaded %s and its signature", 
-                           self.remote_file_path)
+                    log_message(LoggingScope.DOWNLOAD, 'DEBUG', "Error getting ETag for %s: %s",
+                                self.remote_sig_path, str(etag_err))
+                log_message(LoggingScope.DOWNLOAD, 'INFO', "Successfully downloaded %s and its signature",
+                            self.remote_file_path)
             except Exception as sig_err:
                 # Check if signatures are required
                 if self.config['signatures'].getboolean('signatures_required', True):
@@ -290,8 +291,8 @@ class EESSIDataAndSignatureObject:
                     sig_etag_path = self._get_etag_file_path(self.local_sig_path)
                     if sig_etag_path.exists():
                         sig_etag_path.unlink()
-                    log_message(LoggingScope.ERROR, 'ERROR', "Failed to download required signature for %s: %s", 
-                               self.remote_file_path, str(sig_err))
+                    log_message(LoggingScope.ERROR, 'ERROR', "Failed to download required signature for %s: %s",
+                                self.remote_file_path, str(sig_err))
                     raise
                 else:
                     # If signatures are optional, just clean up any partial signature files
@@ -300,10 +301,10 @@ class EESSIDataAndSignatureObject:
                     sig_etag_path = self._get_etag_file_path(self.local_sig_path)
                     if sig_etag_path.exists():
                         sig_etag_path.unlink()
-                    log_message(LoggingScope.DOWNLOAD, 'WARNING', "Failed to download optional signature for %s: %s", 
-                               self.remote_file_path, str(sig_err))
-                    log_message(LoggingScope.DOWNLOAD, 'INFO', "Successfully downloaded %s (signature optional)", 
-                               self.remote_file_path)
+                    log_message(LoggingScope.DOWNLOAD, 'WARNING', "Failed to download optional signature for %s: %s",
+                                self.remote_file_path, str(sig_err))
+                    log_message(LoggingScope.DOWNLOAD, 'INFO', "Successfully downloaded %s (signature optional)",
+                                self.remote_file_path)
 
             return True
         except Exception as err:

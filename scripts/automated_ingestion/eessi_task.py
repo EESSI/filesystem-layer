@@ -1,7 +1,10 @@
 from enum import Enum, auto
-
+from typing import Dict
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
+from utils import log_message, LoggingScope
+from github import Github
+
 
 class TaskState(Enum):
     NEW = auto()  # The task has been created but not yet processed
@@ -78,14 +81,14 @@ class EESSITask:
             log_msg = "Found file %s in branch %s"
             log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file_path, branch)
             return True
-        except github.UnknownObjectException:
+        except Github.UnknownObjectException:
             # file_path does not exist in branch
             return False
-        except github.GithubException as err:
+        except Github.GithubException as err:
             if err.status == 404:
                 # file_path does not exist in branch
                 return False
-            else: 
+            else:
                 # if there was some other (e.g. connection) issue, log message and return False
                 log_msg = 'Unable to determine the state of %s, the GitHub API returned status %s!'
                 log_message(LoggingScope.ERROR, 'WARNING', log_msg, self.object, err.status)
@@ -97,13 +100,14 @@ class EESSITask:
         Determines in which sequence numbers the metadata/task file is included and in which it is not.
 
         Returns:
-            A dictionary with the sequence numbers as keys and a boolean value indicating if the metadata/task file is included in that sequence number.
+            A dictionary with the sequence numbers as keys and a boolean value indicating if the metadata/task file is
+            included in that sequence number.
 
         Idea:
          - The deployment for a single source PR could be split into multiple staging PRs each is assigned a unique
            sequence number.
          - For a given source PR (identified by the repo name and the PR number), a staging PR using a branch named
-           `REPO/PR_NUM/SEQ_NUM` is created. 
+           `REPO/PR_NUM/SEQ_NUM` is created.
          - In the staging repo we create a corresponding directory `REPO/PR_NUM/SEQ_NUM`.
          - If a metadata/task file is handled by the staging PR with sequence number, it is included in that directory.
          - We iterate over all directories under `REPO/PR_NUM`:
@@ -186,7 +190,7 @@ class EESSITask:
             else:
                 # If it's not a list, it means the path is not a directory
                 raise ValueError(f"{directory_path} is not a directory")
-        except github.GithubException as err:
+        except Github.GithubException as err:
             if err.status == 404:
                 raise FileNotFoundError(f"Directory not found: {directory_path}")
             raise err
@@ -208,7 +212,9 @@ class EESSITask:
             handler()
             # if state has changed, run handle() again; otherwise, do nothing
             if self.state != state_before_handle:
-                print(f"handler {handler_name} changed state from {state_before_handle} to {self.state} ; running handle() again")
+                msg = f"handler {handler_name} changed state from {state_before_handle} to {self.state}"
+                msg += " running handle() again"
+                print(msg)
                 self.handle()
         else:
             # Default behavior for missing handlers

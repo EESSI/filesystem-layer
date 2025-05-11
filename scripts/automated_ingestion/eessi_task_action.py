@@ -1,5 +1,6 @@
 from enum import Enum, auto
 
+
 class EESSITaskAction(Enum):
     NOP = auto()  # perform no action
     DELETE = auto()  # perform a delete operation

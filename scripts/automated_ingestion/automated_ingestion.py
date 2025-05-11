@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from eessitarball import EessiTarball, EessiTarballGroup
-from eessi_data_object import EESSIDataAndSignatureObject, DownloadMode
+from eessi_data_object import EESSIDataAndSignatureObject
 from eessi_task import EESSITask
 from eessi_task_description import EESSITaskDescription
 from s3_bucket import EESSIS3Bucket
@@ -10,7 +10,6 @@ from pid import PidFileError
 from utils import log_function_entry_exit, log_message, LoggingScope, set_logging_scopes
 
 import argparse
-import boto3
 import configparser
 import github
 import json
@@ -19,7 +18,7 @@ import os
 import pid
 import sys
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 
 REQUIRED_CONFIG = {
     'secrets': ['aws_secret_access_key', 'aws_access_key_id', 'github_pat'],
@@ -135,30 +134,31 @@ def parse_args():
     # Logging options
     logging_group = parser.add_argument_group('Logging options')
     logging_group.add_argument('--log-file',
-                             help='Path to log file (overrides config file setting)')
+                               help='Path to log file (overrides config file setting)')
     logging_group.add_argument('--console-level',
-                             choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                             help='Logging level for console output (overrides config file setting)')
+                               choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                               help='Logging level for console output (overrides config file setting)')
     logging_group.add_argument('--file-level',
-                             choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-                             help='Logging level for file output (overrides config file setting)')
+                               choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+                               help='Logging level for file output (overrides config file setting)')
     logging_group.add_argument('--quiet',
-                             action='store_true',
-                             help='Suppress console output (overrides all other console settings)')
+                               action='store_true',
+                               help='Suppress console output (overrides all other console settings)')
     logging_group.add_argument('--log-scopes',
-                             help='Comma-separated list of logging scopes using +/- syntax. '
-                                  'Examples: "+FUNC_ENTRY_EXIT" (enable only function entry/exit), '
-                                  '"+ALL,-FUNC_ENTRY_EXIT" (enable all except function entry/exit), '
-                                  '"+FUNC_ENTRY_EXIT,-EXAMPLE_SCOPE" (enable function entry/exit but disable example)')
+                               help='Comma-separated list of logging scopes using +/- syntax. '
+                               'Examples: "+FUNC_ENTRY_EXIT" (enable only function entry/exit), '
+                               '"+ALL,-FUNC_ENTRY_EXIT" (enable all except function entry/exit), '
+                               '"+FUNC_ENTRY_EXIT,-EXAMPLE_SCOPE" (enable function entry/exit but disable example)')
 
     # Existing arguments
     parser.add_argument('-c', '--config', type=str, help='path to configuration file',
-                       default='automated_ingestion.cfg', dest='config')
+                        default='automated_ingestion.cfg', dest='config')
     parser.add_argument('-d', '--debug', help='enable debug mode', action='store_true', dest='debug')
-    parser.add_argument('-l', '--list', help='only list available tarballs or tasks', action='store_true', dest='list_only')
+    parser.add_argument('-l', '--list', help='only list available tarballs or tasks', action='store_true',
+                        dest='list_only')
     parser.add_argument('--task-based', help='use task-based ingestion instead of tarball-based. '
-                       'Optionally specify comma-separated list of extensions (default: .task)',
-                       nargs='?', const='.task', default=False)
+                        'Optionally specify comma-separated list of extensions (default: .task)',
+                        nargs='?', const='.task', default=False)
 
     return parser.parse_args()
 
@@ -175,7 +175,6 @@ def setup_logging(config, args):
     """
     # Get settings from config file
     log_file = config['logging'].get('filename')
-    log_format = config['logging'].get('format', '%(levelname)s: %(message)s')
     config_console_level = LOG_LEVELS.get(config['logging'].get('level', 'INFO').upper(), logging.INFO)
     config_file_level = LOG_LEVELS.get(config['logging'].get('file_level', 'DEBUG').upper(), logging.DEBUG)
 
@@ -256,27 +255,29 @@ def main():
                             task = EESSITask(
                                 EESSITaskDescription(
                                     EESSIDataAndSignatureObject(config, task_path, s3_bucket)
-                                ), 
+                                ),
                                 gh_staging_repo
                             )
                         except Exception as err:
-                            log_message(LoggingScope.ERROR, 'ERROR', "Failed to create EESSITask for task %s: %s", task_path, str(err))
+                            log_message(LoggingScope.ERROR, 'ERROR', "Failed to create EESSITask for task %s: %s",
+                                        task_path, str(err))
                             continue
 
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Task: %s", task)
 
                         # TODO: update the information shown below (what makes sense to show?)
                         # Log information about the task
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file: %s", task.task_description.task_object.local_file_path)
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature file: %s", task.task_description.task_object.local_sig_path)
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature verified: %s", task.task_description.signature_verified)
+                        task_object = task.task_description.task_object
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file: %s", task_object.local_file_path)
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature file: %s", task_object.local_sig_path)
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature verified: %s",
+                                    task.task_description.signature_verified)
 
                         # Log the ETags of the downloaded task file
-                        file_etag, sig_etag = task.task_description.task_object.get_etags()
+                        file_etag, sig_etag = task_object.get_etags()
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file %s has ETag: %s", task_path, file_etag)
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', 
-                                  "Task signature %s has ETag: %s", 
-                                  task.task_description.task_object.remote_sig_path, sig_etag)
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task signature %s has ETag: %s",
+                                    task_object.remote_sig_path, sig_etag)
 
                         # TODO: Process the task file contents
                         # This would involve reading the task file, parsing its contents,
@@ -301,7 +302,8 @@ def main():
                         if tarballs:
                             # Create a group for these tarballs
                             group = EessiTarballGroup(tarballs[0], config, gh_staging_repo, s3_bucket, cvmfs_repo)
-                            log_message(LoggingScope.GROUP_OPS, 'INFO', "group created\n%s", group.to_string(oneline=True))
+                            log_message(LoggingScope.GROUP_OPS, 'INFO', "group created\n%s",
+                                        group.to_string(oneline=True))
                             group.process_group(tarballs)
             else:
                 # use old individual PR method
