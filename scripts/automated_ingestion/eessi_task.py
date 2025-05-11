@@ -2,7 +2,7 @@ from enum import Enum, auto
 from typing import Dict
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
-from utils import log_message, LoggingScope
+from utils import log_message, LoggingScope, log_function_entry_exit
 from github import Github
 
 
@@ -37,6 +37,7 @@ class EESSITask:
     state: TaskState
     git_repo: Github
 
+    @log_function_entry_exit()
     def __init__(self, description: EESSITaskDescription, git_repo: Github):
         self.description = description
         self.git_repo = git_repo
@@ -54,6 +55,7 @@ class EESSITask:
 
         self.state = self._find_state()
 
+    @log_function_entry_exit()
     def _determine_task_action(self) -> EESSITaskAction:
         """
         Determine the action type based on task description metadata.
@@ -70,6 +72,7 @@ class EESSITask:
                 return EESSITaskAction.UPDATE
         return EESSITaskAction.UNKNOWN
 
+    @log_function_entry_exit()
     def _file_exists_in_repo_branch(self, file_path, branch=None) -> bool:
         """
         Check if a file exists in a repository branch.
@@ -95,6 +98,7 @@ class EESSITask:
                 return False
         return False
 
+    @log_function_entry_exit()
     def _determine_sequence_numbers_including_task_file(self) -> Dict[int, bool]:
         """
         Determines in which sequence numbers the metadata/task file is included and in which it is not.
@@ -133,6 +137,7 @@ class EESSITask:
                 continue
         return sequence_numbers
 
+    @log_function_entry_exit()
     def _find_state(self) -> TaskState:
         """
         Determine the state of the task based on the task description metadata.
@@ -167,6 +172,7 @@ class EESSITask:
         # did not find metadata file in staging repo on GitHub
         return TaskState.NEW
 
+    @log_function_entry_exit()
     def _get_state_from_metadata_file(self, metadata_file_state_path: str) -> TaskState:
         """
         Get the state from the file in the metadata_file_state_path.
@@ -179,6 +185,7 @@ class EESSITask:
         except ValueError:
             return TaskState.NEW
 
+    @log_function_entry_exit()
     def _list_directory_contents(self, directory_path, branch=None):
         try:
             # Get contents of the directory
@@ -195,6 +202,7 @@ class EESSITask:
                 raise FileNotFoundError(f"Directory not found: {directory_path}")
             raise err
 
+    @log_function_entry_exit()
     def handle(self):
         """
         Dynamically find and execute the appropriate handler based on action and state.
@@ -221,36 +229,42 @@ class EESSITask:
             print(f"No handler for action {self.action} and state {self.state} implemented; nothing to be done")
 
     # Implement handlers for ADD action
+    @log_function_entry_exit()
     def _handle_add_new(self):
         """Handler for ADD action in NEW state"""
         print("Handling ADD action in NEW state")
         # Implementation for adding in NEW state
         return True
 
+    @log_function_entry_exit()
     def _handle_add_staged(self):
         """Handler for ADD action in STAGED state"""
         print("Handling ADD action in STAGED state")
         # Implementation for adding in STAGED state
         return True
 
+    @log_function_entry_exit()
     def _handle_add_pr_opened(self):
         """Handler for ADD action in PR_OPENED state"""
         print("Handling ADD action in PR_OPENED state")
         # Implementation for adding in PR_OPENED state
         return True
 
+    @log_function_entry_exit()
     def _handle_add_approved(self):
         """Handler for ADD action in APPROVED state"""
         print("Handling ADD action in APPROVED state")
         # Implementation for adding in APPROVED state
         return True
 
+    @log_function_entry_exit()
     def _handle_add_ingested(self):
         """Handler for ADD action in INGESTED state"""
         print("Handling ADD action in INGESTED state")
         # Implementation for adding in INGESTED state
         return True
 
+    @log_function_entry_exit()
     def transition_to(self, new_state: TaskState):
         """
         Transition the task to a new state if valid.
@@ -260,5 +274,6 @@ class EESSITask:
             return True
         return False
 
+    @log_function_entry_exit()
     def __str__(self):
         return f"EESSITask(description={self.description}, action={self.action}, state={self.state})"
