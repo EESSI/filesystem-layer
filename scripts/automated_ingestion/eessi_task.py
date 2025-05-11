@@ -146,6 +146,7 @@ class EESSITask:
             The state of the task.
         """
         # obtain repo and pr from metadata
+        log_message(LoggingScope.TASK_OPS, 'INFO', "finding state of task %s", self.description.task_object)
         repo = self.description.metadata['task']['repo']
         pr = self.description.metadata['task']['pr']
         log_message(LoggingScope.TASK_OPS, 'INFO', "repo: %s, pr: %s", repo, pr)
