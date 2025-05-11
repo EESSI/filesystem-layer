@@ -16,13 +16,14 @@ class LoggingScope(IntFlag):
     FUNC_ENTRY_EXIT = auto()  # Function entry/exit logging
     DOWNLOAD = auto()         # Logging related to file downloads
     VERIFICATION = auto()     # Logging related to signature and checksum verification
-    STATE_OPS = auto()     # Logging related to tarball state changes
+    STATE_OPS = auto()     # Logging related to tarball state operations
     GITHUB_OPS = auto()       # Logging related to GitHub operations (PRs, issues, etc.)
     GROUP_OPS = auto()        # Logging related to tarball group operations
+    TASK_OPS = auto()        # Logging related to task operations
     ERROR = auto()           # Error logging (separate from other scopes for easier filtering)
     DEBUG = auto()           # Debug-level logging (separate from other scopes for easier filtering)
     ALL = (FUNC_ENTRY_EXIT | DOWNLOAD | VERIFICATION | STATE_OPS |
-           GITHUB_OPS | GROUP_OPS | ERROR | DEBUG)
+           GITHUB_OPS | GROUP_OPS | TASK_OPS | ERROR | DEBUG)
 
 
 # Global setting for logging scopes
