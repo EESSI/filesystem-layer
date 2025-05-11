@@ -99,9 +99,13 @@ class EESSITask:
         return False
 
     @log_function_entry_exit()
-    def _determine_sequence_numbers_including_task_file(self) -> Dict[int, bool]:
+    def _determine_sequence_numbers_including_task_file(self, repo: str, pr: str) -> Dict[int, bool]:
         """
         Determines in which sequence numbers the metadata/task file is included and in which it is not.
+
+        Args:
+            repo: the repository name
+            pr: the pull request number
 
         Returns:
             A dictionary with the sequence numbers as keys and a boolean value indicating if the metadata/task file is
@@ -120,8 +124,6 @@ class EESSITask:
         Note: this is a placeholder for now, as we do not know yet if we need to use a sequence number.
         """
         sequence_numbers = {}
-        repo = self.description.metadata['task']['repo']
-        pr = self.description.metadata['task']['pr']
         repo_pr_dir = f"{repo}/{pr}"
         # iterate over all directories under repo_pr_dir
         for dir in self._list_directory_contents(repo_pr_dir):
@@ -154,7 +156,7 @@ class EESSITask:
             repo = task['repo']
             pr = task['pr']
         elif 'repo' in source and 'pr' in source:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "link2pr found in metadata: %s", source)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "source found in metadata: %s", source)
             repo = source['repo']
             pr = source['pr']
         else:
@@ -162,7 +164,7 @@ class EESSITask:
         log_message(LoggingScope.TASK_OPS, 'INFO', "repo: %s, pr: %s", repo, pr)
 
         # iterate over all sequence numbers in repo/pr dir
-        sequence_numbers = self._determine_sequence_numbers_including_task_file()
+        sequence_numbers = self._determine_sequence_numbers_including_task_file(repo, pr)
         log_message(LoggingScope.TASK_OPS, 'INFO', "sequence_numbers: %s", sequence_numbers)
         for sequence_number in [key for key, value in sequence_numbers.items() if value]:
             # create path to metadata file from repo, PR, repo, sequence number, metadata file name, state name
