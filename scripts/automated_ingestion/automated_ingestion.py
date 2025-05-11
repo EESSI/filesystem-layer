@@ -267,17 +267,17 @@ def main():
 
                         # TODO: update the information shown below (what makes sense to show?)
                         # Log information about the task
-                        task_object = task.task_description.task_object
+                        task_object = task.description.task_object
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file: %s", task_object.local_file_path)
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature file: %s", task_object.local_sig_path)
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature verified: %s",
-                                    task.task_description.signature_verified)
+                                    task.description.signature_verified)
 
                         # Log the ETags of the downloaded task file
-                        file_etag, sig_etag = task_object.get_etags()
+                        file_etag, sig_etag = task.description.task_object.get_etags()
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file %s has ETag: %s", task_path, file_etag)
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Task signature %s has ETag: %s",
-                                    task_object.remote_sig_path, sig_etag)
+                                    task.description.task_object.remote_sig_path, sig_etag)
 
                         # TODO: Process the task file contents
                         # This would involve reading the task file, parsing its contents,
