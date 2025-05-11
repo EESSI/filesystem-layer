@@ -3,7 +3,7 @@ from typing import Dict
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
 from utils import log_message, LoggingScope, log_function_entry_exit
-from github import Github
+from github import Github, GithubException, UnknownObjectException
 
 
 class TaskState(Enum):
@@ -84,10 +84,10 @@ class EESSITask:
             log_msg = "Found file %s in branch %s"
             log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file_path, branch)
             return True
-        except Github.UnknownObjectException:
+        except UnknownObjectException:
             # file_path does not exist in branch
             return False
-        except Github.GithubException as err:
+        except GithubException as err:
             if err.status == 404:
                 # file_path does not exist in branch
                 return False
@@ -216,7 +216,7 @@ class EESSITask:
             else:
                 # If it's not a list, it means the path is not a directory
                 raise ValueError(f"{directory_path} is not a directory")
-        except Github.GithubException as err:
+        except GithubException as err:
             if err.status == 404:
                 raise FileNotFoundError(f"Directory not found: {directory_path}")
             raise err
