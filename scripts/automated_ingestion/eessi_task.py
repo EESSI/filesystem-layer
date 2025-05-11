@@ -147,8 +147,16 @@ class EESSITask:
         """
         # obtain repo and pr from metadata
         log_message(LoggingScope.TASK_OPS, 'INFO', "finding state of task %s", self.description.task_object)
-        repo = self.description.metadata['task']['repo']
-        pr = self.description.metadata['task']['pr']
+        task = self.description.metadata['task'] if 'task' in self.description.metadata else None
+        link2pr = self.description.metadata['link2pr'] if 'link2pr' in self.description.metadata else None
+        if task:
+            repo = task['repo']
+            pr = task['pr']
+        elif link2pr:
+            repo = link2pr['repo']
+            pr = link2pr['pr']
+        else:
+            raise ValueError("no repo or pr found in metadata")
         log_message(LoggingScope.TASK_OPS, 'INFO', "repo: %s, pr: %s", repo, pr)
 
         # iterate over all sequence numbers in repo/pr dir
