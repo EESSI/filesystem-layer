@@ -106,7 +106,7 @@ class EessiTarball:
             try:
                 self.git_repo.get_contents(state + '/' + self.metadata_file)
                 log_msg = "Found metadata file %s in state: %s"
-                log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg, self.metadata_file, state)
+                log_message(LoggingScope.STATE_OPS, 'INFO', log_msg, self.metadata_file, state)
                 return state
             except github.UnknownObjectException:
                 # no metadata file found in this state's directory, so keep searching...
@@ -120,7 +120,7 @@ class EessiTarball:
                     log_msg = 'Unable to determine the state of %s, the GitHub API returned status %s!'
                     log_message(LoggingScope.ERROR, 'WARNING', log_msg, self.object, err.status)
                     return "unknown"
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', "Tarball %s is new", self.metadata_file)
+        log_message(LoggingScope.STATE_OPS, 'INFO', "Tarball %s is new", self.metadata_file)
         return "new"
 
     def get_contents_overview(self):
@@ -282,7 +282,7 @@ class EessiTarball:
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
         # TODO: check if there is an open issue for this tarball, and if there is, skip it.
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', 'Tarball %s is ready to be ingested.', self.object)
+        log_message(LoggingScope.STATE_OPS, 'INFO', 'Tarball %s is ready to be ingested.', self.object)
         self.download()
         log_message(LoggingScope.VERIFICATION, 'INFO', 'Verifying its signature...')
         if not self.verify_signatures():
@@ -308,7 +308,7 @@ class EessiTarball:
 
         script = self.config['paths']['ingestion_script']
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', 'Running the ingestion script for %s...', self.object)
+        log_message(LoggingScope.STATE_OPS, 'INFO', 'Running the ingestion script for %s...', self.object)
         ingest_cmd = subprocess.run(
             sudo + [script, self.cvmfs_repo, self.local_path],
             stdout=subprocess.PIPE,
@@ -334,38 +334,38 @@ class EessiTarball:
             )
             if self.issue_exists(issue_title, state='open'):
                 log_msg = 'Failed to ingest %s, but an open issue already exists, skipping...'
-                log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg, self.object)
+                log_message(LoggingScope.STATE_OPS, 'INFO', log_msg, self.object)
             else:
                 self.git_repo.create_issue(title=issue_title, body=issue_body)
 
     def print_ingested(self):
         """Process a tarball that has already been ingested."""
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', '%s has already been ingested, skipping...', self.object)
+        log_message(LoggingScope.STATE_OPS, 'INFO', '%s has already been ingested, skipping...', self.object)
 
     @log_function_entry_exit()
     def mark_new_tarball_as_staged(self, branch=None):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
         log_msg = 'Found new tarball %s, downloading it...'
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg, self.object)
+        log_message(LoggingScope.STATE_OPS, 'INFO', log_msg, self.object)
         # Download the tarball and its metadata file.
         # Use force as it may be a new attempt for an existing tarball that failed before.
         self.download(force=True)
         if not self.local_path or not self.local_metadata_path:
             log_msg = "Skipping tarball %s - download failed"
-            log_message(LoggingScope.STATE_CHANGE, 'WARNING', log_msg, self.object)
+            log_message(LoggingScope.STATE_OPS, 'WARNING', log_msg, self.object)
             return
 
         # Verify the signatures of the tarball and metadata file.
         if not self.verify_signatures():
             log_msg = "Skipping tarball %s - signature verification failed"
-            log_message(LoggingScope.STATE_CHANGE, 'WARNING', log_msg, self.object)
+            log_message(LoggingScope.STATE_OPS, 'WARNING', log_msg, self.object)
             return
 
         # If no branch is provided, use the main branch
         target_branch = branch if branch else 'main'
         log_msg = "Adding metadata to '%s' folder in %s branch"
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg, next_state, target_branch)
+        log_message(LoggingScope.STATE_OPS, 'INFO', log_msg, next_state, target_branch)
 
         file_path_staged = next_state + '/' + self.metadata_file
         contents = ''
@@ -379,14 +379,14 @@ class EessiTarball:
 
     def print_rejected(self):
         """Process a (rejected) tarball for which the corresponding PR has been closed witout merging."""
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', "This tarball was rejected, so we're skipping it.")
+        log_message(LoggingScope.STATE_OPS, 'INFO', "This tarball was rejected, so we're skipping it.")
         # Do we want to delete rejected tarballs at some point?
 
     def print_unknown(self):
         """Process a tarball which has an unknown state."""
         log_msg = "The state of this tarball could not be determined,"
         log_msg += " so we're skipping it."
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', log_msg)
+        log_message(LoggingScope.STATE_OPS, 'INFO', log_msg)
 
     def find_next_sequence_number(self, repo, pr_id):
         """Find the next available sequence number for staging PRs of a source PR."""
@@ -643,7 +643,7 @@ class EessiTarball:
     def reject(self):
         """Reject a tarball for ingestion."""
         # Let's move the the tarball to the directory for rejected tarballs.
-        log_message(LoggingScope.STATE_CHANGE, 'INFO', 'Marking tarball %s as rejected...', self.object)
+        log_message(LoggingScope.STATE_OPS, 'INFO', 'Marking tarball %s as rejected...', self.object)
         next_state = 'rejected'
         self.move_metadata_file(self.state, next_state)
 

@@ -148,9 +148,11 @@ class EESSITask:
         # obtain repo and pr from metadata
         repo = self.description.metadata['task']['repo']
         pr = self.description.metadata['task']['pr']
+        log_message(LoggingScope.TASK_OPS, 'INFO', "repo: %s, pr: %s", repo, pr)
 
         # iterate over all sequence numbers in repo/pr dir
         sequence_numbers = self._determine_sequence_numbers_including_task_file()
+        log_message(LoggingScope.TASK_OPS, 'INFO', "sequence_numbers: %s", sequence_numbers)
         for sequence_number in [key for key, value in sequence_numbers.items() if value]:
             # create path to metadata file from repo, PR, repo, sequence number, metadata file name, state name
             # format of the metadata file name is:
@@ -164,12 +166,16 @@ class EESSITask:
             #   Later, we may switch to using task action files instead of metadata files. The format of the
             #   SUFFIX would then be defined by the task action or the configuration file.
             version, component, os, architecture, timestamp, suffix = self.description.get_metadata_file_components()
+            log_msg = "version: %s, component: %s, os: %s, architecture: %s, timestamp: %s, suffix: %s"
+            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, version, component, os, architecture, timestamp, suffix)
             metadata_file_name = f"eessi-{version}-{component}-{os}-{architecture}-{timestamp}.{suffix}"
             metadata_file_state_path = f"{repo}/{pr}/{sequence_number}/{metadata_file_name}"
             # get the state from the file in the metadata_file_state_path
             state = self._get_state_from_metadata_file(metadata_file_state_path)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "state: %s", state)
             return state
         # did not find metadata file in staging repo on GitHub
+        log_message(LoggingScope.TASK_OPS, 'INFO', "did not find metadata file in staging repo on GitHub, state: NEW")
         return TaskState.NEW
 
     @log_function_entry_exit()
