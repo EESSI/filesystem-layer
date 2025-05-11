@@ -76,6 +76,38 @@ class EESSITaskDescription:
                        self.task_object.local_file_path, str(e))
             raise
 
+    def get_metadata_file_components(self) -> Tuple[str, str, str, str, str, str]:
+        """
+        Get the components of the metadata file name.
+
+        An example of the metadata file name is:
+          eessi-2023.06-software-linux-x86_64-amd-zen2-1745557626.tar.gz.meta.txt
+
+        The components are:
+          eessi: some prefix
+          VERSION: 2023.06
+          COMPONENT: software
+          OS: linux
+          ARCHITECTURE: x86_64-amd-zen2
+          TIMESTAMP: 1745557626
+          SUFFIX: tar.gz.meta.txt
+
+          The ARCHITECTURE component can include one to two hyphens.
+          The SUFFIX is the part after the first dot (no other components should include dots).
+        """
+        # obtain file name from local file path using basename
+        file_name = Path(self.task_object.local_file_path).name
+        # split file_name into part before suffix and the suffix
+        # from file_name_without_suffix determine VERSION (2nd element), COMPONENT (3rd element), OS (4th element),
+        #  ARCHITECTURE (5th to second last elements) and TIMESTAMP (last element)
+        components = file_name_without_suffix.split('-')
+        version = components[1]
+        component = components[2]
+        os = components[3]
+        architecture = '-'.join(components[4:-1])
+        timestamp = components[-1]
+        return version, component, os, architecture, timestamp, suffix
+
     def __str__(self) -> str:
         """Return a string representation of the EESSITaskDescription object."""
         return f"EESSITaskDescription({self.task_object.local_file_path}, verified={self.signature_verified})" 

@@ -11,18 +11,33 @@ class TaskState(Enum):
     REJECTED = auto()  # The task has been rejected
     INGESTED = auto()  # The task has been ingested into the target CernVM-FS repository
 
+    @classmethod
+    def from_string(cls, name, default=None, case_sensitive=False):
+        if case_sensitive:
+            return cls.__members__.get(name, default)
+
+        try:
+            return next(
+                member for member_name, member in cls.__members__.items()
+                if member_name.lower() == name.lower()
+            )
+        except StopIteration:
+            return default
+
     def __str__(self):
         return self.name.lower()
 
+
 class EESSITask:
-    task_description: EESSITaskDescription
+    description: EESSITaskDescription
     action: EESSITaskAction
     state: TaskState
+    git_repo: Github
 
-    def __init__(self, task_description: EESSITaskDescription):
-        self.task_description = task_description
-        self.action = self._determine_action()
-        self.state = TaskState.NEW
+    def __init__(self, description: EESSITaskDescription, git_repo: Github):
+        self.description = description
+        self.git_repo = git_repo
+        self.action = self._determine_task_action()
 
         # Define valid state transitions for all actions
         self.valid_transitions = {
@@ -34,12 +49,14 @@ class EESSITask:
             TaskState.INGESTED: []   # Terminal state
         }
 
-    def _determine_action(self) -> EESSITaskAction:
+        self.state = self._find_state()
+
+    def _determine_task_action(self) -> EESSITaskAction:
         """
         Determine the action type based on task description metadata.
         """
-        if 'task' in self.task_description.metadata and 'action' in self.task_description.metadata['task']:
-            action_str = self.task_description.metadata['task']['action'].lower()
+        if 'task' in self.description.metadata and 'action' in self.description.metadata['task']:
+            action_str = self.description.metadata['task']['action'].lower()
             if action_str == "nop":
                 return EESSITaskAction.NOP
             elif action_str == "delete":
@@ -49,6 +66,130 @@ class EESSITask:
             elif action_str == "update":
                 return EESSITaskAction.UPDATE
         return EESSITaskAction.UNKNOWN
+
+    def _file_exists_in_repo_branch(self, file_path, branch=None) -> bool:
+        """
+        Check if a file exists in a repository branch.
+        """
+        if branch is None:
+            branch = self.git_repo.default_branch
+        try:
+            self.git_repo.get_contents(file_path, ref=branch)
+            log_msg = "Found file %s in branch %s"
+            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file_path, branch)
+            return True
+        except github.UnknownObjectException:
+            # file_path does not exist in branch
+            return False
+        except github.GithubException as err:
+            if err.status == 404:
+                # file_path does not exist in branch
+                return False
+            else: 
+                # if there was some other (e.g. connection) issue, log message and return False
+                log_msg = 'Unable to determine the state of %s, the GitHub API returned status %s!'
+                log_message(LoggingScope.ERROR, 'WARNING', log_msg, self.object, err.status)
+                return False
+        return False
+
+    def _determine_sequence_numbers_including_task_file(self) -> Dict[int, bool]:
+        """
+        Determines in which sequence numbers the metadata/task file is included and in which it is not.
+
+        Returns:
+            A dictionary with the sequence numbers as keys and a boolean value indicating if the metadata/task file is included in that sequence number.
+
+        Idea:
+         - The deployment for a single source PR could be split into multiple staging PRs each is assigned a unique
+           sequence number.
+         - For a given source PR (identified by the repo name and the PR number), a staging PR using a branch named
+           `REPO/PR_NUM/SEQ_NUM` is created. 
+         - In the staging repo we create a corresponding directory `REPO/PR_NUM/SEQ_NUM`.
+         - If a metadata/task file is handled by the staging PR with sequence number, it is included in that directory.
+         - We iterate over all directories under `REPO/PR_NUM`:
+           - If the metadata/task file is available in the directory, we add the sequence number to the list.
+
+        Note: this is a placeholder for now, as we do not know yet if we need to use a sequence number.
+        """
+        sequence_numbers = {}
+        repo = self.description.metadata['task']['repo']
+        pr = self.description.metadata['task']['pr']
+        repo_pr_dir = f"{repo}/{pr}"
+        # iterate over all directories under repo_pr_dir
+        for dir in self._list_directory_contents(repo_pr_dir):
+            # check if the directory is a number
+            if dir.name.isdigit():
+                remote_file_path = self.description.task_object.remote_file_path
+                if self._file_exists_in_repo_branch(f"{repo_pr_dir}/{dir.name}/{remote_file_path}"):
+                    sequence_numbers[int(dir.name)] = True
+                else:
+                    sequence_numbers[int(dir.name)] = False
+            else:
+                # directory is not a number, so we skip it
+                continue
+        return sequence_numbers
+
+    def _find_state(self) -> TaskState:
+        """
+        Determine the state of the task based on the task description metadata.
+
+        Returns:
+            The state of the task.
+        """
+        # obtain repo and pr from metadata
+        repo = self.description.metadata['task']['repo']
+        pr = self.description.metadata['task']['pr']
+
+        # iterate over all sequence numbers in repo/pr dir
+        sequence_numbers = self._determine_sequence_numbers_including_task_file()
+        for sequence_number in [key for key, value in sequence_numbers.items() if value]:
+            # create path to metadata file from repo, PR, repo, sequence number, metadata file name, state name
+            # format of the metadata file name is:
+            #   eessi-VERSION-COMPONENT-OS-ARCHITECTURE-TIMESTAMP.SUFFIX
+            # all uppercase words are placeholders
+            # all placeholders (except ARCHITECTURE) do not include any hyphens
+            # ARCHITECTURE can include one to two hyphens
+            # The SUFFIX is composed of two parts: TARBALLSUFFIX and METADATASUFFIX
+            # TARBALLSUFFIX is defined by the task object or in the configuration file
+            # METADATASUFFIX is defined by the task object or in the configuration file
+            #   Later, we may switch to using task action files instead of metadata files. The format of the
+            #   SUFFIX would then be defined by the task action or the configuration file.
+            version, component, os, architecture, timestamp, suffix = self.description.get_metadata_file_components()
+            metadata_file_name = f"eessi-{version}-{component}-{os}-{architecture}-{timestamp}.{suffix}"
+            metadata_file_state_path = f"{repo}/{pr}/{sequence_number}/{metadata_file_name}"
+            # get the state from the file in the metadata_file_state_path
+            state = self._get_state_from_metadata_file(metadata_file_state_path)
+            return state
+        # did not find metadata file in staging repo on GitHub
+        return TaskState.NEW
+
+    def _get_state_from_metadata_file(self, metadata_file_state_path: str) -> TaskState:
+        """
+        Get the state from the file in the metadata_file_state_path.
+        """
+        # get contents of metadata_file_state_path
+        contents = self.git_repo.get_contents(metadata_file_state_path)
+        try:
+            state = TaskState.from_string(contents.name)
+            return state
+        except ValueError:
+            return TaskState.NEW
+
+    def _list_directory_contents(self, directory_path, branch=None):
+        try:
+            # Get contents of the directory
+            contents = self.git_repo.get_contents(directory_path, ref=branch)
+
+            # If contents is a list, it means we successfully got directory contents
+            if isinstance(contents, list):
+                return contents
+            else:
+                # If it's not a list, it means the path is not a directory
+                raise ValueError(f"{directory_path} is not a directory")
+        except github.GithubException as err:
+            if err.status == 404:
+                raise FileNotFoundError(f"Directory not found: {directory_path}")
+            raise err
 
     def handle(self):
         """
@@ -114,4 +255,4 @@ class EESSITask:
         return False
 
     def __str__(self):
-        return f"EESSITask(task_description={self.task_description})"
+        return f"EESSITask(description={self.description}, action={self.action}, state={self.state})"

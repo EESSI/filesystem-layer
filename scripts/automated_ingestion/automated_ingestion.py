@@ -256,11 +256,14 @@ def main():
                             task = EESSITask(
                                 EESSITaskDescription(
                                     EESSIDataAndSignatureObject(config, task_path, s3_bucket)
-                                )
+                                ), 
+                                gh_staging_repo
                             )
                         except Exception as err:
                             log_message(LoggingScope.ERROR, 'ERROR', "Failed to create EESSITask for task %s: %s", task_path, str(err))
                             continue
+
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task: %s", task)
 
                         # TODO: update the information shown below (what makes sense to show?)
                         # Log information about the task
