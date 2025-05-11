@@ -21,6 +21,12 @@ class EESSITaskDescription:
     # Metadata from the task description file
     metadata: Dict[str, Any] = None
 
+    # task element
+    task: Dict[str, Any] = None
+
+    # source element
+    source: Dict[str, Any] = None
+
     @log_function_entry_exit()
     def __init__(self, task_object: EESSIDataAndSignatureObject):
         """
@@ -50,6 +56,12 @@ class EESSITaskDescription:
             self.task = self.metadata['task']
         else:
             self.task = None
+
+        # check if the task file contains a link2pr field and add that to source element
+        if 'link2pr' in self.metadata:
+            self.source = self.metadata['link2pr']
+        else:
+            self.source = None
 
     @log_function_entry_exit()
     def _read_metadata(self) -> None:

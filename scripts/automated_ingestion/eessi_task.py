@@ -147,16 +147,16 @@ class EESSITask:
         """
         # obtain repo and pr from metadata
         log_message(LoggingScope.TASK_OPS, 'INFO', "finding state of task %s", self.description.task_object)
-        task = self.description.metadata['task'] if 'task' in self.description.metadata else None
-        link2pr = self.description.metadata['link2pr'] if 'link2pr' in self.description.metadata else None
-        if task:
+        task = self.description.task
+        source = self.description.source
+        if 'repo' in task and 'pr' in task:
             log_message(LoggingScope.TASK_OPS, 'INFO', "task found in metadata: %s", task)
             repo = task['repo']
             pr = task['pr']
-        elif link2pr:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "link2pr found in metadata: %s", link2pr)
-            repo = link2pr['repo']
-            pr = link2pr['pr']
+        elif 'repo' in source and 'pr' in source:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "link2pr found in metadata: %s", source)
+            repo = source['repo']
+            pr = source['pr']
         else:
             raise ValueError("no repo or pr found in metadata")
         log_message(LoggingScope.TASK_OPS, 'INFO', "repo: %s, pr: %s", repo, pr)
