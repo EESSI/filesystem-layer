@@ -208,6 +208,7 @@ class EESSITask:
     def _list_directory_contents(self, directory_path, branch=None):
         try:
             # Get contents of the directory
+            log_message(LoggingScope.TASK_OPS, 'INFO', "listing contents of %s in branch %s", directory_path, branch)
             contents = self.git_repo.get_contents(directory_path, ref=branch)
 
             # If contents is a list, it means we successfully got directory contents
