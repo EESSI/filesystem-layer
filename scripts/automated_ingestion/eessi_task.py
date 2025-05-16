@@ -48,6 +48,7 @@ class EESSITask:
         self.action = self._determine_task_action()
 
         # Define valid state transitions for all actions
+        # NOTE, TaskState.APPROVED must be the first element or _next_state() will not work
         self.valid_transitions = {
             TaskState.NEW: [TaskState.STAGED],
             TaskState.STAGED: [TaskState.PR_OPENED],
@@ -237,6 +238,16 @@ class EESSITask:
             raise err
 
     @log_function_entry_exit()
+    def _next_state(self) -> TaskState:
+        """
+        Determine the next state based on the current state using the valid_transitions dictionary.
+
+        NOTE, it assumes that function is only called for non-terminal states and that the next state is the first
+        element of the list returned by the valid_transitions dictionary.
+        """
+        return self.valid_transitions[self.state][0]
+
+    @log_function_entry_exit()
     def handle(self):
         """
         Dynamically find and execute the appropriate handler based on action and state.
@@ -283,7 +294,13 @@ class EESSITask:
         payload_object = EESSIDataAndSignatureObject(config, payload_remote_file_path, remote_client)
         self.payload = EESSITaskPayload(payload_object)
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload: %s", self.payload)
-
+        # determine next state (NEXT_STATE), put metadata/task file into GH staging repo in main branch under directory
+        # REPO/PR_NUM/SEQ_NUM/payload_name.NEXT_STATE
+        next_state = self._next_state()
+        log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
+        repo_pr_dir = f"{self.description.task_object.repo}/{self.description.task_object.pr}"
+        staging_repo_path = f"{repo_pr_dir}/{payload_name}.{next_state}"
+        log_message(LoggingScope.TASK_OPS, 'INFO', "staging_repo_path: %s", staging_repo_path)
         return True
 
     @log_function_entry_exit()
