@@ -270,6 +270,7 @@ class EESSITask:
         # Implementation for adding in NEW state
         # get name of of payload from metadata
         payload_name = self.description.metadata['payload']['filename']
+        log_message(LoggingScope.TASK_OPS, 'INFO', "payload_name: %s", payload_name)
         # get config and remote_client from self.description.task_object
         config = self.description.task_object.config
         remote_client = self.description.task_object.remote_client
@@ -277,6 +278,7 @@ class EESSITask:
         #   with payload_name
         description_remote_file_path = self.description.task_object.remote_file_path
         payload_remote_file_path = os.path.join(os.path.dirname(description_remote_file_path), payload_name)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "payload_remote_file_path: %s", payload_remote_file_path)
         # initialize payload object
         payload_object = EESSIDataAndSignatureObject(config, payload_remote_file_path, remote_client)
         self.payload = EESSITaskPayload(payload_object)
