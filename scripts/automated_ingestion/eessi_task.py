@@ -298,9 +298,15 @@ class EESSITask:
         # REPO/PR_NUM/SEQ_NUM/payload_name.NEXT_STATE
         next_state = self._next_state()
         log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
-        repo_pr_dir = f"{self.description.get_repo_name()}/{self.description.get_pr_number()}"
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        repo_pr_dir = f"{repo_name}/{pr_number}"
         staging_repo_path = f"{repo_pr_dir}/{payload_name}.{next_state}"
         log_message(LoggingScope.TASK_OPS, 'INFO', "staging_repo_path: %s", staging_repo_path)
+        # contents of task description / metadata file
+        contents = self.description.get_contents()
+        self.git_repo.create_file(staging_repo_path, f"new task for {repo_name} PR {pr_number} add build for arch" ,
+                                  contents)
         return True
 
     @log_function_entry_exit()
