@@ -1,9 +1,12 @@
 from enum import Enum, auto
 from typing import Dict
+from eessi_data_object import EESSIDataAndSignatureObject
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
+from eessi_task_payload import EESSITaskPayload
 from utils import log_message, LoggingScope, log_function_entry_exit
 from github import Github, GithubException, UnknownObjectException
+import os
 
 
 class TaskState(Enum):
@@ -33,6 +36,7 @@ class TaskState(Enum):
 
 class EESSITask:
     description: EESSITaskDescription
+    payload: EESSITaskPayload
     action: EESSITaskAction
     state: TaskState
     git_repo: Github
@@ -264,6 +268,20 @@ class EESSITask:
         """Handler for ADD action in NEW state"""
         print("Handling ADD action in NEW state")
         # Implementation for adding in NEW state
+        # get name of of payload from metadata
+        payload_name = self.description.metadata['payload']['filename']
+        # get config and remote_client from self.description.task_object
+        config = self.description.task_object.config
+        remote_client = self.description.task_object.remote_client
+        # determine remote_file_path by replacing basename of remote_file_path in self.description.task_object
+        #   with payload_name
+        description_remote_file_path = self.description.task_object.remote_file_path
+        payload_remote_file_path = os.path.join(os.path.dirname(description_remote_file_path), payload_name)
+        # initialize payload object
+        payload_object = EESSIDataAndSignatureObject(config, payload_remote_file_path, remote_client)
+        self.payload = EESSITaskPayload(payload_object)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "payload: %s", self.payload)
+
         return True
 
     @log_function_entry_exit()
