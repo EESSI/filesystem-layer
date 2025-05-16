@@ -76,7 +76,8 @@ class EESSITaskDescription:
 
         try:
             with open(self.task_object.local_file_path, 'r') as file:
-                self.metadata = json.load(file)
+                self.raw_contents = file.read()
+                self.metadata = json.loads(self.raw_contents)
             log_message(LoggingScope.DEBUG, 'DEBUG', "Successfully read metadata from %s",
                         self.task_object.local_file_path)
         except json.JSONDecodeError as err:
@@ -87,6 +88,13 @@ class EESSITaskDescription:
             log_message(LoggingScope.ERROR, 'ERROR', "Failed to read task description file %s: %s",
                         self.task_object.local_file_path, str(err))
             raise
+
+    @log_function_entry_exit()
+    def get_contents(self) -> str:
+        """
+        Get the contents of the task description / metadata file.
+        """
+        return self.raw_contents
 
     @log_function_entry_exit()
     def get_metadata_file_components(self) -> Tuple[str, str, str, str, str, str]:
