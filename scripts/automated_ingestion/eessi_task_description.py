@@ -88,6 +88,7 @@ class EESSITaskDescription:
                         self.task_object.local_file_path, str(err))
             raise
 
+    @log_function_entry_exit()
     def get_metadata_file_components(self) -> Tuple[str, str, str, str, str, str]:
         """
         Get the components of the metadata file name.
@@ -123,6 +124,27 @@ class EESSITaskDescription:
         timestamp = components[-1]
         return version, component, os, architecture, timestamp, suffix
 
+    @log_function_entry_exit()
+    def get_pr_number(self) -> str:
+        """
+        Get the PR number from the task description / metadata file.
+        """
+        if self.source and 'pr' in self.source:
+            return self.source['pr']
+        else:
+            return '0'
+
+    @log_function_entry_exit()
+    def get_repo_name(self) -> str:
+        """
+        Get the repository name from the task description / metadata file.
+        """
+        if self.source and 'repo' in self.source:
+            return self.source['repo']
+        else:
+            return 'None'
+
+    @log_function_entry_exit()
     def __str__(self) -> str:
         """Return a string representation of the EESSITaskDescription object."""
         return f"EESSITaskDescription({self.task_object.local_file_path}, verified={self.signature_verified})"
