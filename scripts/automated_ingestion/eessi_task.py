@@ -298,7 +298,7 @@ class EESSITask:
         # REPO/PR_NUM/SEQ_NUM/payload_name.NEXT_STATE
         next_state = self._next_state()
         log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
-        repo_pr_dir = f"{self.description.task_object.repo}/{self.description.task_object.pr}"
+        repo_pr_dir = f"{self.description.get_repo_name()}/{self.description.get_pr_number()}"
         staging_repo_path = f"{repo_pr_dir}/{payload_name}.{next_state}"
         log_message(LoggingScope.TASK_OPS, 'INFO', "staging_repo_path: %s", staging_repo_path)
         return True
