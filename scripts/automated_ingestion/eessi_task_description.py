@@ -142,8 +142,8 @@ class EESSITaskDescription:
             raise ValueError("get_metadata_value: key is not defined or has a length of 0")
 
         value = None
-        task = self.description.task
-        source = self.description.source
+        task = self.task
+        source = self.source
         if task and 'repo' in task and key in task['repo']:
             value = task['repo'][key]
             log_message(LoggingScope.TASK_OPS, 'INFO',
