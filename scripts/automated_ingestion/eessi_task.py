@@ -231,7 +231,8 @@ class EESSITask:
             if file.path.startswith(metadata_file_state_path_prefix):
                 # get state from file name taking only the suffix
                 state = TaskState.from_string(file.name.split('.')[-1])
-            return state
+                log_message(LoggingScope.TASK_OPS, 'INFO', "state: %s", state)
+                return state
         # did not find any file with metadata_file_state_path_prefix as prefix
         log_message(LoggingScope.TASK_OPS, 'INFO', "did not find any file with prefix %s",
                     metadata_file_state_path_prefix)
