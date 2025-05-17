@@ -157,9 +157,10 @@ class EESSITask:
             for dir in directories:
                 # check if the directory is a number
                 if dir.name.isdigit():
-                    # determin if a state file with prefix exists in the sequence number directory
-                    remote_file_path = self.description.task_object.remote_file_path
-                    state_file_name_prefix = f"{repo_pr_dir}/{dir.name}/{remote_file_path}"
+                    # determine if a state file with prefix exists in the sequence number directory
+                    #   we need to use the basename of the remote file path
+                    remote_file_path_basename = os.path.basename(self.description.task_object.remote_file_path)
+                    state_file_name_prefix = f"{repo_pr_dir}/{dir.name}/{remote_file_path_basename}"
                     if self._state_file_with_prefix_exists_in_repo_branch(state_file_name_prefix):
                         sequence_numbers[int(dir.name)] = True
                     else:
