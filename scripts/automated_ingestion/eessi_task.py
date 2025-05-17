@@ -128,6 +128,9 @@ class EESSITask:
     def _determine_sequence_numbers_including_task_file(self, repo: str, pr: str) -> Dict[int, bool]:
         """
         Determines in which sequence numbers the metadata/task file is included and in which it is not.
+        NOTE, we only need to check the default branch of the repository, because a for a new task a file
+        is added to the default branch and for the subsequent processing of the task we use a different branch.
+        Thus, until the PR is closed, the task file stays in the default branch.
 
         Args:
             repo: the repository name
@@ -206,37 +209,60 @@ class EESSITask:
             # no sequence numbers found, so we return NEW
             log_message(LoggingScope.TASK_OPS, 'INFO', "no sequence numbers found, state: NEW")
             return TaskState.NEW
-        # because a new sequence number is only created after the previous staging PR has been approved or rejected,
-        #   we need to check if the processing of the highest sequence number is finished.
-        highest_sequence_number = self._find_highest_number(sequence_numbers.keys())
-        # we obtain the state from the file in the highest sequence number directory
-        # TODO: verify if the state matches other information, e.g. the state of the staging PR
-        #       for now, we assume that the state is correct
+        # we got at least one sequence number
+        # if one value for a sequence number is True, we can determine the state from the file in the directory
+        sequence_including_task = [key for key, value in sequence_numbers.items() if value is True]
+        if len(sequence_including_task) == 0:
+            # no sequence number includes the task file, so we return NEW
+            log_message(LoggingScope.TASK_OPS, 'INFO', "no sequence number includes the task file, state: NEW")
+            return TaskState.NEW
+        # we got at least one sequence number which includes the task file
+        # we can determine the state from the filename in the directory
+        # NOTE, we use the first element in sequence_including_task (there should be only one)
+        #     we ignore other elements in sequence_including_task
+        sequence_number = sequence_including_task[0]
         task_file_name = self.description.get_task_file_name()
-        metadata_file_state_path_prefix = f"{repo}/{pr}/{highest_sequence_number}/{task_file_name}."
-        state = self._get_state_for_metadata_file_prefix(metadata_file_state_path_prefix)
+        metadata_file_state_path_prefix = f"{repo}/{pr}/{sequence_number}/{task_file_name}."
+        state = self._get_state_for_metadata_file_prefix(metadata_file_state_path_prefix, sequence_number)
         log_message(LoggingScope.TASK_OPS, 'INFO', "state: %s", state)
         return state
 
     @log_function_entry_exit()
-    def _get_state_for_metadata_file_prefix(self, metadata_file_state_path_prefix: str) -> TaskState:
+    def _get_state_for_metadata_file_prefix(self, metadata_file_state_path_prefix: str,
+                                            sequence_number: int) -> TaskState:
         """
         Get the state from the file in the metadata_file_state_path_prefix.
         """
-        # first get all files in directory part of metadata_file_state_path_prefix
+        # depending on the state of the deployment (NEW, STAGED, PR_OPENED, APPROVED, REJECTED, INGESTED)
+        # we need to check the task file in the default branch or in the branch corresponding to the sequence number
         directory_part = os.path.dirname(metadata_file_state_path_prefix)
-        files = self._list_directory_contents(directory_part)
-        # check if any of the files has metadata_file_state_path_prefix as prefix
-        for file in files:
-            if file.path.startswith(metadata_file_state_path_prefix):
-                # get state from file name taking only the suffix
-                state = TaskState.from_string(file.name.split('.')[-1])
-                log_message(LoggingScope.TASK_OPS, 'INFO', "state: %s", state)
-                return state
-        # did not find any file with metadata_file_state_path_prefix as prefix
-        log_message(LoggingScope.TASK_OPS, 'INFO', "did not find any file with prefix %s",
-                    metadata_file_state_path_prefix)
-        return TaskState.NEW
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        default_branch_name = self.git_repo.default_branch
+        branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+        all_branch_names = [branch.name for branch in self.git_repo.get_branches()]
+        states = []
+        for branch in [default_branch_name, branch_name]:
+            if branch in all_branch_names:
+                # first get all files in directory part of metadata_file_state_path_prefix
+                files = self._list_directory_contents(directory_part, branch)
+                # check if any of the files has metadata_file_state_path_prefix as prefix
+                for file in files:
+                    if file.path.startswith(metadata_file_state_path_prefix):
+                        # get state from file name taking only the suffix
+                        state = TaskState.from_string(file.name.split('.')[-1])
+                        log_message(LoggingScope.TASK_OPS, 'INFO', "state: %s", state)
+                        states.append(state)
+        if len(states) == 0:
+            # did not find any file with metadata_file_state_path_prefix as prefix
+            log_message(LoggingScope.TASK_OPS, 'INFO', "did not find any file with prefix %s",
+                        metadata_file_state_path_prefix)
+            return TaskState.NEW
+        # sort the states and return the last one
+        states.sort()
+        state = states[-1]
+        log_message(LoggingScope.TASK_OPS, 'INFO', "state: %s", state)
+        return state
 
     @log_function_entry_exit()
     def _list_directory_contents(self, directory_path, branch=None):
@@ -298,7 +324,7 @@ class EESSITask:
     def _handle_add_new(self):
         """Handler for ADD action in NEW state"""
         print("Handling ADD action in NEW state")
-        # Implementation for adding in NEW state
+        # Implementation for adding in NEW state: a task is only NEW if it was not processed yet
         # get name of of payload from metadata
         payload_name = self.description.metadata['payload']['filename']
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload_name: %s", payload_name)
@@ -315,7 +341,7 @@ class EESSITask:
         self.payload = EESSITaskPayload(payload_object)
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload: %s", self.payload)
         # determine next state (NEXT_STATE), put metadata/task file into GH staging repo in main branch under directory
-        # REPO/PR_NUM/SEQ_NUM/payload_name.NEXT_STATE
+        # REPO/PR_NUM/SEQ_NUM/task_file_name.NEXT_STATE
         next_state = self._next_state()
         log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
         repo_name = self.description.get_repo_name()
@@ -325,7 +351,18 @@ class EESSITask:
         if len(sequence_numbers) == 0:
             sequence_number = 0
         else:
+            # we need to figure out the status of the last deployment (with the highest sequence number)
+            # if a PR exists and it is closed, we add the task to the *next* higher sequence number
+            # otherwise we add the task to the highest sequence number
             sequence_number = self._find_highest_number(sequence_numbers.keys())
+            branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+            if branch_name in [branch.name for branch in self.git_repo.get_branches()]:
+                # branch exists, check if PR exists
+                find_pr = [pr for pr in self.git_repo.get_pulls(head=branch_name, state='all')]
+                if find_pr:
+                    pr = find_pr.pop(0)
+                    if pr.state == 'closed':
+                        sequence_number += 1
         # we use the basename of the remote file path for the task description file
         task_file_name = self.description.get_task_file_name()
         staging_repo_path = f"{repo_pr_dir}/{sequence_number}/{task_file_name}.{next_state}"
@@ -343,6 +380,15 @@ class EESSITask:
         """Handler for ADD action in STAGED state"""
         print("Handling ADD action in STAGED state")
         # Implementation for adding in STAGED state
+        # construct supposed branch name
+        # check if branch exists
+        # - yes: check if corresponding PR exists
+        #   - yes: check status of PR
+        #     - open: rename file and add it to branch, set state, update PR contents, return
+        #     - closed && !merged: rename file to rejected, set state
+        #     - else: weird state, log message, return
+        #   - no: delete branch
+        # create new branch, add task file to branch, set state, create PR, update PR contents, return
         return True
 
     @log_function_entry_exit()
