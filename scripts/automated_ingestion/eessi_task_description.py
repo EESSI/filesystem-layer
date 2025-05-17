@@ -133,24 +133,53 @@ class EESSITaskDescription:
         return version, component, os, architecture, timestamp, suffix
 
     @log_function_entry_exit()
+    def get_metadata_value(self, key: str) -> str:
+        """
+        Get the value of a key from the task description / metadata file.
+        """
+        # check that key is defined and has a length > 0
+        if not key or len(key) == 0:
+            raise ValueError("get_metadata_value: key is not defined or has a length of 0")
+
+        value = None
+        task = self.description.task
+        source = self.description.source
+        if task and 'repo' in task and key in task['repo']:
+            value = task['repo'][key]
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        f"Value '{value}' for key {key} found in information from task metadata: {task}")
+        elif source and 'repo' in source and key in source['repo']:
+            value = source['repo'][key]
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        f"Value '{value}' for key {key} found in information from source metadata: {source}")
+        else:
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        f"Value '{value}' for key {key} neither found in task metadata nor source metadata")
+            raise ValueError(f"Value '{value}' for key {key} neither found in task metadata nor source metadata")
+        return value
+
+    @log_function_entry_exit()
     def get_pr_number(self) -> str:
         """
         Get the PR number from the task description / metadata file.
         """
-        if self.source and 'pr' in self.source:
-            return self.source['pr']
-        else:
-            return '0'
+        return self.get_metadata_value('pr')
 
     @log_function_entry_exit()
     def get_repo_name(self) -> str:
         """
         Get the repository name from the task description / metadata file.
         """
-        if self.source and 'repo' in self.source:
-            return self.source['repo']
-        else:
-            return 'None'
+        return self.get_metadata_value('repo')
+
+    @log_function_entry_exit()
+    def get_task_file_name(self) -> str:
+        """
+        Get the file name from the task description / metadata file.
+        """
+        # get file name from remote file path using basename
+        file_name = Path(self.task_object.remote_file_path).name
+        return file_name
 
     @log_function_entry_exit()
     def __str__(self) -> str:

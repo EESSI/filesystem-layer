@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Dict
+from typing import Dict, List
 from eessi_data_object import EESSIDataAndSignatureObject
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
@@ -78,23 +78,44 @@ class EESSITask:
         return EESSITaskAction.UNKNOWN
 
     @log_function_entry_exit()
-    def _file_exists_in_repo_branch(self, file_path, branch=None) -> bool:
+    def _state_file_with_prefix_exists_in_repo_branch(self, file_path_prefix: str, branch=None) -> bool:
         """
         Check if a file exists in a repository branch.
+
+        Args:
+            file_path_prefix: the prefix of the file path
+            branch: the branch to check
+
+        Returns:
+            True if a file with the prefix exists in the branch, False otherwise
         """
         if branch is None:
             branch = self.git_repo.default_branch
         try:
-            self.git_repo.get_contents(file_path, ref=branch)
-            log_msg = "Found file %s in branch %s"
-            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file_path, branch)
-            return True
+            # get all files in directory part of file_path_prefix
+            directory_part = os.path.dirname(file_path_prefix)
+            files = self.git_repo.get_contents(directory_part, ref=branch)
+            log_msg = "Found files %s in directory %s in branch %s"
+            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, files, directory_part, branch)
+            # check if any of the files has file_path_prefix as prefix
+            for file in files:
+                if file.path.startswith(file_path_prefix):
+                    log_msg = "Found file %s in directory %s in branch %s"
+                    log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file.path, directory_part, branch)
+                    return True
+            log_msg = "No file with prefix %s found in directory %s in branch %s"
+            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file_path_prefix, directory_part, branch)
+            return False
         except UnknownObjectException:
             # file_path does not exist in branch
+            log_msg = "Directory %s or file with prefix %s does not exist in branch %s"
+            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, directory_part, file_path_prefix, branch)
             return False
         except GithubException as err:
             if err.status == 404:
                 # file_path does not exist in branch
+                log_msg = "Directory %s or file with prefix %s does not exist in branch %s"
+                log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, directory_part, file_path_prefix, branch)
                 return False
             else:
                 # if there was some other (e.g. connection) issue, log message and return False
@@ -136,8 +157,10 @@ class EESSITask:
             for dir in directories:
                 # check if the directory is a number
                 if dir.name.isdigit():
+                    # determin if a state file with prefix exists in the sequence number directory
                     remote_file_path = self.description.task_object.remote_file_path
-                    if self._file_exists_in_repo_branch(f"{repo_pr_dir}/{dir.name}/{remote_file_path}"):
+                    state_file_name_prefix = f"{repo_pr_dir}/{dir.name}/{remote_file_path}"
+                    if self._state_file_with_prefix_exists_in_repo_branch(state_file_name_prefix):
                         sequence_numbers[int(dir.name)] = True
                     else:
                         sequence_numbers[int(dir.name)] = False
@@ -154,6 +177,15 @@ class EESSITask:
         return sequence_numbers
 
     @log_function_entry_exit()
+    def _find_highest_number(self, str_list: List[str]) -> int:
+        """
+        Find the highest number in a list of strings.
+        """
+        # Convert all strings to integers
+        int_list = [int(num) for num in str_list]
+        return max(int_list)
+
+    @log_function_entry_exit()
     def _find_state(self) -> TaskState:
         """
         Determine the state of the task based on the task description metadata.
@@ -163,60 +195,46 @@ class EESSITask:
         """
         # obtain repo and pr from metadata
         log_message(LoggingScope.TASK_OPS, 'INFO', "finding state of task %s", self.description.task_object)
-        task = self.description.task
-        source = self.description.source
-        if 'repo' in task and 'pr' in task:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "task found in metadata: %s", task)
-            repo = task['repo']
-            pr = task['pr']
-        elif 'repo' in source and 'pr' in source:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "source found in metadata: %s", source)
-            repo = source['repo']
-            pr = source['pr']
-        else:
-            raise ValueError("no repo or pr found in metadata")
+        repo = self.description.get_repo_name()
+        pr = self.description.get_pr_number()
         log_message(LoggingScope.TASK_OPS, 'INFO', "repo: %s, pr: %s", repo, pr)
 
-        # iterate over all sequence numbers in repo/pr dir
+        # obtain all sequence numbers in repo/pr dir which include a state file for this task
         sequence_numbers = self._determine_sequence_numbers_including_task_file(repo, pr)
-        log_message(LoggingScope.TASK_OPS, 'INFO', "sequence_numbers: %s", sequence_numbers)
-        for sequence_number in [key for key, value in sequence_numbers.items() if value]:
-            # create path to metadata file from repo, PR, repo, sequence number, metadata file name, state name
-            # format of the metadata file name is:
-            #   eessi-VERSION-COMPONENT-OS-ARCHITECTURE-TIMESTAMP.SUFFIX
-            # all uppercase words are placeholders
-            # all placeholders (except ARCHITECTURE) do not include any hyphens
-            # ARCHITECTURE can include one to two hyphens
-            # The SUFFIX is composed of two parts: TARBALLSUFFIX and METADATASUFFIX
-            # TARBALLSUFFIX is defined by the task object or in the configuration file
-            # METADATASUFFIX is defined by the task object or in the configuration file
-            #   Later, we may switch to using task action files instead of metadata files. The format of the
-            #   SUFFIX would then be defined by the task action or the configuration file.
-            version, component, os, architecture, timestamp, suffix = self.description.get_metadata_file_components()
-            log_msg = "version: %s, component: %s, os: %s, architecture: %s, timestamp: %s, suffix: %s"
-            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, version, component, os, architecture, timestamp, suffix)
-            metadata_file_name = f"eessi-{version}-{component}-{os}-{architecture}-{timestamp}.{suffix}"
-            metadata_file_state_path = f"{repo}/{pr}/{sequence_number}/{metadata_file_name}"
-            # get the state from the file in the metadata_file_state_path
-            state = self._get_state_from_metadata_file(metadata_file_state_path)
-            log_message(LoggingScope.TASK_OPS, 'INFO', "state: %s", state)
-            return state
-        # did not find metadata file in staging repo on GitHub
-        log_message(LoggingScope.TASK_OPS, 'INFO', "did not find metadata file in staging repo on GitHub, state: NEW")
-        return TaskState.NEW
+        if len(sequence_numbers) == 0:
+            # no sequence numbers found, so we return NEW
+            log_message(LoggingScope.TASK_OPS, 'INFO', "no sequence numbers found, state: NEW")
+            return TaskState.NEW
+        # because a new sequence number is only created after the previous staging PR has been approved or rejected,
+        #   we need to check if the processing of the highest sequence number is finished.
+        highest_sequence_number = self._find_highest_number(sequence_numbers.keys())
+        # we obtain the state from the file in the highest sequence number directory
+        # TODO: verify if the state matches other information, e.g. the state of the staging PR
+        #       for now, we assume that the state is correct
+        task_file_name = self.description.get_task_file_name()
+        metadata_file_state_path_prefix = f"{repo}/{pr}/{highest_sequence_number}/{task_file_name}."
+        state = self._get_state_for_metadata_file_prefix(metadata_file_state_path_prefix)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "state: %s", state)
+        return state
 
     @log_function_entry_exit()
-    def _get_state_from_metadata_file(self, metadata_file_state_path: str) -> TaskState:
+    def _get_state_for_metadata_file_prefix(self, metadata_file_state_path_prefix: str) -> TaskState:
         """
-        Get the state from the file in the metadata_file_state_path.
+        Get the state from the file in the metadata_file_state_path_prefix.
         """
-        # get contents of metadata_file_state_path
-        contents = self.git_repo.get_contents(metadata_file_state_path)
-        try:
-            state = TaskState.from_string(contents.name)
+        # first get all files in directory part of metadata_file_state_path_prefix
+        directory_part = os.path.dirname(metadata_file_state_path_prefix)
+        files = self._list_directory_contents(directory_part)
+        # check if any of the files has metadata_file_state_path_prefix as prefix
+        for file in files:
+            if file.path.startswith(metadata_file_state_path_prefix):
+                # get state from file name taking only the suffix
+                state = TaskState.from_string(file.name.split('.')[-1])
             return state
-        except ValueError:
-            return TaskState.NEW
+        # did not find any file with metadata_file_state_path_prefix as prefix
+        log_message(LoggingScope.TASK_OPS, 'INFO', "did not find any file with prefix %s",
+                    metadata_file_state_path_prefix)
+        return TaskState.NEW
 
     @log_function_entry_exit()
     def _list_directory_contents(self, directory_path, branch=None):
@@ -301,12 +319,19 @@ class EESSITask:
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         repo_pr_dir = f"{repo_name}/{pr_number}"
-        staging_repo_path = f"{repo_pr_dir}/{payload_name}.{next_state}"
+        sequence_numbers = self._determine_sequence_numbers_including_task_file(repo_name, pr_number)
+        if len(sequence_numbers) == 0:
+            sequence_number = 0
+        else:
+            sequence_number = self._find_highest_number(sequence_numbers.keys())
+        staging_repo_path = f"{repo_pr_dir}/{sequence_number}/{payload_name}.{next_state}"
         log_message(LoggingScope.TASK_OPS, 'INFO', "staging_repo_path: %s", staging_repo_path)
         # contents of task description / metadata file
         contents = self.description.get_contents()
-        self.git_repo.create_file(staging_repo_path, f"new task for {repo_name} PR {pr_number} add build for arch" ,
+        self.git_repo.create_file(staging_repo_path,
+                                  f"new task for {repo_name} PR {pr_number} seq {sequence_number}: add build for arch",
                                   contents)
+        self.state = next_state
         return True
 
     @log_function_entry_exit()
