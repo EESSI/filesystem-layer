@@ -325,7 +325,9 @@ class EESSITask:
             sequence_number = 0
         else:
             sequence_number = self._find_highest_number(sequence_numbers.keys())
-        staging_repo_path = f"{repo_pr_dir}/{sequence_number}/{payload_name}.{next_state}"
+        # we use the basename of the remote file path for the task description file
+        task_file_name = self.description.get_task_file_name()
+        staging_repo_path = f"{repo_pr_dir}/{sequence_number}/{task_file_name}.{next_state}"
         log_message(LoggingScope.TASK_OPS, 'INFO', "staging_repo_path: %s", staging_repo_path)
         # contents of task description / metadata file
         contents = self.description.get_contents()
