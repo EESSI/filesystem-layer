@@ -144,17 +144,19 @@ class EESSITaskDescription:
         value = None
         task = self.task
         source = self.source
+        log_message(LoggingScope.TASK_OPS, 'INFO',
+                    f"checking if either task ({task}) or source ({source}) contains information for key '{key}'")
         if task and 'repo' in task and key in task['repo']:
             value = task['repo'][key]
             log_message(LoggingScope.TASK_OPS, 'INFO',
-                        f"Value '{value}' for key {key} found in information from task metadata: {task}")
+                        f"Value '{value}' for key '{key}' found in information from task metadata: {task}")
         elif source and 'repo' in source and key in source['repo']:
             value = source['repo'][key]
             log_message(LoggingScope.TASK_OPS, 'INFO',
-                        f"Value '{value}' for key {key} found in information from source metadata: {source}")
+                        f"Value '{value}' for key '{key}' found in information from source metadata: {source}")
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO',
-                        f"Value '{value}' for key {key} neither found in task metadata nor source metadata")
+                        f"Value '{value}' for key '{key}' neither found in task metadata nor source metadata")
             raise ValueError(f"Value '{value}' for key {key} neither found in task metadata nor source metadata")
         return value
 
