@@ -63,13 +63,56 @@ pr_body = A new tarball has been staged for {pr_url}.
     ```
     
     </details>
-
+    
     <details>
     <summary>Overview of tarball contents</summary>
     
     {tar_overview}
     
     </details>
+
+# Method for creating staging PRs:
+# - 'individual': create one PR per tarball (old method)
+# - 'grouped': group tarballs by link2pr and create one PR per group (new method)
+staging_pr_method = individual
+
+# Template for individual tarball PRs
+individual_pr_body = A new tarball has been staged for {pr_url}.
+    Please review the contents of this tarball carefully.
+    Merging this PR will lead to automatic ingestion of the tarball to the repository {cvmfs_repo}.
+    
+    <details>
+    <summary>Metadata of tarball</summary>
+    
+    ```
+    {metadata}
+    ```
+    
+    </details>
+    
+    <details>
+    <summary>Overview of tarball contents</summary>
+    
+    {tar_overview}
+    
+    </details>
+
+# Template for grouped tarball PRs
+grouped_pr_body = A group of tarballs has been staged for {pr_url}.
+    Please review the contents of these tarballs carefully.
+    Merging this PR will lead to automatic ingestion of the approved tarballs to the repository {cvmfs_repo}.
+    Unchecked tarballs will be marked as rejected.
+    
+    {tarballs}
+    
+    <details>
+    <summary>Overview of tarball contents</summary>
+    
+    {tar_overview}
+    
+    </details>
+    
+    {metadata}
 
 [slack]
 ingestion_notification = yes

@@ -9,7 +9,8 @@ import urllib.request
 import yaml
 
 # Default location for EESSI's Ansible group vars file containing the CVMFS settings.
-DEFAULT_ANSIBLE_GROUP_VARS_LOCATION = 'https://raw.githubusercontent.com/EESSI/filesystem-layer/main/inventory/group_vars/all.yml'
+DEFAULT_ANSIBLE_GROUP_VARS_LOCATION = \
+    'https://raw.githubusercontent.com/EESSI/filesystem-layer/main/inventory/group_vars/all.yml'
 # Default fully qualified CVMFS repository name
 DEFAULT_CVMFS_FQRN = 'software.eessi.io'
 # Maximum amount of time (in minutes) that a Stratum 1 is allowed to not having performed a snapshot.
@@ -32,8 +33,8 @@ def find_stratum_urls(vars_file, fqrn):
     """Find all Stratum 0/1 URLs in a given Ansible YAML vars file that contains the EESSI CVMFS configuration."""
     try:
         group_vars = urllib.request.urlopen(vars_file)
-    except:
-        error(f'Cannot read the file that contains the Stratum 1 URLs from {vars_file}!')
+    except Exception as err:
+        error(f'Cannot read the file that contains the Stratum 1 URLs from {vars_file}!\nException: {err}')
     try:
         group_vars_yaml = yaml.safe_load(group_vars)
         s1_urls = group_vars_yaml['eessi_cvmfs_server_urls'][0]['urls']
@@ -44,8 +45,8 @@ def find_stratum_urls(vars_file, fqrn):
                 break
         else:
             error(f'Could not find Stratum 0 URL in {vars_file}!')
-    except:
-        error(f'Cannot parse the yaml file from {vars_file}!')
+    except Exception as err:
+        error(f'Cannot parse the yaml file from {vars_file}!\nException: {err}')
     return s0_url, s1_urls
 
 
@@ -64,7 +65,7 @@ def check_revisions(stratum_urls, fqrn):
                 revisions[stratum] = int(rev_matches[0])
             else:
                 errors.append(f'Could not find revision number for stratum {stratum}!')
-        except urllib.error.HTTPError as e:
+        except urllib.error.HTTPError:
             errors.append(f'Could not connect to {stratum}!')
 
     # Check if all revisions are the same.
@@ -95,10 +96,11 @@ def check_snapshots(s1_urls, fqrn, max_snapshot_delay=DEFAULT_MAX_SNAPSHOT_DELAY
             # Stratum 1 servers are supposed to make a snapshot every few minutes,
             # so let's check if it is not too far behind.
             if now - last_snapshot_time > datetime.timedelta(minutes=max_snapshot_delay):
+                time_diff = (now - last_snapshot_time).seconds / 60
                 errors.append(
-                    f'Stratum 1 {s1} has made its last snapshot {(now - last_snapshot_time).seconds / 60:.0f} minutes ago!')
-        except urllib.error.HTTPError as e:
-            errors.append(f'Could not connect to {s1_json}!')
+                    f'Stratum 1 {s1} has made its last snapshot {time_diff:.0f} minutes ago!')
+        except urllib.error.HTTPError:
+            errors.append(f'Could not connect to {s1_snapshot_file}!')
 
     if last_snapshots:
         # Get the Stratum 1 with the most recent snapshot...
