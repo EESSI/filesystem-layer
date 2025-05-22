@@ -9,6 +9,12 @@ from github import Github, GithubException, UnknownObjectException
 import os
 
 
+class SequenceStatus(Enum):
+    DOES_NOT_EXIST = auto()
+    IN_PROGRESS = auto()
+    FINISHED = auto()
+
+
 class TaskState(Enum):
     NEW = auto()  # The task has been created but not yet processed
     STAGED = auto()  # The task has been staged to the Stratum-0
@@ -188,6 +194,112 @@ class EESSITask:
         # Convert all strings to integers
         int_list = [int(num) for num in str_list]
         return max(int_list)
+
+    @log_function_entry_exit()
+    def _get_sequence_number_for_task_file(self) -> int:
+        """
+        Get the sequence number this task is assigned to at the moment.
+        NOTE, should only be called if the task is actually assigned to a sequence number.
+        """
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        sequence_numbers = self._determine_sequence_numbers_including_task_file(repo_name, pr_number)
+        if len(sequence_numbers) == 0:
+            raise ValueError("Found no sequence numbers at all")
+        else:
+            # get all entries with value True, there should be only one, so we return the first one
+            sequence_numbers_true = [key for key, value in sequence_numbers.items() if value is True]
+            if len(sequence_numbers_true) == 0:
+                raise ValueError("Found no sequence numbers that include the task file for task %s",
+                                 self.description)
+            else:
+                return sequence_numbers_true[0]
+
+    @log_function_entry_exit()
+    def _get_current_sequence_number(self, sequence_numbers: Dict[int, bool] = None) -> int:
+        """
+        Get the current sequence number based on the sequence numbers.
+        If sequence_numbers is not provided, we determine the sequence numbers from the task description.
+        """
+        if sequence_numbers is None:
+            repo_name = self.description.get_repo_name()
+            pr_number = self.description.get_pr_number()
+            sequence_numbers = self._determine_sequence_numbers_including_task_file(repo_name, pr_number)
+        if len(sequence_numbers) == 0:
+            return 0
+        return self._find_highest_number(sequence_numbers.keys())
+
+    @log_function_entry_exit()
+    def _determine_sequence_status(self, sequence_number: int = None) -> int:
+        """
+        Determine the status of the sequence number. It could be: DOES_NOT_EXIST, IN_PROGRESS, FINISHED
+        If sequence_number is not provided, we use the highest existing sequence number.
+        """
+        if sequence_number is None:
+            sequence_number = self._get_current_sequence_number()
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        sequence_numbers = self._determine_sequence_numbers_including_task_file(repo_name, pr_number)
+        if len(sequence_numbers) == 0:
+            return SequenceStatus.DOES_NOT_EXIST
+        elif sequence_number not in sequence_numbers.keys():
+            return SequenceStatus.DOES_NOT_EXIST
+        elif sequence_number < self._find_highest_number(sequence_numbers.keys()):
+            return SequenceStatus.FINISHED
+        else:
+            # check status of PR if it exists
+            branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+            if branch_name in [branch.name for branch in self.git_repo.get_branches()]:
+                find_pr = [pr for pr in self.git_repo.get_pulls(head=branch_name, state='all')]
+                if find_pr:
+                    pr = find_pr.pop(0)
+                    if pr.state == 'closed':
+                        return SequenceStatus.FINISHED
+            return SequenceStatus.IN_PROGRESS
+
+    @log_function_entry_exit()
+    def _find_staging_pr(self) -> Tuple[PullRequest, str, int]:
+        """
+        Find the staging PR for the task.
+        TODO: arg sequence number --> make function simpler
+        """
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        try:
+            sequence_number = self._get_sequence_number_for_task_file()
+        except ValueError:
+            # no sequence number found, so we return None
+            log_message(LoggingScope.ERROR, 'ERROR', "no sequence number found for task %s", self.description)
+            return None, None, None
+        except Exception as err:
+            # some other error
+            log_message(LoggingScope.ERROR, 'ERROR', "error finding staging PR for task %s: %s",
+                        self.description, err)
+            return None, None, None
+        branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+        if branch_name in [branch.name for branch in self.git_repo.get_branches()]:
+            find_pr = [pr for pr in self.git_repo.get_pulls(head=branch_name, state='all')]
+            if find_pr:
+                pr = find_pr.pop(0)
+                return pr, branch_name, sequence_number
+            else:
+                return None, branch_name, sequence_number
+        else:
+            return None, None, None
+
+    @log_function_entry_exit()
+    def _create_staging_pr(self, sequence_number: int) -> Tuple[PullRequest, str]:
+        """
+        Create a staging PR for the task.
+        NOTE, SHALL only be called if no staging PR for the task exists yet. 
+        """
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+        pr = self.git_repo.create_pull(title=f"Add task for {repo_name} PR {pr_number} seq {sequence_number}",
+                                      body=f"Add task for {repo_name} PR {pr_number} seq {sequence_number}",
+                                      head=branch_name, base=self.git_repo.default_branch)
+        return pr, branch_name
 
     @log_function_entry_exit()
     def _find_state(self) -> TaskState:
@@ -380,7 +492,50 @@ class EESSITask:
         """Handler for ADD action in STAGED state"""
         print("Handling ADD action in STAGED state")
         # Implementation for adding in STAGED state
-        # construct supposed branch name
+        #  - create or find PR
+        #  - update PR contents
+        # determine PR
+        #  - no PR -> create one
+        #  - PR && closed -> create one (may require to move task file to different sequence number)
+        #  - PR && open -> update PR contents, task file status, etc
+        # TODO: determine sequence number, then use it to find staging pr
+        # find staging PR
+        staging_pr, staging_branch = self._find_staging_pr(sequence_number)
+        # create PR if necessary
+        if staging_pr is None and sequence_number is None:
+            # no PR found, create one
+            staging_pr, staging_branch = self._create_staging_pr(sequence_number)
+        elif staging_pr is None and sequence_number is not None:
+            # no PR found, create one
+            staging_pr, staging_branch = self._create_staging_pr(sequence_number)
+        elif staging_pr.state == 'closed':
+            # PR closed, create new one
+            staging_pr, staging_branch = self._create_staging_pr(sequence_number + 1)
+        if staging_pr is None:
+            # something went wrong, we cannot continue
+            log_message(LoggingScope.ERROR, 'ERROR', "no staging PR found for task %s", self.description)
+            return False
+        # update PR contents
+        self._update_pr_contents(staging_pr)
+        # update task file status
+        self._update_task_file_status(staging_branch)
+
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        # current sequence 
+        sequence_number = self._get_current_sequence_number()
+        sequence_status = self._determine_sequence_status(sequence_number)
+        if sequence_status == SequenceStatus.FINISHED:
+            sequence_number += 1
+            # re-determine sequence status
+            sequence_status = self._determine_sequence_status(sequence_number)
+        if sequence_status == SequenceStatus.DOES_NOT_EXIST:
+            # something is odd, the task file should already be in the default branch
+            log_message(LoggingScope.ERROR, 'ERROR', "sequence number %s does not exist", sequence_number)
+            return False
+        elif sequence_status == SequenceStatus.FINISHED:
+            # we need to figure out the status of the last deployment (with the highest sequence number)
+            branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
         # check if branch exists
         # - yes: check if corresponding PR exists
         #   - yes: check status of PR
