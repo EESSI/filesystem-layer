@@ -16,7 +16,7 @@ fi
 
 os="${distro}${release}"
 
-if [ "$arch" = "arm64" ] || [ "$arch" = "riscv64" ] || [ "${os}" = "debian13" ]
+if [ "$arch" = "riscv64" ] || [ "${os}" = "debian13" ]
 then
     apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release
     cd /tmp
