@@ -24,13 +24,13 @@ then
     tar xzf cvmfs-${cvmfsversion}.tar.gz
     cd cvmfs-cvmfs-${cvmfsversion}
     mkdir /root/deb
-    sed -i 's/Architecture: i386 amd64 armhf arm64/Architecture: i386 amd64 armhf arm64 riscv64/' packaging/debian/cvmfs/control.in
-    sed -i 's/python-dev/python3-dev/' packaging/debian/cvmfs/control.in
-    sed -i 's/python-setuptools/python3-setuptools/' packaging/debian/cvmfs/control.in
+    sed -i 's/amd64 armhf arm64/amd64 armhf arm64 riscv64/' packaging/debian/cvmfs/control*
+    sed -i 's/python-dev/python3-dev/' packaging/debian/cvmfs/control*
+    sed -i 's/python-setuptools/python3-setuptools/' packaging/debian/cvmfs/control*
     if [ "$arch" = "riscv64" ]
     then
         # valgrind is not available (yet) for RISC-V
-        sed -i 's/, valgrind//' packaging/debian/cvmfs/control.in
+        sed -i 's/, valgrind//' packaging/debian/cvmfs/control*
         # for RISC-V we need to run autoreconf, see:
         # https://github.com/cvmfs/cvmfs/pull/3446
         wget https://github.com/cvmfs/cvmfs/pull/3446.patch
