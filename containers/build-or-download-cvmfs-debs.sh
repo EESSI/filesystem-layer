@@ -27,7 +27,8 @@ then
     sed -i 's/amd64 armhf arm64/amd64 armhf arm64 riscv64/' packaging/debian/cvmfs/control*
     sed -i 's/python-dev/python3-dev/' packaging/debian/cvmfs/control*
     sed -i 's/python-setuptools/python3-setuptools/' packaging/debian/cvmfs/control*
-    sed -i 's/libfuse3-3/libfuse3-4' packaging/debian/cvmfs/control*
+    # debian13 has libfuse3-4
+    [ $os = "debian13" ] && sed -i 's/libfuse3-3/libfuse3-4' packaging/debian/cvmfs/control*
     if [ "$arch" = "riscv64" ]
     then
         # valgrind is not available (yet) for RISC-V
