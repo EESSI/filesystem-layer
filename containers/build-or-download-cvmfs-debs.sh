@@ -18,7 +18,7 @@ os="${distro}${release}"
 
 if [ "$arch" = "riscv64" ] || [ "${os}" = "debian13" ]
 then
-    apt-get install -y devscripts libfuse3-dev cmake cpio libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release
+    apt-get install -y devscripts libfuse3-dev cmake cpio golang libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release
     cd /tmp
     wget https://github.com/cvmfs/cvmfs/archive/refs/tags/cvmfs-${cvmfsversion}.tar.gz
     tar xzf cvmfs-${cvmfsversion}.tar.gz
