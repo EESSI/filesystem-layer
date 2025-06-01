@@ -509,6 +509,22 @@ class EESSITask:
 
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating symlink: %s", err)
+            raise err
+
+    @log_function_entry_exit()
+    def _safe_create_file(self, path: str, message: str, content: str, branch: str = None):
+        """Create a file in the given branch."""
+        try:
+            branch = self.git_repo.default_branch if branch is None else branch
+            existing_file = self.git_repo.get_contents(path, ref=branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "File %s already exists", path)
+            return existing_file
+        except GithubException as err:
+            if err.status == 404:  # File doesn't exist
+                # Safe to create
+                return self.git_repo.create_file(path, message, content, branch=branch)
+            else:
+                raise err  # Some other error
 
     @log_function_entry_exit()
     def _handle_add_undetermined(self):
@@ -527,29 +543,34 @@ class EESSITask:
         task_description_file_path = f"{target_dir}/TaskDescription"
         task_state_file_path = f"{target_dir}/TaskState.{TaskState.NEW_TASK.name}"
         try:
-            self.git_repo.create_file(task_description_file_path,
-                                      f"new task description for {repo_name} PR {pr_number} seq {sequence_number}",
-                                      self.description.get_contents(), branch=branch)
+            self._safe_create_file(task_description_file_path,
+                                   f"new task description for {repo_name} PR {pr_number} seq {sequence_number}",
+                                   self.description.get_contents(), branch=branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "task description file created: %s", task_description_file_path)
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating task description file: %s", err)
             return TaskState.UNDETERMINED
-        log_message(LoggingScope.TASK_OPS, 'INFO',
-                    "task description file created: %s", task_description_file_path)
 
         try:
-            self.git_repo.create_file(task_state_file_path,
-                                      f"new task state for {repo_name} PR {pr_number} seq {sequence_number}",
-                                      "", branch=branch)
+            self._safe_create_file(task_state_file_path,
+                                   f"new task state for {repo_name} PR {pr_number} seq {sequence_number}",
+                                   "", branch=branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "task state file created: %s", task_state_file_path)
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating task state file: %s", err)
             return TaskState.UNDETERMINED
-        log_message(LoggingScope.TASK_OPS, 'INFO', "task state file created: %s", task_state_file_path)
 
-        self._create_symlink(self.description.task_object.remote_file_path, target_dir, branch=branch)
-        log_message(LoggingScope.TASK_OPS, 'INFO', "symlink created: %s -> %s",
-                    self.description.task_object.remote_file_path, target_dir)
-        # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number is still
-        #   open or yet to be created); if it is not valid, perform corrective actions
+        try:
+            self._create_symlink(self.description.task_object.remote_file_path, target_dir, branch=branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "symlink created: %s -> %s",
+                        self.description.task_object.remote_file_path, target_dir)
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating symlink: %s", err)
+            return TaskState.UNDETERMINED
+
+        # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number
+        #   is still open or yet to be created); if it is not valid, perform corrective actions
         return TaskState.NEW_TASK
 
     @log_function_entry_exit()
