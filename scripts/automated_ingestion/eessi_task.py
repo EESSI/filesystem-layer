@@ -503,6 +503,10 @@ class EESSITask:
                 log_message(LoggingScope.TASK_OPS, 'INFO', "new tree created: %s", new_tree)
             except Exception as err:
                 log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating new tree: %s", err)
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Status Code: %s", err.status)
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Error Message: %s", err.data)
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Headers: %s", err.headers)
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Raw Response: %s", err.response)
                 return False
 
             # Create new commit
