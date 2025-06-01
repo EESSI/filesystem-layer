@@ -450,26 +450,23 @@ class EESSITask:
         """
         Dynamically find and execute the appropriate handler based on action and state.
         """
-        state_before_handle = self.state
+        state_before_handle = self.determine_state()
 
         # Construct handler method name
-        handler_name = f"_handle_{self.action}_{self.state}"
+        handler_name = f"_handle_{self.action}_{state_before_handle}"
 
         # Check if the handler exists
         handler = getattr(self, handler_name, None)
 
         if handler and callable(handler):
             # Execute the handler if it exists
-            handler()
-            # if state has changed, run handle() again; otherwise, do nothing
-            if self.state != state_before_handle:
-                msg = f"handler {handler_name} changed state from {state_before_handle} to {self.state}"
-                msg += " running handle() again"
-                print(msg)
-                self.handle()
+            return handler()
         else:
             # Default behavior for missing handlers
-            print(f"No handler for action {self.action} and state {self.state} implemented; nothing to be done")
+            log_message(LoggingScope.TASK_OPS, 'ERROR',
+                        "No handler for action %s and state %s implemented; nothing to be done",
+                        self.action, state_before_handle)
+            return state_before_handle
 
     # Implement handlers for ADD action
     @log_function_entry_exit()
