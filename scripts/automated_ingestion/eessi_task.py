@@ -16,12 +16,14 @@ class SequenceStatus(Enum):
 
 
 class TaskState(Enum):
-    NEW = auto()  # The task has been created but not yet processed
-    STAGED = auto()  # The task has been staged to the Stratum-0
-    PR_OPENED = auto()  # The task has been opened as a PR in some staging repository
-    APPROVED = auto()  # The task has been approved
-    REJECTED = auto()  # The task has been rejected
-    INGESTED = auto()  # The task has been ingested into the target CernVM-FS repository
+    UNDETERMINED = auto()  # The task state was not determined yet
+    NEW_TASK = auto()  # The task has been created but not yet processed
+    PAYLOAD_STAGED = auto()  # The task's payload has been staged to the Stratum-0
+    PULL_REQUEST = auto()  # A PR for the task has been created or updated in some staging repository
+    APPROVED = auto()  # The PR for the task has been approved
+    REJECTED = auto()  # The PR for the task has been rejected
+    INGESTED = auto()  # The task's payload has been applied to the target CernVM-FS repository
+    DONE = auto()  # The task has been completed
 
     @classmethod
     def from_string(cls, name, default=None, case_sensitive=False):
@@ -56,12 +58,15 @@ class EESSITask:
         # Define valid state transitions for all actions
         # NOTE, TaskState.APPROVED must be the first element or _next_state() will not work
         self.valid_transitions = {
-            TaskState.NEW: [TaskState.STAGED],
-            TaskState.STAGED: [TaskState.PR_OPENED],
-            TaskState.PR_OPENED: [TaskState.APPROVED, TaskState.REJECTED],
+            TaskState.UNDETERMINED: [TaskState.NEW_TASK, TaskState.PAYLOAD_STAGED, TaskState.PULL_REQUEST,
+                                    TaskState.APPROVED, TaskState.REJECTED, TaskState.INGESTED, TaskState.DONE],
+            TaskState.NEW_TASK: [TaskState.PAYLOAD_STAGED],
+            TaskState.PAYLOAD_STAGED: [TaskState.PULL_REQUEST],
+            TaskState.PULL_REQUEST: [TaskState.APPROVED, TaskState.REJECTED],
             TaskState.APPROVED: [TaskState.INGESTED],
-            TaskState.REJECTED: [],  # Terminal state
-            TaskState.INGESTED: []   # Terminal state
+            TaskState.REJECTED: [TaskState.DONE],
+            TaskState.INGESTED: [TaskState.DONE],
+            TaskState.DONE: []  # Terminal state
         }
 
         self.state = self._find_state()
@@ -318,16 +323,16 @@ class EESSITask:
         # obtain all sequence numbers in repo/pr dir which include a state file for this task
         sequence_numbers = self._determine_sequence_numbers_including_task_file(repo, pr)
         if len(sequence_numbers) == 0:
-            # no sequence numbers found, so we return NEW
-            log_message(LoggingScope.TASK_OPS, 'INFO', "no sequence numbers found, state: NEW")
-            return TaskState.NEW
+            # no sequence numbers found, so we return NEW_TASK
+            log_message(LoggingScope.TASK_OPS, 'INFO', "no sequence numbers found, state: NEW_TASK")
+            return TaskState.NEW_TASK
         # we got at least one sequence number
         # if one value for a sequence number is True, we can determine the state from the file in the directory
         sequence_including_task = [key for key, value in sequence_numbers.items() if value is True]
         if len(sequence_including_task) == 0:
-            # no sequence number includes the task file, so we return NEW
-            log_message(LoggingScope.TASK_OPS, 'INFO', "no sequence number includes the task file, state: NEW")
-            return TaskState.NEW
+            # no sequence number includes the task file, so we return NEW_TASK
+            log_message(LoggingScope.TASK_OPS, 'INFO', "no sequence number includes the task file, state: NEW_TASK")
+            return TaskState.NEW_TASK
         # we got at least one sequence number which includes the task file
         # we can determine the state from the filename in the directory
         # NOTE, we use the first element in sequence_including_task (there should be only one)
@@ -345,7 +350,7 @@ class EESSITask:
         """
         Get the state from the file in the metadata_file_state_path_prefix.
         """
-        # depending on the state of the deployment (NEW, STAGED, PR_OPENED, APPROVED, REJECTED, INGESTED)
+        # depending on the state of the deployment (NEW_TASK, PAYLOAD_STAGED, PULL_REQUEST, APPROVED, REJECTED, INGESTED)
         # we need to check the task file in the default branch or in the branch corresponding to the sequence number
         directory_part = os.path.dirname(metadata_file_state_path_prefix)
         repo_name = self.description.get_repo_name()
@@ -369,7 +374,7 @@ class EESSITask:
             # did not find any file with metadata_file_state_path_prefix as prefix
             log_message(LoggingScope.TASK_OPS, 'INFO', "did not find any file with prefix %s",
                         metadata_file_state_path_prefix)
-            return TaskState.NEW
+            return TaskState.NEW_TASK
         # sort the states and return the last one
         states.sort()
         state = states[-1]
@@ -433,10 +438,10 @@ class EESSITask:
 
     # Implement handlers for ADD action
     @log_function_entry_exit()
-    def _handle_add_new(self):
-        """Handler for ADD action in NEW state"""
-        print("Handling ADD action in NEW state")
-        # Implementation for adding in NEW state: a task is only NEW if it was not processed yet
+    def _handle_add_new_task(self):
+        """Handler for ADD action in NEW_TASK state"""
+        print("Handling ADD action in NEW_TASK state")
+        # Implementation for adding in NEW_TASK state: a task is only NEW_TASK if it was not processed yet
         # get name of of payload from metadata
         payload_name = self.description.metadata['payload']['filename']
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload_name: %s", payload_name)
@@ -488,10 +493,10 @@ class EESSITask:
         return True
 
     @log_function_entry_exit()
-    def _handle_add_staged(self):
-        """Handler for ADD action in STAGED state"""
-        print("Handling ADD action in STAGED state")
-        # Implementation for adding in STAGED state
+    def _handle_add_payload_staged(self):
+        """Handler for ADD action in PAYLOAD_STAGED state"""
+        print("Handling ADD action in PAYLOAD_STAGED state")
+        # Implementation for adding in PAYLOAD_STAGED state
         #  - create or find PR
         #  - update PR contents
         # determine PR
@@ -547,10 +552,10 @@ class EESSITask:
         return True
 
     @log_function_entry_exit()
-    def _handle_add_pr_opened(self):
-        """Handler for ADD action in PR_OPENED state"""
-        print("Handling ADD action in PR_OPENED state")
-        # Implementation for adding in PR_OPENED state
+    def _handle_add_pull_request(self):
+        """Handler for ADD action in PULL_REQUEST state"""
+        print("Handling ADD action in PULL_REQUEST state")
+        # Implementation for adding in PULL_REQUEST state
         return True
 
     @log_function_entry_exit()
