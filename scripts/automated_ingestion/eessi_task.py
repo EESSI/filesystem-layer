@@ -442,11 +442,6 @@ class EESSITask:
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in default branch",
                         path_in_default_branch)
-            # check if path exists in any other branch
-            for branch in self.git_repo.get_branches():
-                if self._path_exists_in_branch(path_in_default_branch, branch):
-                    log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in branch %s",
-                                path_in_default_branch, branch)
         exit(0)
         return TaskState.UNDETERMINED
 
