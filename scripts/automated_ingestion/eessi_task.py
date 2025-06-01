@@ -8,6 +8,7 @@ from utils import log_message, LoggingScope, log_function_entry_exit
 from github import Github, GithubException, UnknownObjectException
 from github.PullRequest import PullRequest
 import os
+import traceback
 
 
 class SequenceStatus(Enum):
@@ -501,12 +502,19 @@ class EESSITask:
             try:
                 new_tree = self.git_repo.create_git_tree([tree_element], base_tree)
                 log_message(LoggingScope.TASK_OPS, 'INFO', "new tree created: %s", new_tree)
-            except Exception as err:
+            except GithubException as err:
                 log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating new tree: %s", err)
                 log_message(LoggingScope.TASK_OPS, 'ERROR', "  Status Code: %s", err.status)
                 log_message(LoggingScope.TASK_OPS, 'ERROR', "  Error Message: %s", err.data)
                 log_message(LoggingScope.TASK_OPS, 'ERROR', "  Headers: %s", err.headers)
                 log_message(LoggingScope.TASK_OPS, 'ERROR', "  Raw Response: %s", err.response)
+                return False
+            except Exception as err:
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "\n=== General Exception ===")
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Type: %s", type(err).__name__)
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Message: %s", str(err))
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Traceback:")
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "    %s", traceback.format_exc())
                 return False
 
             # Create new commit
