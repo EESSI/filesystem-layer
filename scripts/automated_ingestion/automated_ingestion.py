@@ -249,6 +249,7 @@ def main():
             else:
                 # Process each task file
                 for task_path in tasks:
+                    log_message(LoggingScope.GROUP_OPS, 'INFO', "Processing task: %s", task_path)
                     try:
                         # Create EESSITask for the task file
                         try:
