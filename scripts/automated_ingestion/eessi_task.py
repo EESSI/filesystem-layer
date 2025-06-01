@@ -477,6 +477,40 @@ class EESSITask:
 
     # Implement handlers for ADD action
     @log_function_entry_exit()
+    def _create_symlink(self, source_path: str, target_path: str, branch: str = None):
+        """Create a symlink in the given branch."""
+        try:
+            branch = self.git_repo.default_branch if branch is None else branch
+            ref = self.git_repo.get_git_ref(f"heads/{branch}")
+            commit = self.git_repo.get_git_commit(ref.object.sha)
+            base_tree = self.git_repo.get_git_tree(commit.tree.sha)
+
+            # Create blob for symlink target
+            blob = self.git_repo.create_git_blob(target_path, "utf-8")
+
+            # Create tree element
+            tree_element = {
+                "path": source_path,
+                "mode": "120000",
+                "type": "blob",
+                "sha": blob.sha
+            }
+
+            # Create new tree and commit
+            new_tree = self.git_repo.create_git_tree([tree_element], base_tree)
+            commit_message = f"Add symlink {source_path} -> {target_path}"
+            new_commit = self.git_repo.create_git_commit(commit_message, new_tree, [commit])
+
+            # Update reference
+            ref.edit(new_commit.sha)
+
+            log_message(LoggingScope.TASK_OPS, 'INFO', "Symlink created: %s -> %s",
+                        source_path, target_path)
+
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating symlink: %s", err)
+
+    @log_function_entry_exit()
     def _handle_add_undetermined(self):
         """Handler for ADD action in UNDETERMINED state"""
         print("Handling ADD action in UNDETERMINED state")
@@ -487,7 +521,7 @@ class EESSITask:
         branch = self.git_repo.default_branch
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
-        sequence_number = self._get_fixed_sequence_number()
+        sequence_number = self._get_fixed_sequence_number()  # corresponds to an open or yet to be created PR
         task_file_name = self.description.get_task_file_name()
         target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
         task_description_file_path = f"{target_dir}/TaskDescription"
@@ -498,8 +532,9 @@ class EESSITask:
         self.git_repo.create_file(task_state_file_path,
                                   f"new task state for {repo_name} PR {pr_number} seq {sequence_number}",
                                   "", branch=branch)
-        # self.git_repo.create_symlink(self.description.task_object.remote_file_path,
-        #                              target_dir, branch=branch)
+        self._create_symlink(self.description.task_object.remote_file_path, target_dir, branch=branch)
+        # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number is still open or
+        #   yet to be created); if it is not valid, perform corrective actions
         return TaskState.NEW_TASK
 
     @log_function_entry_exit()
