@@ -280,25 +280,25 @@ def main():
                                         "Task '%s': previous state = '%s', current state = '%s'",
                                         task_path, previous_state.name, current_state.name)
 
-                        # TODO: update the information shown below (what makes sense to show?)
-                        # Log information about the task
-                        task_object = task.description.task_object
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file: %s", task_object.local_file_path)
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature file: %s", task_object.local_sig_path)
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature verified: %s",
-                                    task.description.signature_verified)
+                        # # TODO: update the information shown below (what makes sense to show?)
+                        # # Log information about the task
+                        # task_object = task.description.task_object
+                        # log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file: %s", task_object.local_file_path)
+                        # log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature file: %s", task_object.local_sig_path)
+                        # log_message(LoggingScope.GROUP_OPS, 'INFO', "Signature verified: %s",
+                        #             task.description.signature_verified)
 
-                        # Log the ETags of the downloaded task file
-                        file_etag, sig_etag = task.description.task_object.get_etags()
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file %s has ETag: %s", task_path, file_etag)
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task signature %s has ETag: %s",
-                                    task.description.task_object.remote_sig_path, sig_etag)
+                        # # Log the ETags of the downloaded task file
+                        # file_etag, sig_etag = task.description.task_object.get_etags()
+                        # log_message(LoggingScope.GROUP_OPS, 'INFO', "Task file %s has ETag: %s", task_path, file_etag)
+                        # log_message(LoggingScope.GROUP_OPS, 'INFO', "Task signature %s has ETag: %s",
+                        #             task.description.task_object.remote_sig_path, sig_etag)
 
-                        # TODO: Process the task file contents
-                        # This would involve reading the task file, parsing its contents,
-                        # and performing the required actions based on the task type
-                        log_message(LoggingScope.GROUP_OPS, 'INFO', "TODO: Processing task file: %s", task_path)
-                        task.handle()
+                        # # TODO: Process the task file contents
+                        # # This would involve reading the task file, parsing its contents,
+                        # # and performing the required actions based on the task type
+                        # log_message(LoggingScope.GROUP_OPS, 'INFO', "TODO: Processing task file: %s", task_path)
+                        # task.handle()
 
                     except Exception as err:
                         log_message(LoggingScope.ERROR, 'ERROR', "Failed to process task %s: %s", task_path, str(err))
