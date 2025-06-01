@@ -5,7 +5,7 @@ from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
 from eessi_task_payload import EESSITaskPayload
 from utils import log_message, LoggingScope, log_function_entry_exit
-from github import Github, GithubException, UnknownObjectException
+from github import Github, GithubException, InputGitTreeElement, UnknownObjectException
 from github.PullRequest import PullRequest
 import os
 import traceback
@@ -491,12 +491,13 @@ class EESSITask:
             log_message(LoggingScope.TASK_OPS, 'INFO', "blob created: %s", blob)
 
             # Create tree element
-            tree_element = {
-                "path": source_path,
-                "mode": "120000",
-                "type": "blob",
-                "sha": blob.sha
-            }
+            tree_element = InputGitTreeElement(
+                path=source_path,
+                mode="120000",
+                type="blob",
+                sha=blob.sha
+            )
+            log_message(LoggingScope.TASK_OPS, 'INFO', "tree element created: %s", tree_element)
 
             # Create new tree
             try:
