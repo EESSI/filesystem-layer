@@ -279,6 +279,7 @@ def main():
                             log_message(LoggingScope.GROUP_OPS, 'INFO',
                                         "Task '%s': previous state = '%s', current state = '%s'",
                                         task_path, previous_state.name, current_state.name)
+                            exit(0)  # run loop body only once
 
                         # # TODO: update the information shown below (what makes sense to show?)
                         # # Log information about the task

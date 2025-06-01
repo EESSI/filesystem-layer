@@ -236,6 +236,13 @@ class EESSITask:
         return self._find_highest_number(sequence_numbers.keys())
 
     @log_function_entry_exit()
+    def _get_fixed_sequence_number(self) -> int:
+        """
+        Get a fixed sequence number.
+        """
+        return 0
+
+    @log_function_entry_exit()
     def _determine_sequence_status(self, sequence_number: int = None) -> int:
         """
         Determine the status of the sequence number. It could be: DOES_NOT_EXIST, IN_PROGRESS, FINISHED
@@ -469,6 +476,28 @@ class EESSITask:
             return state_before_handle
 
     # Implement handlers for ADD action
+    @log_function_entry_exit()
+    def _handle_add_undetermined(self):
+        """Handler for ADD action in UNDETERMINED state"""
+        print("Handling ADD action in UNDETERMINED state")
+        # create symlink target directory (REPO/PR/SEQ/TASK_FILE_NAME/)
+        # create task file in target directory (TARGET_DIR/TaskDescription)
+        # create task status file in target directory (TARGET_DIR/TaskState.NEW_TASK)
+        # create symlink from task file path to target directory (remote_file_path -> TARGET_DIR)
+        branch = self.git_repo.default_branch
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        sequence_number = self._get_fixed_sequence_number()
+        task_file_name = self.description.get_task_file_name()
+        target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}/"
+        self.git_repo.create_file(target_dir, "TaskDescription",
+                                  self.description.get_contents(), branch=branch)
+        self.git_repo.create_file(target_dir, f"TaskState.{TaskState.NEW_TASK.name}",
+                                  "", branch=branch)
+        self.git_repo.create_symlink(self.description.task_object.remote_file_path,
+                                     target_dir, branch=branch)
+        return TaskState.NEW_TASK
+
     @log_function_entry_exit()
     def _handle_add_new_task(self):
         """Handler for ADD action in NEW_TASK state"""
