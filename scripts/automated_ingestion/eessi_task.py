@@ -497,10 +497,15 @@ class EESSITask:
                 "sha": blob.sha
             }
 
-            # Create new tree and commit
-            new_tree = self.git_repo.create_git_tree([tree_element], base_tree)
-            log_message(LoggingScope.TASK_OPS, 'INFO', "new tree created: %s", new_tree)
+            # Create new tree
+            try:
+                new_tree = self.git_repo.create_git_tree([tree_element], base_tree)
+                log_message(LoggingScope.TASK_OPS, 'INFO', "new tree created: %s", new_tree)
+            except Exception as err:
+                log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating new tree: %s", err)
+                return False
 
+            # Create new commit
             commit_message = f"Add symlink {source_path} -> {target_path}"
             new_commit = self.git_repo.create_git_commit(commit_message, new_tree, [commit])
             log_message(LoggingScope.TASK_OPS, 'INFO', "new commit created: %s", new_commit)
