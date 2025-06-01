@@ -489,7 +489,7 @@ class EESSITask:
         pr_number = self.description.get_pr_number()
         sequence_number = self._get_fixed_sequence_number()
         task_file_name = self.description.get_task_file_name()
-        target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}/"
+        target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
         self.git_repo.create_file(target_dir, "TaskDescription",
                                   self.description.get_contents(), branch=branch)
         self.git_repo.create_file(target_dir, f"TaskState.{TaskState.NEW_TASK.name}",
