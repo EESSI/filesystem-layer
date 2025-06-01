@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from eessi_data_object import EESSIDataAndSignatureObject
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
@@ -263,7 +263,7 @@ class EESSITask:
             return SequenceStatus.IN_PROGRESS
 
     @log_function_entry_exit()
-    def _find_staging_pr(self) -> Tuple[PullRequest, str, int]:
+    def _find_staging_pr(self) -> Tuple[Optional[PullRequest], Optional[str], Optional[int]]:
         """
         Find the staging PR for the task.
         TODO: arg sequence number --> make function simpler
