@@ -2,7 +2,7 @@
 
 from eessitarball import EessiTarball, EessiTarballGroup
 from eessi_data_object import EESSIDataAndSignatureObject
-from eessi_task import EESSITask
+from eessi_task import EESSITask, TaskState
 from eessi_task_description import EESSITaskDescription
 from s3_bucket import EESSIS3Bucket
 from pid.decorator import pidfile  # noqa: F401
@@ -259,9 +259,6 @@ def main():
                                 ),
                                 gh_staging_repo
                             )
-                            current_state = task.determine_state()
-                            log_message(LoggingScope.GROUP_OPS, 'INFO', "Task '%s' is in state '%s'",
-                                        task_path, current_state.name)
 
                         except Exception as err:
                             log_message(LoggingScope.ERROR, 'ERROR', "Failed to create EESSITask for task %s: %s",
@@ -269,6 +266,19 @@ def main():
                             continue
 
                         log_message(LoggingScope.GROUP_OPS, 'INFO', "Task: %s", task)
+
+                        previous_state = None
+                        current_state = task.determine_state()
+                        log_message(LoggingScope.GROUP_OPS, 'INFO', "Task '%s' is in state '%s'",
+                                    task_path, current_state.name)
+                        while (current_state is not None and
+                               current_state != TaskState.DONE and
+                               previous_state != current_state):
+                            previous_state = current_state
+                            current_state = task.handle()
+                            log_message(LoggingScope.GROUP_OPS, 'INFO',
+                                        "Task '%s': previous state = '%s', current state = '%s'",
+                                        task_path, previous_state.name, current_state.name)
 
                         # TODO: update the information shown below (what makes sense to show?)
                         # Log information about the task

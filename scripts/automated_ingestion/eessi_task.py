@@ -442,8 +442,8 @@ class EESSITask:
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in default branch",
                         path_in_default_branch)
+            return TaskState.UNDETERMINED
         exit(0)
-        return TaskState.UNDETERMINED
 
     @log_function_entry_exit()
     def handle(self):
