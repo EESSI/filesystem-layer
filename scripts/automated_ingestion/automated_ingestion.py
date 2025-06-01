@@ -259,7 +259,8 @@ def main():
                                 gh_staging_repo
                             )
                             current_state = task.determine_state()
-                            log_message(LoggingScope.GROUP_OPS, 'INFO', "Task '%s' is in state '%s'", task_path, current_state)
+                            log_message(LoggingScope.GROUP_OPS, 'INFO', "Task '%s' is in state '%s'",
+                                        task_path, current_state.name)
 
                         except Exception as err:
                             log_message(LoggingScope.ERROR, 'ERROR', "Failed to create EESSITask for task %s: %s",

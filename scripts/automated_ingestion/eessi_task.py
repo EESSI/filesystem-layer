@@ -1,11 +1,11 @@
 from enum import Enum, auto
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from eessi_data_object import EESSIDataAndSignatureObject
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
 from eessi_task_payload import EESSITaskPayload
 from utils import log_message, LoggingScope, log_function_entry_exit
-from github import Github, GithubException, UnknownObjectException
+from github import Github, GithubException, UnknownObjectException, PullRequest
 import os
 
 
@@ -59,7 +59,7 @@ class EESSITask:
         # NOTE, TaskState.APPROVED must be the first element or _next_state() will not work
         self.valid_transitions = {
             TaskState.UNDETERMINED: [TaskState.NEW_TASK, TaskState.PAYLOAD_STAGED, TaskState.PULL_REQUEST,
-                                    TaskState.APPROVED, TaskState.REJECTED, TaskState.INGESTED, TaskState.DONE],
+                                     TaskState.APPROVED, TaskState.REJECTED, TaskState.INGESTED, TaskState.DONE],
             TaskState.NEW_TASK: [TaskState.PAYLOAD_STAGED],
             TaskState.PAYLOAD_STAGED: [TaskState.PULL_REQUEST],
             TaskState.PULL_REQUEST: [TaskState.APPROVED, TaskState.REJECTED],
@@ -296,14 +296,14 @@ class EESSITask:
     def _create_staging_pr(self, sequence_number: int) -> Tuple[PullRequest, str]:
         """
         Create a staging PR for the task.
-        NOTE, SHALL only be called if no staging PR for the task exists yet. 
+        NOTE, SHALL only be called if no staging PR for the task exists yet.
         """
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
         pr = self.git_repo.create_pull(title=f"Add task for {repo_name} PR {pr_number} seq {sequence_number}",
-                                      body=f"Add task for {repo_name} PR {pr_number} seq {sequence_number}",
-                                      head=branch_name, base=self.git_repo.default_branch)
+                                       body=f"Add task for {repo_name} PR {pr_number} seq {sequence_number}",
+                                       head=branch_name, base=self.git_repo.default_branch)
         return pr, branch_name
 
     @log_function_entry_exit()
@@ -350,7 +350,8 @@ class EESSITask:
         """
         Get the state from the file in the metadata_file_state_path_prefix.
         """
-        # depending on the state of the deployment (NEW_TASK, PAYLOAD_STAGED, PULL_REQUEST, APPROVED, REJECTED, INGESTED)
+        # depending on the state of the deployment (NEW_TASK, PAYLOAD_STAGED, PULL_REQUEST, APPROVED, REJECTED,
+        # INGESTED, DONE)
         # we need to check the task file in the default branch or in the branch corresponding to the sequence number
         directory_part = os.path.dirname(metadata_file_state_path_prefix)
         repo_name = self.description.get_repo_name()
@@ -444,8 +445,9 @@ class EESSITask:
             for branch in self.git_repo.get_branches():
                 if self._path_exists_in_branch(path_in_default_branch, branch):
                     log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in branch %s",
+                                path_in_default_branch, branch)
         exit(0)
-        # return TaskState.UNDETERMINED
+        return TaskState.UNDETERMINED
 
     @log_function_entry_exit()
     def handle(self):
@@ -542,6 +544,7 @@ class EESSITask:
         #  - PR && open -> update PR contents, task file status, etc
         # TODO: determine sequence number, then use it to find staging pr
         # find staging PR
+        sequence_number = self._get_sequence_number_for_task_file()
         staging_pr, staging_branch = self._find_staging_pr(sequence_number)
         # create PR if necessary
         if staging_pr is None and sequence_number is None:
@@ -564,7 +567,7 @@ class EESSITask:
 
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
-        # current sequence 
+        # current sequence
         sequence_number = self._get_current_sequence_number()
         sequence_status = self._determine_sequence_status(sequence_number)
         if sequence_status == SequenceStatus.FINISHED:
@@ -578,6 +581,7 @@ class EESSITask:
         elif sequence_status == SequenceStatus.FINISHED:
             # we need to figure out the status of the last deployment (with the highest sequence number)
             branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+            log_message(LoggingScope.TASK_OPS, 'INFO', "branch %s exists", branch_name)
         # check if branch exists
         # - yes: check if corresponding PR exists
         #   - yes: check status of PR
