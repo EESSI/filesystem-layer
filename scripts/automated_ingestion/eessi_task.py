@@ -526,15 +526,30 @@ class EESSITask:
         target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
         task_description_file_path = f"{target_dir}/TaskDescription"
         task_state_file_path = f"{target_dir}/TaskState.{TaskState.NEW_TASK.name}"
-        self.git_repo.create_file(task_description_file_path,
-                                  f"new task description for {repo_name} PR {pr_number} seq {sequence_number}",
-                                  self.description.get_contents(), branch=branch)
-        self.git_repo.create_file(task_state_file_path,
-                                  f"new task state for {repo_name} PR {pr_number} seq {sequence_number}",
-                                  "", branch=branch)
+        try:
+            self.git_repo.create_file(task_description_file_path,
+                                      f"new task description for {repo_name} PR {pr_number} seq {sequence_number}",
+                                      self.description.get_contents(), branch=branch)
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating task description file: %s", err)
+            return TaskState.UNDETERMINED
+        log_message(LoggingScope.TASK_OPS, 'INFO',
+                    "task description file created: %s", task_description_file_path)
+
+        try:
+            self.git_repo.create_file(task_state_file_path,
+                                      f"new task state for {repo_name} PR {pr_number} seq {sequence_number}",
+                                      "", branch=branch)
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating task state file: %s", err)
+            return TaskState.UNDETERMINED
+        log_message(LoggingScope.TASK_OPS, 'INFO', "task state file created: %s", task_state_file_path)
+
         self._create_symlink(self.description.task_object.remote_file_path, target_dir, branch=branch)
-        # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number is still open or
-        #   yet to be created); if it is not valid, perform corrective actions
+        log_message(LoggingScope.TASK_OPS, 'INFO', "symlink created: %s -> %s",
+                    self.description.task_object.remote_file_path, target_dir)
+        # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number is still
+        #   open or yet to be created); if it is not valid, perform corrective actions
         return TaskState.NEW_TASK
 
     @log_function_entry_exit()
