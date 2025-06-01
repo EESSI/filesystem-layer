@@ -69,7 +69,7 @@ class EESSITask:
             TaskState.DONE: []  # Terminal state
         }
 
-        self.state = self._find_state()
+        # self.state = self._find_state()
 
     @log_function_entry_exit()
     def _determine_task_action(self) -> EESSITaskAction:
@@ -409,6 +409,43 @@ class EESSITask:
         element of the list returned by the valid_transitions dictionary.
         """
         return self.valid_transitions[self.state][0]
+
+    @log_function_entry_exit()
+    def _path_exists_in_branch(self, path: str, branch: str = None) -> bool:
+        """
+        Check if a path exists in a branch.
+        """
+        try:
+            branch = self.git_repo.default_branch if branch is None else branch
+            contents = self._list_directory_contents(path, branch)
+            if isinstance(contents, list):
+                return True
+            else:
+                return False
+            return True
+        except FileNotFoundError:
+            return False
+
+    @log_function_entry_exit()
+    def determine_state(self) -> TaskState:
+        """
+        Determine the state of the task based on the state of the staging repository.
+        """
+        # High-level logic:
+        # 1. Check if path representing the task file exists in the default branch
+        path_in_default_branch = self.description.task_object.remote_file_path
+        if self._path_exists_in_branch(path_in_default_branch, branch=self.git_repo.default_branch):
+            log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in default branch",
+                        path_in_default_branch)
+        else:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in default branch",
+                        path_in_default_branch)
+            # check if path exists in any other branch
+            for branch in self.git_repo.get_branches():
+                if self._path_exists_in_branch(path_in_default_branch, branch):
+                    log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in branch %s",
+        exit(0)
+        return TaskState.UNDETERMINED
 
     @log_function_entry_exit()
     def handle(self):
