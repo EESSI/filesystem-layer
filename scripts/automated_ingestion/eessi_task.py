@@ -621,4 +621,4 @@ class EESSITask:
 
     @log_function_entry_exit()
     def __str__(self):
-        return f"EESSITask(description={self.description}, action={self.action}, state={self.state})"
+        return f"EESSITask(description={self.description}, action={self.action}, state={self.determine_state()})"
