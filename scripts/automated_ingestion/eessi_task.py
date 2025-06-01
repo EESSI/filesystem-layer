@@ -5,7 +5,8 @@ from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
 from eessi_task_payload import EESSITaskPayload
 from utils import log_message, LoggingScope, log_function_entry_exit
-from github import Github, GithubException, UnknownObjectException, PullRequest
+from github import Github, GithubException, UnknownObjectException
+from github.PullRequest import PullRequest
 import os
 
 
