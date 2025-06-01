@@ -487,6 +487,7 @@ class EESSITask:
 
             # Create blob for symlink target
             blob = self.git_repo.create_git_blob(target_path, "utf-8")
+            log_message(LoggingScope.TASK_OPS, 'INFO', "blob created: %s", blob)
 
             # Create tree element
             tree_element = {
@@ -498,18 +499,22 @@ class EESSITask:
 
             # Create new tree and commit
             new_tree = self.git_repo.create_git_tree([tree_element], base_tree)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "new tree created: %s", new_tree)
+
             commit_message = f"Add symlink {source_path} -> {target_path}"
             new_commit = self.git_repo.create_git_commit(commit_message, new_tree, [commit])
+            log_message(LoggingScope.TASK_OPS, 'INFO', "new commit created: %s", new_commit)
 
             # Update reference
             ref.edit(new_commit.sha)
 
             log_message(LoggingScope.TASK_OPS, 'INFO', "Symlink created: %s -> %s",
                         source_path, target_path)
+            return True
 
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating symlink: %s", err)
-            raise err
+            return False
 
     @log_function_entry_exit()
     def _safe_create_file(self, path: str, message: str, content: str, branch: str = None):
@@ -559,14 +564,14 @@ class EESSITask:
             log_message(LoggingScope.TASK_OPS, 'INFO', "task state file created: %s", task_state_file_path)
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating task state file: %s", err)
+            # TODO: rollback previous changes (task description file)
             return TaskState.UNDETERMINED
 
-        try:
-            self._create_symlink(self.description.task_object.remote_file_path, target_dir, branch=branch)
+        if self._create_symlink(self.description.task_object.remote_file_path, target_dir, branch=branch):
             log_message(LoggingScope.TASK_OPS, 'INFO', "symlink created: %s -> %s",
                         self.description.task_object.remote_file_path, target_dir)
-        except Exception as err:
-            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating symlink: %s", err)
+        else:
+            # TODO: rollback previous changes (task description file, task state file)
             return TaskState.UNDETERMINED
 
         # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number
