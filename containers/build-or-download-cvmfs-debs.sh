@@ -16,7 +16,7 @@ fi
 
 os="${distro}${release}"
 
-if [ "$arch" = "riscv64" ] || [ "${os}" = "debian13" ]
+if [ "$arch" = "riscv64" ]
 then
     apt-get install -y devscripts libfuse3-dev cmake cpio golang libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release
     cd /tmp
@@ -29,23 +29,18 @@ then
     sed -i 's/python-setuptools/python3-setuptools/' packaging/debian/cvmfs/control*
     # debian13 has libfuse3-4
     [ $os = "debian13" ] && sed -i 's/libfuse3-3/libfuse3-4/' packaging/debian/cvmfs/control*
-    if [ "$arch" = "riscv64" ]
-    then
-        # valgrind is not available (yet) for RISC-V
-        sed -i 's/, valgrind//' packaging/debian/cvmfs/control*
-        # for RISC-V we need to run autoreconf, see:
-        # https://github.com/cvmfs/cvmfs/pull/3446
-        wget https://github.com/cvmfs/cvmfs/pull/3446.patch
-        patch -p 1 -i ./3446.patch
-        rm 3446.patch
-        # QEMU shows the host CPU in /proc/cpuinfo, so we need to tweak the CPU detection for some packages and use uname -m instead
-        sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/libcrypto/src/configureHook.sh
-        sed -i "s/rv64/riscv64/" externals/libcrypto/src/configureHook.sh
-        sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/protobuf/src/configureHook.sh
-        sed -i "s/rv64/riscv64/" externals/protobuf/src/configureHook.sh
-    else
-        apt-get install -y valgrind
-    fi
+    # valgrind is not available (yet) for RISC-V
+    sed -i 's/, valgrind//' packaging/debian/cvmfs/control*
+    # for RISC-V we need to run autoreconf, see:
+    # https://github.com/cvmfs/cvmfs/pull/3446
+    wget https://github.com/cvmfs/cvmfs/pull/3446.patch
+    patch -p 1 -i ./3446.patch
+    rm 3446.patch
+    # QEMU shows the host CPU in /proc/cpuinfo, so we need to tweak the CPU detection for some packages and use uname -m instead
+    sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/libcrypto/src/configureHook.sh
+    sed -i "s/rv64/riscv64/" externals/libcrypto/src/configureHook.sh
+    sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/protobuf/src/configureHook.sh
+    sed -i "s/rv64/riscv64/" externals/protobuf/src/configureHook.sh
 
     # gcc 14 fix for CVMFS's dependency pacparser, see
     # https://github.com/manugarg/pacparser/issues/194
@@ -67,7 +62,7 @@ EOF
 
     cd ci/cvmfs
     # make sure the cvmfs package also uses debian 13 for debian sid
-    [ $release = "13" ] && sed -i "s@\$(lsb_release -sr)@13@" ./deb.sh && sed -i "s/focal/trixie/" ./deb.sh
+    #[ $release = "13" ] && sed -i "s@\$(lsb_release -sr)@13@" ./deb.sh && sed -i "s/focal/trixie/" ./deb.sh
     ./deb.sh /tmp/cvmfs-cvmfs-${cvmfsversion} /root/deb
 else
     mkdir -p /root/deb
