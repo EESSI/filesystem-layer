@@ -25,7 +25,8 @@ permissions: read-all
 jobs:
   build_and_publish:
     name: Build and publish image
-    runs-on: self-hosted
+    #runs-on: self-hosted
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 720
     permissions:
       packages: write
