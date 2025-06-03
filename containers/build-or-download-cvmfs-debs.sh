@@ -23,34 +23,11 @@ then
     [ $os = "debian13" ] && sed -i 's/libfuse3-3 (>= 3.3.0)/libfuse3-3 (>= 3.3.0) | libfuse3-4/g' packaging/debian/cvmfs/control*
     # valgrind is not available (yet) for RISC-V
     sed -i 's/, valgrind//' packaging/debian/cvmfs/control*
-    # for RISC-V we need to run autoreconf, see:
-    # https://github.com/cvmfs/cvmfs/pull/3446
-    wget https://github.com/cvmfs/cvmfs/pull/3446.patch
-    patch -p 1 -i ./3446.patch
-    rm 3446.patch
     # QEMU shows the host CPU in /proc/cpuinfo, so we need to tweak the CPU detection for some packages and use uname -m instead
     sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/libcrypto/src/configureHook.sh
     sed -i "s/rv64/riscv64/" externals/libcrypto/src/configureHook.sh
     sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/protobuf/src/configureHook.sh
     sed -i "s/rv64/riscv64/" externals/protobuf/src/configureHook.sh
-
-    # gcc 14 fix for CVMFS's dependency pacparser, see
-    # https://github.com/manugarg/pacparser/issues/194
-    if gcc --version | grep -q "^gcc.*14"; then
-cat << EOF > externals/pacparser/src/fix_gcc14.patch
---- src/spidermonkey/js/src/jsapi.c
-+++ src/spidermonkey/js/src/jsapi.c
-@@ -93,7 +93,7 @@
- #ifdef HAVE_VA_LIST_AS_ARRAY
- #define JS_ADDRESSOF_VA_LIST(ap) ((va_list *)(ap))
- #else
--#define JS_ADDRESSOF_VA_LIST(ap) (&(ap))
-+#define JS_ADDRESSOF_VA_LIST(ap) ((va_list *)(&(ap)))
- #endif
- 
- #if defined(JS_PARANOID_REQUEST) && defined(JS_THREADSAFE)
-EOF
-    fi
 
     cd ci/cvmfs
     ./deb.sh /tmp/cvmfs-cvmfs-${cvmfsversion} /root/deb
