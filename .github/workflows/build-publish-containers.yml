@@ -25,14 +25,15 @@ permissions: read-all
 jobs:
   build_and_publish:
     name: Build and publish image
-    runs-on: self-hosted
+    #runs-on: self-hosted
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 720
     permissions:
       packages: write
       contents: read
     strategy:
       matrix:
-        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian-sid']
+        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian13']
         platform: [amd64, arm64, riscv64]
         exclude:
           # exclude images that don't support RISC-V
@@ -97,7 +98,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian-sid']
+        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian13']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
@@ -112,7 +113,7 @@ jobs:
           echo REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
 
       - name: Create the final image using  "docker buildx imagetools create"
-        if: github.event_name != 'pull_request' && matrix.tag == 'build-node:debian-sid'
+        if: github.event_name != 'pull_request' && matrix.tag == 'build-node:debian13'
         run: |
           docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \
@@ -120,7 +121,7 @@ jobs:
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-riscv64
 
       - name: Create the final image using  "docker buildx imagetools create"
-        if: github.event_name != 'pull_request' && matrix.tag != 'build-node:debian-sid'
+        if: github.event_name != 'pull_request' && matrix.tag != 'build-node:debian13'
         run: |
           docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \
