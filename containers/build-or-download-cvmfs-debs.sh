@@ -19,8 +19,6 @@ then
     cd cvmfs-cvmfs-${cvmfsversion}
     mkdir /root/deb
     sed -i 's/amd64 armhf arm64/amd64 armhf arm64 riscv64/' packaging/debian/cvmfs/control*
-    #sed -i 's/python-dev/python3-dev/' packaging/debian/cvmfs/control*
-    #sed -i 's/python-setuptools/python3-setuptools/' packaging/debian/cvmfs/control*
     # debian13 provides libfuse3-4, see https://github.com/cvmfs/cvmfs/pull/3847
     [ $os = "debian13" ] && sed -i 's/libfuse3-3 (>= 3.3.0)/libfuse3-3 (>= 3.3.0) | libfuse3-4/g' packaging/debian/cvmfs/control*
     # valgrind is not available (yet) for RISC-V
@@ -55,8 +53,6 @@ EOF
     fi
 
     cd ci/cvmfs
-    # make sure the cvmfs package also uses debian 13 for debian sid
-    #[ $release = "13" ] && sed -i "s@\$(lsb_release -sr)@13@" ./deb.sh && sed -i "s/focal/trixie/" ./deb.sh
     ./deb.sh /tmp/cvmfs-cvmfs-${cvmfsversion} /root/deb
 else
     mkdir -p /root/deb
