@@ -447,11 +447,12 @@ class EESSITask:
         if self._path_exists_in_branch(path_in_default_branch, branch=self.git_repo.default_branch):
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in default branch",
                         path_in_default_branch)
+            # TODO: determine state
+            exit(0)
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in default branch",
                         path_in_default_branch)
             return TaskState.UNDETERMINED
-        exit(0)
 
     @log_function_entry_exit()
     def handle(self):
@@ -553,10 +554,10 @@ class EESSITask:
     def _handle_add_undetermined(self):
         """Handler for ADD action in UNDETERMINED state"""
         print("Handling ADD action in UNDETERMINED state")
-        # create symlink target directory (REPO/PR/SEQ/TASK_FILE_NAME/)
+        # create target directory (REPO/PR/SEQ/TASK_FILE_NAME/)
         # create task file in target directory (TARGET_DIR/TaskDescription)
         # create task status file in target directory (TARGET_DIR/TaskState.NEW_TASK)
-        # create symlink from task file path to target directory (remote_file_path -> TARGET_DIR)
+        # create pointer file from task file path to target directory (remote_file_path -> TARGET_DIR)
         branch = self.git_repo.default_branch
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
@@ -564,7 +565,7 @@ class EESSITask:
         task_file_name = self.description.get_task_file_name()
         target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
         task_description_file_path = f"{target_dir}/TaskDescription"
-        task_state_file_path = f"{target_dir}/TaskState.{TaskState.NEW_TASK.name}"
+        task_state_file_path = f"{target_dir}/TaskState"
         try:
             self._safe_create_file(task_description_file_path,
                                    f"new task description for {repo_name} PR {pr_number} seq {sequence_number}",
@@ -578,17 +579,23 @@ class EESSITask:
         try:
             self._safe_create_file(task_state_file_path,
                                    f"new task state for {repo_name} PR {pr_number} seq {sequence_number}",
-                                   "", branch=branch)
+                                   f"{TaskState.NEW_TASK.name}", branch=branch)
             log_message(LoggingScope.TASK_OPS, 'INFO', "task state file created: %s", task_state_file_path)
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating task state file: %s", err)
             # TODO: rollback previous changes (task description file)
             return TaskState.UNDETERMINED
 
-        if self._create_symlink(self.description.task_object.remote_file_path, target_dir, branch=branch):
-            log_message(LoggingScope.TASK_OPS, 'INFO', "symlink created: %s -> %s",
-                        self.description.task_object.remote_file_path, target_dir)
-        else:
+        try:
+            remote_file_path = self.description.task_object.remote_file_path
+            self._safe_create_file(remote_file_path,
+                                   f"pointer from task file {remote_file_path} to target {target_dir}",
+                                   f"remote_file_path = {remote_file_path}\ntarget_dir = {target_dir}",
+                                   branch=branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "pointer file created: %s -> %s",
+                        remote_file_path, target_dir)
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating pointer file: %s", err)
             # TODO: rollback previous changes (task description file, task state file)
             return TaskState.UNDETERMINED
 
