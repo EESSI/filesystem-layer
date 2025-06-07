@@ -1,14 +1,18 @@
 from enum import Enum, auto
 from typing import Dict, List, Tuple, Optional
+
+import os
+import traceback
+import base64
+
 from eessi_data_object import EESSIDataAndSignatureObject
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
 from eessi_task_payload import EESSITaskPayload
 from utils import log_message, LoggingScope, log_function_entry_exit
+
 from github import Github, GithubException, InputGitTreeElement, UnknownObjectException
 from github.PullRequest import PullRequest
-import os
-import traceback
 
 
 class SequenceStatus(Enum):
@@ -551,6 +555,61 @@ class EESSITask:
                 raise err  # Some other error
 
     @log_function_entry_exit()
+    def _create_multi_file_commit(self, files_data, commit_message, branch=None):
+        """
+        Create a commit with multiple file changes
+
+        files_data: dict with structure:
+        {
+            "path/to/file1.txt": {
+                "content": "file content",
+                "mode": "100644"  # optional, defaults to 100644
+            },
+            "path/to/file2.py": {
+                "content": "print('hello')",
+                "mode": "100644"
+            }
+        }
+        """
+        branch = self.git_repo.default_branch if branch is None else branch
+        ref = self.git_repo.get_git_ref(f"heads/{branch}")
+        current_commit = self.git_repo.get_git_commit(ref.object.sha)
+        base_tree = current_commit.tree
+
+        # Create tree elements
+        tree_elements = []
+        for file_path, file_info in files_data.items():
+            content = file_info["content"]
+            if isinstance(content, str):
+                content = content.encode('utf-8')
+
+            blob = self.git_repo.create_git_blob(
+                base64.b64encode(content).decode('utf-8'),
+                "base64"
+            )
+            tree_elements.append(InputGitTreeElement(
+                path=file_path,
+                mode=file_info.get("mode", "100644"),
+                type="blob",
+                sha=blob.sha
+            ))
+
+        # Create new tree
+        new_tree = self.git_repo.create_git_tree(tree_elements, base_tree)
+
+        # Create commit
+        new_commit = self.git_repo.create_git_commit(
+            commit_message,
+            new_tree,
+            [current_commit]
+        )
+
+        # Update branch reference
+        ref.edit(new_commit.sha)
+
+        return new_commit
+
+    @log_function_entry_exit()
     def _handle_add_undetermined(self):
         """Handler for ADD action in UNDETERMINED state"""
         print("Handling ADD action in UNDETERMINED state")
@@ -566,36 +625,30 @@ class EESSITask:
         target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
         task_description_file_path = f"{target_dir}/TaskDescription"
         task_state_file_path = f"{target_dir}/TaskState"
-        try:
-            self._safe_create_file(task_description_file_path,
-                                   f"new task description for {repo_name} PR {pr_number} seq {sequence_number}",
-                                   self.description.get_contents(), branch=branch)
-            log_message(LoggingScope.TASK_OPS, 'INFO',
-                        "task description file created: %s", task_description_file_path)
-        except Exception as err:
-            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating task description file: %s", err)
-            return TaskState.UNDETERMINED
+        remote_file_path = self.description.task_object.remote_file_path
+
+        files_to_commit = {
+            task_description_file_path: {
+                "content": self.description.get_contents(),
+                "mode": "100644"
+            },
+            task_state_file_path: {
+                "content": f"{TaskState.NEW_TASK.name}",
+                "mode": "100644"
+            },
+            remote_file_path: {
+                "content": f"remote_file_path = {remote_file_path}\ntarget_dir = {target_dir}",
+                "mode": "100644"
+            }
+        }
 
         try:
-            self._safe_create_file(task_state_file_path,
-                                   f"new task state for {repo_name} PR {pr_number} seq {sequence_number}",
-                                   f"{TaskState.NEW_TASK.name}", branch=branch)
-            log_message(LoggingScope.TASK_OPS, 'INFO', "task state file created: %s", task_state_file_path)
+            commit = self._create_multi_file_commit(files_to_commit,
+                                                    f"new task for {repo_name} PR {pr_number} seq {sequence_number}",
+                                                    branch=branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "commit created: %s", commit)
         except Exception as err:
-            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating task state file: %s", err)
-            # TODO: rollback previous changes (task description file)
-            return TaskState.UNDETERMINED
-
-        try:
-            remote_file_path = self.description.task_object.remote_file_path
-            self._safe_create_file(remote_file_path,
-                                   f"pointer from task file {remote_file_path} to target {target_dir}",
-                                   f"remote_file_path = {remote_file_path}\ntarget_dir = {target_dir}",
-                                   branch=branch)
-            log_message(LoggingScope.TASK_OPS, 'INFO', "pointer file created: %s -> %s",
-                        remote_file_path, target_dir)
-        except Exception as err:
-            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating pointer file: %s", err)
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating commit: %s", err)
             # TODO: rollback previous changes (task description file, task state file)
             return TaskState.UNDETERMINED
 
