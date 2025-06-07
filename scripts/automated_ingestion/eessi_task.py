@@ -429,16 +429,15 @@ class EESSITask:
         """
         Check if a path exists in a branch.
         """
+        branch = self.git_repo.default_branch if branch is None else branch
         try:
-            branch = self.git_repo.default_branch if branch is None else branch
-            contents = self._list_directory_contents(path, branch)
-            if isinstance(contents, list):
-                return True
-            else:
-                return False
+            self.git_repo.get_contents(path, ref=branch)
             return True
-        except FileNotFoundError:
-            return False
+        except GithubException as err:
+            if err.status == 404:
+                return False
+            else:
+                raise err
 
     @log_function_entry_exit()
     def _read_dict_from_string(self, content: str) -> dict:
