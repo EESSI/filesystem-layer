@@ -12,6 +12,8 @@
 
 # Only if it passes these checks, the tarball gets ingested to the base dir in the repository specified below.
 
+CVMFS_ROOT=${CUSTOM_CVMFS_ROOT:-/cvmfs}
+
 basedir=versions
 decompress="gunzip -c"
 cvmfs_server="cvmfs_server"
@@ -180,8 +182,14 @@ function update_lmod_caches() {
         error "the script for updating the Lmod caches (${update_caches_script}) does not have execute permissions!"
     fi
     ${cvmfs_server} transaction "${cvmfs_repo}"
-    ${update_caches_script} /cvmfs/${cvmfs_repo}/${basedir}/${version}
-    ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+    ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}"
+    ec=$?
+    if [ $ec -eq 0 ]; then
+        ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+    else
+        ${cvmfs_server} abort -f "${cvmfs_repo}"
+        error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
+    fi
 }
 
 function ingest_init_tarball() {
@@ -206,7 +214,7 @@ function ingest_compat_tarball() {
     # Handle the ingestion of tarballs containing a compatibility layer
     check_arch
     check_os
-    compat_layer_path="/cvmfs/${cvmfs_repo}/${basedir}/${version}/compat/${os}/${arch}"
+    compat_layer_path="${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}/compat/${os}/${arch}"
     # Assume that we already had a compat layer in place if there is a startprefix script in the corresponding CVMFS directory
     if [ -f "${compat_layer_path}/startprefix" ];
     then
@@ -217,7 +225,7 @@ function ingest_compat_tarball() {
         old_layer_suffixed_path="${compat_layer_path}-${new_suffix}"
         echo_yellow "Moving the existing compat layer from ${compat_layer_path} to ${old_layer_suffixed_path}..."
         mv ${compat_layer_path} ${old_layer_suffixed_path}
-        tar -C "/cvmfs/${cvmfs_repo}/${basedir}/" -xzf "${tar_file}"
+        tar -C "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/" -xzf "${tar_file}"
         ${cvmfs_server} publish -m "updated compat layer for ${version}, ${os}, ${arch}" "${cvmfs_repo}"
         ec=$?
         if [ $ec -eq 0 ]

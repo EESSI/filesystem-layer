@@ -1,10 +1,13 @@
 #!/bin/bash
 
-INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
-TEST_OUTPUT=/dev/null # change to /dev/stdout to print test outputs for debugging purposes
-
 # Temporary base dir for the tests
 tstdir=$(mktemp -d)
+
+# let ingest-tarball.sh script not use /cvmfs, but a temporary directory we can create
+export CUSTOM_CVMFS_ROOT=${tstdir}/cvmfs
+
+INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
+TEST_OUTPUT=${tstdir}/out.txt
 
 # Statistics
 num_tests=0
@@ -87,15 +90,30 @@ tarballs_fail=(
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat"
 )
 
+# update_lmod_caches.sh script requires that directory exists,
+# and that script to update Lmod cache is found in there
+repo_version_root="${CUSTOM_CVMFS_ROOT}/my.repo.tld/versions/2000.01"
+lmod_libexec_path="${repo_version_root}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/"
+mkdir -p "${lmod_libexec_path}"
+lmod_update_script="${lmod_libexec_path}/update_lmod_system_cache_files"
+touch "${lmod_update_script}"
+chmod u+x "${lmod_update_script}"
+
+
 # Run the tests that should succeed
 for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
     "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 0 ]; then
+        echo ">> ${tarballs_success[$i]} test with existing repo FAILed!" >&2
+        echo ">> output:" >&2
+        cat "${TEST_OUTPUT}" >&2
+        echo >&2
         num_tests_failed=$((num_tests_failed + 1))
     else
         num_tests_succeeded=$((num_tests_succeeded + 1))
     fi
+    rm -f "${TEST_OUTPUT}"
     num_tests=$((num_tests + 1))
 done
 
@@ -104,10 +122,15 @@ for ((i = 0; i < ${#tarballs_fail[@]}; i++)); do
     t=$(create_tarball ${tarballs_fail[$i]})
     "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
+        echo ">> ${tarballs_fail[$i]} test passed, but should have failed!" >&2
+        echo ">> output:" >&2
+        cat "${TEST_OUTPUT}" >&2
+        echo >&2
         num_tests_failed=$((num_tests_failed + 1))
     else
         num_tests_succeeded=$((num_tests_succeeded + 1))
     fi
+    rm -f "${TEST_OUTPUT}"
     num_tests=$((num_tests + 1))
 done
 
@@ -116,10 +139,15 @@ for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
     "${INGEST_SCRIPT}" "my.nonexistingrepo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
+        echo ">> ${tarballs_success[$i]} test passed with non-existing repo, should have failed!" >&2
+        echo ">> output:" >&2
+        cat "${TEST_OUTPUT}" >&2
+        echo >&2
         num_tests_failed=$((num_tests_failed + 1))
     else
         num_tests_succeeded=$((num_tests_succeeded + 1))
     fi
+    rm -f "${TEST_OUTPUT}"
     num_tests=$((num_tests + 1))
 done
 
