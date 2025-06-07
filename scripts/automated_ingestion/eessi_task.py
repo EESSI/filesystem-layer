@@ -98,44 +98,44 @@ class EESSITask:
         return EESSITaskAction.UNKNOWN
 
     @log_function_entry_exit()
-    def _state_file_with_prefix_exists_in_repo_branch(self, file_path_prefix: str, branch=None) -> bool:
+    def _state_file_with_prefix_exists_in_repo_branch(self, file_path_prefix: str, branch_name: str = None) -> bool:
         """
         Check if a file exists in a repository branch.
 
         Args:
             file_path_prefix: the prefix of the file path
-            branch: the branch to check
+            branch_name: the branch to check
 
         Returns:
             True if a file with the prefix exists in the branch, False otherwise
         """
-        if branch is None:
-            branch = self.git_repo.default_branch
+        branch_name = self.git_repo.default_branch if branch_name is None else branch_name
+        # branch = self._get_branch_from_name(branch_name)
         try:
             # get all files in directory part of file_path_prefix
             directory_part = os.path.dirname(file_path_prefix)
-            files = self.git_repo.get_contents(directory_part, ref=branch)
+            files = self.git_repo.get_contents(directory_part, ref=branch_name)
             log_msg = "Found files %s in directory %s in branch %s"
-            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, files, directory_part, branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, files, directory_part, branch_name)
             # check if any of the files has file_path_prefix as prefix
             for file in files:
                 if file.path.startswith(file_path_prefix):
                     log_msg = "Found file %s in directory %s in branch %s"
-                    log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file.path, directory_part, branch)
+                    log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file.path, directory_part, branch_name)
                     return True
             log_msg = "No file with prefix %s found in directory %s in branch %s"
-            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file_path_prefix, directory_part, branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file_path_prefix, directory_part, branch_name)
             return False
         except UnknownObjectException:
             # file_path does not exist in branch
             log_msg = "Directory %s or file with prefix %s does not exist in branch %s"
-            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, directory_part, file_path_prefix, branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, directory_part, file_path_prefix, branch_name)
             return False
         except GithubException as err:
             if err.status == 404:
                 # file_path does not exist in branch
                 log_msg = "Directory %s or file with prefix %s does not exist in branch %s"
-                log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, directory_part, file_path_prefix, branch)
+                log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, directory_part, file_path_prefix, branch_name)
                 return False
             else:
                 # if there was some other (e.g. connection) issue, log message and return False
@@ -317,9 +317,10 @@ class EESSITask:
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+        default_branch_name = self.git_repo.default_branch
         pr = self.git_repo.create_pull(title=f"Add task for {repo_name} PR {pr_number} seq {sequence_number}",
                                        body=f"Add task for {repo_name} PR {pr_number} seq {sequence_number}",
-                                       head=branch_name, base=self.git_repo.default_branch)
+                                       head=branch_name, base=default_branch_name)
         return pr, branch_name
 
     @log_function_entry_exit()
@@ -399,12 +400,13 @@ class EESSITask:
         return state
 
     @log_function_entry_exit()
-    def _list_directory_contents(self, directory_path, branch=None):
+    def _list_directory_contents(self, directory_path, branch_name: str = None):
         try:
             # Get contents of the directory
-            branch = self.git_repo.default_branch if branch is None else branch
-            log_message(LoggingScope.TASK_OPS, 'INFO', "listing contents of %s in branch %s", directory_path, branch)
-            contents = self.git_repo.get_contents(directory_path, ref=branch)
+            branch_name = self.git_repo.default_branch if branch_name is None else branch_name
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "listing contents of %s in branch %s", directory_path, branch_name)
+            contents = self.git_repo.get_contents(directory_path, ref=branch_name)
 
             # If contents is a list, it means we successfully got directory contents
             if isinstance(contents, list):
@@ -429,13 +431,13 @@ class EESSITask:
         return self.valid_transitions[the_state][0]
 
     @log_function_entry_exit()
-    def _path_exists_in_branch(self, path: str, branch: str = None) -> bool:
+    def _path_exists_in_branch(self, path: str, branch_name: str = None) -> bool:
         """
         Check if a path exists in a branch.
         """
-        branch = self.git_repo.default_branch if branch is None else branch
+        branch_name = self.git_repo.default_branch if branch_name is None else branch_name
         try:
-            self.git_repo.get_contents(path, ref=branch)
+            self.git_repo.get_contents(path, ref=branch_name)
             return True
         except GithubException as err:
             if err.status == 404:
@@ -456,12 +458,12 @@ class EESSITask:
         return config_dict
 
     @log_function_entry_exit()
-    def _read_target_dir_from_file(self, path: str, branch: str = None) -> str:
+    def _read_target_dir_from_file(self, path: str, branch_name: str = None) -> str:
         """
         Read the target directory from the file in the given branch.
         """
-        branch = self.git_repo.default_branch if branch is None else branch
-        content = self.git_repo.get_contents(path, ref=branch)
+        branch_name = self.git_repo.default_branch if branch_name is None else branch_name
+        content = self.git_repo.get_contents(path, ref=branch_name)
 
         # Decode the content from base64
         content_str = content.decoded_content.decode('utf-8')
@@ -476,8 +478,7 @@ class EESSITask:
         """
         Get a branch object from its name.
         """
-        if not branch_name:
-            return self.git_repo.default_branch
+        branch_name = self.git_repo.default_branch if branch_name is None else branch_name
 
         try:
             branch = self.git_repo.get_branch(branch_name)
@@ -489,12 +490,12 @@ class EESSITask:
             return None
 
     @log_function_entry_exit()
-    def _read_task_state_from_file(self, path: str, branch: str = None) -> TaskState:
+    def _read_task_state_from_file(self, path: str, branch_name: str = None) -> TaskState:
         """
         Read the task state from the file in the given branch.
         """
-        branch = self.git_repo.default_branch if branch is None else branch
-        content = self.git_repo.get_contents(path, ref=branch)
+        branch_name = self.git_repo.default_branch if branch_name is None else branch_name
+        content = self.git_repo.get_contents(path, ref=branch_name)
 
         # Decode the content from base64
         content_str = content.decoded_content.decode('utf-8').strip()
@@ -512,16 +513,16 @@ class EESSITask:
         """
         # check if path representing the task file exists in the default branch
         path_in_default_branch = self.description.task_object.remote_file_path
-        default_branch = self.git_repo.default_branch
-        if self._path_exists_in_branch(path_in_default_branch, branch=default_branch):
+        default_branch_name = self.git_repo.default_branch
+        if self._path_exists_in_branch(path_in_default_branch, branch_name=default_branch_name):
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in default branch",
                         path_in_default_branch)
             # get state from task file in default branch
             # - get target_dir from path_in_default_branch
-            target_dir = self._read_target_dir_from_file(path_in_default_branch, default_branch)
+            target_dir = self._read_target_dir_from_file(path_in_default_branch, default_branch_name)
             # read the TaskState file in target dir
             task_state_file_path = f"{target_dir}/TaskState"
-            task_state_default_branch = self._read_task_state_from_file(task_state_file_path, default_branch)
+            task_state_default_branch = self._read_task_state_from_file(task_state_file_path, default_branch_name)
             # if branch for sequence number exists, get state from task file in corresponding branch
             # - branch name is of the form REPO-PR-SEQ
             # - target dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/
@@ -568,11 +569,11 @@ class EESSITask:
 
     # Implement handlers for ADD action
     @log_function_entry_exit()
-    def _create_symlink(self, source_path: str, target_path: str, branch: str = None):
+    def _create_symlink(self, source_path: str, target_path: str, branch_name: str = None):
         """Create a symlink in the given branch."""
         try:
-            branch = self.git_repo.default_branch if branch is None else branch
-            ref = self.git_repo.get_git_ref(f"heads/{branch}")
+            branch_name = self.git_repo.default_branch if branch_name is None else branch_name
+            ref = self.git_repo.get_git_ref(f"heads/{branch_name}")
             commit = self.git_repo.get_git_commit(ref.object.sha)
             base_tree = self.git_repo.get_git_tree(commit.tree.sha)
 
@@ -625,22 +626,22 @@ class EESSITask:
             return False
 
     @log_function_entry_exit()
-    def _safe_create_file(self, path: str, message: str, content: str, branch: str = None):
+    def _safe_create_file(self, path: str, message: str, content: str, branch_name: str = None):
         """Create a file in the given branch."""
         try:
-            branch = self.git_repo.default_branch if branch is None else branch
-            existing_file = self.git_repo.get_contents(path, ref=branch)
+            branch_name = self.git_repo.default_branch if branch_name is None else branch_name
+            existing_file = self.git_repo.get_contents(path, ref=branch_name)
             log_message(LoggingScope.TASK_OPS, 'INFO', "File %s already exists", path)
             return existing_file
         except GithubException as err:
             if err.status == 404:  # File doesn't exist
                 # Safe to create
-                return self.git_repo.create_file(path, message, content, branch=branch)
+                return self.git_repo.create_file(path, message, content, branch=branch_name)
             else:
                 raise err  # Some other error
 
     @log_function_entry_exit()
-    def _create_multi_file_commit(self, files_data, commit_message, branch=None):
+    def _create_multi_file_commit(self, files_data, commit_message, branch_name: str = None):
         """
         Create a commit with multiple file changes
 
@@ -656,8 +657,8 @@ class EESSITask:
             }
         }
         """
-        branch = self.git_repo.default_branch if branch is None else branch
-        ref = self.git_repo.get_git_ref(f"heads/{branch}")
+        branch_name = self.git_repo.default_branch if branch_name is None else branch_name
+        ref = self.git_repo.get_git_ref(f"heads/{branch_name}")
         current_commit = self.git_repo.get_git_commit(ref.object.sha)
         base_tree = current_commit.tree
 
@@ -695,12 +696,12 @@ class EESSITask:
         return new_commit
 
     @log_function_entry_exit()
-    def _update_file(self, file_path, new_content, commit_message, branch=None):
+    def _update_file(self, file_path, new_content, commit_message, branch_name: str = None):
         try:
-            branch = self.git_repo.default_branch if branch is None else branch
+            branch_name = self.git_repo.default_branch if branch_name is None else branch_name
 
             # Get the current file
-            file = self.git_repo.get_contents(file_path, ref=branch)
+            file = self.git_repo.get_contents(file_path, ref=branch_name)
 
             # Update the file
             result = self.git_repo.update_file(
@@ -708,7 +709,7 @@ class EESSITask:
                 message=commit_message,
                 content=new_content,
                 sha=file.sha,
-                branch=branch
+                branch=branch_name
             )
 
             log_message(LoggingScope.TASK_OPS, 'INFO',
@@ -727,7 +728,7 @@ class EESSITask:
         # create task file in target directory (TARGET_DIR/TaskDescription)
         # create task status file in target directory (TARGET_DIR/TaskState.NEW_TASK)
         # create pointer file from task file path to target directory (remote_file_path -> TARGET_DIR)
-        branch = self.git_repo.default_branch
+        branch_name = self.git_repo.default_branch
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         sequence_number = self._get_fixed_sequence_number()  # corresponds to an open or yet to be created PR
@@ -756,7 +757,7 @@ class EESSITask:
             commit = self._create_multi_file_commit(
                 files_to_commit,
                 f"new task for {repo_name} PR {pr_number} seq {sequence_number}",
-                branch=branch
+                branch_name=branch_name
             )
             log_message(LoggingScope.TASK_OPS, 'INFO', "commit created: %s", commit)
         except Exception as err:
@@ -795,10 +796,10 @@ class EESSITask:
         # determine next state (NEXT_STATE), update TaskState file content
         next_state = self._next_state()
         log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
+        default_branch_name = self.git_repo.default_branch
         target_dir = self._read_target_dir_from_file(self.description.task_object.remote_file_path,
-                                                     self.git_repo.default_branch)
+                                                     default_branch_name)
         task_state_file_path = f"{target_dir}/TaskState"
-        default_branch = self.git_repo.default_branch
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         seq_num = self._get_fixed_sequence_number()
@@ -806,7 +807,7 @@ class EESSITask:
         self._update_file(task_state_file_path,
                           f"{next_state.name}\n",
                           commit_message,
-                          branch=default_branch)
+                          branch_name=default_branch_name)
 
         # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number
         #   is still open or yet to be created); if it is not valid, perform corrective actions
@@ -847,11 +848,15 @@ class EESSITask:
 
         branch_name = self._determine_branch_name_from_sequence_number()
         branch = self._get_branch_from_name(branch_name)
+        default_branch_name = self.git_repo.default_branch
+        default_branch = self._get_branch_from_name(default_branch_name)
+        default_sha = default_branch.commit.sha
         if not branch:
             # branch for sequence number does not exist
             # TODO: could have been merged already --> check if sequence directory exists
             # ASSUME: it has not existed before --> create it
-            branch = self.git_repo.create_git_ref(f"refs/heads/{branch_name}", self.git_repo.default_branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "branch %s does not exist, creating it", branch_name)
+            branch = self.git_repo.create_git_ref(f"refs/heads/{branch_name}", default_sha)
             log_message(LoggingScope.TASK_OPS, 'INFO', "branch %s created: %s", branch_name, branch)
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO', "found existing branch for %s: %s", branch_name, branch)
