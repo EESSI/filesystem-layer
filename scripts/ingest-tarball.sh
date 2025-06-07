@@ -181,7 +181,13 @@ function update_lmod_caches() {
     fi
     ${cvmfs_server} transaction "${cvmfs_repo}"
     ${update_caches_script} /cvmfs/${cvmfs_repo}/${basedir}/${version}
-    ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+    ec=$?
+    if [ $ec -eq 0 ]; then
+        ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+    else
+        ${cvmfs_server} abort "${cvmfs_repo}"
+        error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed\!"
+    fi
 }
 
 function ingest_init_tarball() {
