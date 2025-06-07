@@ -441,6 +441,60 @@ class EESSITask:
             return False
 
     @log_function_entry_exit()
+    def _read_dict_from_string(self, content: str) -> dict:
+        """
+        Read the dictionary from the string.
+        """
+        config_dict = {}
+        for line in content.strip().split('\n'):
+            if '=' in line and not line.strip().startswith('#'):  # Skip comments
+                key, value = line.split('=', 1)  # Split only on first '='
+                config_dict[key.strip()] = value.strip()
+        return config_dict
+
+    @log_function_entry_exit()
+    def _read_target_dir_from_file(self, path: str, branch: str = None) -> str:
+        """
+        Read the target directory from the file in the given branch.
+        """
+        branch = self.git_repo.default_branch if branch is None else branch
+        content = self.git_repo.get_contents(path, ref=branch)
+
+        # Decode the content from base64
+        content_str = content.decoded_content.decode('utf-8')
+
+        # Parse into dictionary
+        config_dict = self._read_dict_from_string(content_str)
+
+        return config_dict.get('target_dir', None)
+
+    @log_function_entry_exit()
+    def _branch_exists(self, branch_name: str) -> bool:
+        """
+        Check if a branch exists.
+        """
+        try:
+            self.git_repo.get_branch(branch_name)
+            return True
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "error checking if branch %s exists: %s",
+                        branch_name, err)
+            return False
+
+    @log_function_entry_exit()
+    def _read_task_state_from_file(self, path: str, branch: str = None) -> TaskState:
+        """
+        Read the task state from the file in the given branch.
+        """
+        branch = self.git_repo.default_branch if branch is None else branch
+        content = self.git_repo.get_contents(path, ref=branch)
+
+        # Decode the content from base64
+        content_str = content.decoded_content.decode('utf-8')
+
+        return TaskState.from_string(content_str)
+
+    @log_function_entry_exit()
     def determine_state(self) -> TaskState:
         """
         Determine the state of the task based on the state of the staging repository.
@@ -448,11 +502,33 @@ class EESSITask:
         # High-level logic:
         # 1. Check if path representing the task file exists in the default branch
         path_in_default_branch = self.description.task_object.remote_file_path
-        if self._path_exists_in_branch(path_in_default_branch, branch=self.git_repo.default_branch):
+        default_branch = self.git_repo.default_branch
+        if self._path_exists_in_branch(path_in_default_branch, branch=default_branch):
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in default branch",
                         path_in_default_branch)
             # TODO: determine state
-            exit(0)
+            # - get state from task file in default branch
+            #   - get target_dir from path_in_default_branch
+            target_dir = self._read_target_dir_from_file(path_in_default_branch, default_branch)
+            # read the TaskState file in target dir
+            task_state_file_path = f"{target_dir}/TaskState"
+            task_state_default_branch = self._read_task_state_from_file(task_state_file_path, default_branch)
+            # - if branch for sequence number exists, get state from task file in corresponding branch
+            #   - branch name is of the form REPO-PR-SEQ
+            #   - target dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/
+            #   - obtain repo, pr, seq from target dir
+            org, repo, pr, seq, _ = target_dir.split('/')
+            staging_branch_name = f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
+            if self._branch_exists(staging_branch_name):
+                # read the TaskState file in staging branch
+                task_state_staging_branch = self._read_task_state_from_file(task_state_file_path, staging_branch_name)
+                log_message(LoggingScope.TASK_OPS, 'INFO', "task state in staging branch %s: %s",
+                            staging_branch_name, task_state_staging_branch)
+                return task_state_staging_branch
+            else:
+                log_message(LoggingScope.TASK_OPS, 'INFO', "task state in default branch: %s",
+                            task_state_default_branch)
+                return task_state_default_branch
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in default branch",
                         path_in_default_branch)
