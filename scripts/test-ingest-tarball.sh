@@ -1,10 +1,13 @@
 #!/bin/bash
 
-INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
-TEST_OUTPUT=$(mktemp)
-
 # Temporary base dir for the tests
 tstdir=$(mktemp -d)
+
+# let ingest-tarball.sh script not use /cvmfs, but a temporary directory we can create
+export CUSTOM_CVMFS_ROOT=${tstdir}/cvmfs
+
+INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
+TEST_OUTPUT=${tstdir}/out.txt
 
 # Statistics
 num_tests=0
@@ -86,6 +89,16 @@ tarballs_fail=(
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat/linux/sparc"
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat"
 )
+
+# update_lmod_caches.sh script requires that directory exists,
+# and that script to update Lmod cache is found in there
+repo_version_root="${CUSTOM_CVMFS_ROOT}/my.repo.tld/versions/2000.01"
+lmod_libexec_path="${repo_version_root}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/"
+mkdir -p "${lmod_libexec_path}"
+lmod_update_script="${lmod_libexec_path}/update_lmod_system_cache_files"
+touch "${lmod_update_script}"
+chmod u+x "${lmod_update_script}"
+
 
 # Run the tests that should succeed
 for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
