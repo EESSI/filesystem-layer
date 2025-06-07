@@ -1,7 +1,7 @@
 #!/bin/bash
 
 INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
-TEST_OUTPUT=/dev/null # change to /dev/stdout to print test outputs for debugging purposes
+TEST_OUTPUT=$(mktemp)
 
 # Temporary base dir for the tests
 tstdir=$(mktemp -d)
@@ -92,10 +92,15 @@ for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
     "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 0 ]; then
+        echo ">> ${tarballs_success[$i]} test with existing repo FAILed!" >&2
+        echo ">> output:" >&2
+        cat "${TEST_OUTPUT}" >&2
+        echo >&2
         num_tests_failed=$((num_tests_failed + 1))
     else
         num_tests_succeeded=$((num_tests_succeeded + 1))
     fi
+    rm -f "${TEST_OUTPUT}"
     num_tests=$((num_tests + 1))
 done
 
@@ -104,10 +109,15 @@ for ((i = 0; i < ${#tarballs_fail[@]}; i++)); do
     t=$(create_tarball ${tarballs_fail[$i]})
     "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
+        echo ">> ${tarballs_fail[$i]} test passed, but should have failed!" >&2
+        echo ">> output:" >&2
+        cat "${TEST_OUTPUT}" >&2
+        echo >&2
         num_tests_failed=$((num_tests_failed + 1))
     else
         num_tests_succeeded=$((num_tests_succeeded + 1))
     fi
+    rm -f "${TEST_OUTPUT}"
     num_tests=$((num_tests + 1))
 done
 
@@ -116,10 +126,15 @@ for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
     "${INGEST_SCRIPT}" "my.nonexistingrepo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
+        echo ">> ${tarballs_success[$i]} test passed with non-existing repo, should have failed!" >&2
+        echo ">> output:" >&2
+        cat "${TEST_OUTPUT}" >&2
+        echo >&2
         num_tests_failed=$((num_tests_failed + 1))
     else
         num_tests_succeeded=$((num_tests_succeeded + 1))
     fi
+    rm -f "${TEST_OUTPUT}"
     num_tests=$((num_tests + 1))
 done
 
