@@ -490,8 +490,12 @@ class EESSITask:
 
         # Decode the content from base64
         content_str = content.decoded_content.decode('utf-8')
+        log_message(LoggingScope.TASK_OPS, 'INFO', "content in TaskState file: %s", content_str)
 
-        return TaskState.from_string(content_str)
+        task_state = TaskState.from_string(content_str)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "task state: %s", task_state)
+
+        return task_state
 
     @log_function_entry_exit()
     def determine_state(self) -> TaskState:
