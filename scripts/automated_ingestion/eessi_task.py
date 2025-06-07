@@ -800,6 +800,8 @@ class EESSITask:
                           commit_message,
                           branch=default_branch)
 
+        # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number
+        #   is still open or yet to be created); if it is not valid, perform corrective actions
         return next_state
 
     @log_function_entry_exit()
