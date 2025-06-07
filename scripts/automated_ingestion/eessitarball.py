@@ -1,11 +1,9 @@
-from utils import send_slack_message, sha256sum
+from utils import send_slack_message, sha256sum, log_function_entry_exit, log_message, LoggingScope
 
 from pathlib import PurePosixPath
 
-import boto3
 import github
 import json
-import logging
 import os
 import subprocess
 import tarfile
@@ -19,7 +17,8 @@ class EessiTarball:
     for which it interfaces with the S3 bucket, GitHub, and CVMFS.
     """
 
-    def __init__(self, object_name, config, git_staging_repo, s3, bucket, cvmfs_repo):
+    @log_function_entry_exit()
+    def __init__(self, object_name, config, git_staging_repo, s3_bucket, cvmfs_repo):
         """Initialize the tarball object."""
         self.config = config
         self.git_repo = git_staging_repo
@@ -27,15 +26,14 @@ class EessiTarball:
         self.metadata_sig_file = self.metadata_file + config['signatures']['signature_file_extension']
         self.object = object_name
         self.object_sig = object_name + config['signatures']['signature_file_extension']
-        self.s3 = s3
-        self.bucket = bucket
+        self.s3_bucket = s3_bucket
         self.cvmfs_repo = cvmfs_repo
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
         self.local_sig_path = self.local_path + config['signatures']['signature_file_extension']
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
         self.local_metadata_sig_path = self.local_metadata_path + config['signatures']['signature_file_extension']
         self.sig_verified = False
-        self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
+        self.url = f'https://{s3_bucket.bucket}.s3.amazonaws.com/{object_name}'
 
         self.states = {
             'new': {'handler': self.mark_new_tarball_as_staged, 'next_state': 'staged'},
@@ -49,6 +47,7 @@ class EessiTarball:
         # Find the initial state of this tarball.
         self.state = self.find_state()
 
+    @log_function_entry_exit()
     def download(self, force=False):
         """
         Download this tarball and its corresponding metadata file, if this hasn't been already done.
@@ -57,32 +56,41 @@ class EessiTarball:
             (self.object, self.local_path, self.object_sig, self.local_sig_path),
             (self.metadata_file, self.local_metadata_path, self.metadata_sig_file, self.local_metadata_sig_path),
         ]
+        log_message(LoggingScope.DOWNLOAD, 'INFO', "Downloading %s", files)
         skip = False
         for (object, local_file, sig_object, local_sig_file) in files:
             if force or not os.path.exists(local_file):
                 # First we try to download signature file, which may or may not be available
                 # and may be optional or required.
                 try:
-                    self.s3.download_file(self.bucket, sig_object, local_sig_file)
-                except:
+                    log_msg = "Downloading signature file %s to %s"
+                    log_message(LoggingScope.DOWNLOAD, 'INFO', log_msg, sig_object, local_sig_file)
+                    self.s3_bucket.download_file(self.s3_bucket.bucket, sig_object, local_sig_file)
+                except Exception as err:
+                    log_msg = 'Failed to download signature file %s for %s from %s to %s.'
                     if self.config['signatures'].getboolean('signatures_required', True):
-                        logging.error(
-                            f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}.'
+                        log_msg += '\nException: %s'
+                        log_message(
+                            LoggingScope.ERROR, 'ERROR', log_msg,
+                            sig_object, object, self.s3_bucket.bucket, local_sig_file, err
                         )
                         skip = True
                         break
                     else:
-                        logging.warning(
-                            f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}. ' +
-                             'Ignoring this, because signatures are not required with the current configuration.'
+                        log_msg += ' Ignoring this, because signatures are not required'
+                        log_msg += ' with the current configuration.'
+                        log_msg += '\nException: %s'
+                        log_message(
+                            LoggingScope.DOWNLOAD, 'WARNING', log_msg,
+                            sig_object, object, self.s3_bucket.bucket, local_sig_file, err
                         )
                 # Now we download the file itself.
                 try:
-                    self.s3.download_file(self.bucket, object, local_file)
-                except:
-                    logging.error(
-                        f'Failed to download {object} from {self.bucket} to {local_file}.'
-                    )
+                    log_message(LoggingScope.DOWNLOAD, 'INFO', "Downloading file %s to %s", object, local_file)
+                    self.s3_bucket.download_file(self.s3_bucket.bucket, object, local_file)
+                except Exception as err:
+                    log_msg = 'Failed to download %s from %s to %s.\nException: %s'
+                    log_message(LoggingScope.ERROR, 'ERROR', log_msg, object, self.s3_bucket.bucket, local_file, err)
                     skip = True
                     break
         # If any required download failed, make sure to skip this tarball completely.
@@ -90,27 +98,30 @@ class EessiTarball:
             self.local_path = None
             self.local_metadata_path = None
 
+    @log_function_entry_exit()
     def find_state(self):
         """Find the state of this tarball by searching through the state directories in the git repository."""
+        log_message(LoggingScope.DEBUG, 'DEBUG', "Find state for %s", self.object)
         for state in list(self.states.keys()):
-            # iterate through the state dirs and try to find the tarball's metadata file
             try:
                 self.git_repo.get_contents(state + '/' + self.metadata_file)
+                log_msg = "Found metadata file %s in state: %s"
+                log_message(LoggingScope.STATE_OPS, 'INFO', log_msg, self.metadata_file, state)
                 return state
             except github.UnknownObjectException:
                 # no metadata file found in this state's directory, so keep searching...
                 continue
-            except github.GithubException as e:
-                if e.status == 404:
+            except github.GithubException as err:
+                if err.status == 404:
                     # no metadata file found in this state's directory, so keep searching...
                     continue
                 else:
                     # if there was some other (e.g. connection) issue, abort the search for this tarball
-                    logging.warning(f'Unable to determine the state of {self.object}, the GitHub API returned status {e.status}!')
+                    log_msg = 'Unable to determine the state of %s, the GitHub API returned status %s!'
+                    log_message(LoggingScope.ERROR, 'WARNING', log_msg, self.object, err.status)
                     return "unknown"
-        else:
-            # if no state was found, we assume this is a new tarball that was ingested to the bucket
-            return "new"
+        log_message(LoggingScope.STATE_OPS, 'INFO', "Tarball %s is new", self.metadata_file)
+        return "new"
 
     def get_contents_overview(self):
         """Return an overview of what is included in the tarball."""
@@ -128,7 +139,9 @@ class EessiTarball:
             # determine prefix after filtering out '<EESSI version>/init' subdirectory,
             # to get actual prefix for specific CPU target (like '2023.06/software/linux/aarch64/neoverse_v1')
             init_subdir = os.path.join('*', 'init')
-            non_init_paths = sorted([p for p in paths if not any(x.match(init_subdir) for x in PurePosixPath(p).parents)])
+            non_init_paths = sorted(
+                [p for p in paths if not any(x.match(init_subdir) for x in PurePosixPath(p).parents)]
+            )
             if non_init_paths:
                 prefix = os.path.commonprefix(non_init_paths)
             else:
@@ -148,8 +161,8 @@ class EessiTarball:
             other = [  # anything that is not in <prefix>/software nor <prefix>/modules
                 m.path
                 for m in members
-                if not PurePosixPath(prefix).joinpath('software') in PurePosixPath(m.path).parents
-                   and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(m.path).parents
+                if (not PurePosixPath(prefix).joinpath('software') in PurePosixPath(m.path).parents
+                    and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(m.path).parents)
                 # if not fnmatch.fnmatch(m.path, os.path.join(prefix, 'software', '*'))
                 # and not fnmatch.fnmatch(m.path, os.path.join(prefix, 'modules', '*'))
             ]
@@ -181,88 +194,121 @@ class EessiTarball:
         handler = self.states[self.state]['handler']
         handler()
 
-    def verify_signatures(self):
-        """Verify the signatures of the downloaded tarball and metadata file using the corresponding signature files."""
+    def to_string(self, oneline=False):
+        """Serialize tarball info so it can be printed."""
+        str = f"tarball: {self.object}"
+        sep = "\n" if not oneline else ","
+        str += f"{sep} metadt: {self.metadata_file}"
+        str += f"{sep} bucket: {self.s3_bucket.bucket}"
+        str += f"{sep} cvmfs.: {self.cvmfs_repo}"
+        str += f"{sep} GHrepo: {self.git_repo}"
+        return str
 
+    @log_function_entry_exit()
+    def verify_signatures(self):
+        """
+        Verify the signatures of the downloaded tarball and metadata file
+        using the corresponding signature files.
+        """
         sig_missing_msg = 'Signature file %s is missing.'
         sig_missing = False
         for sig_file in [self.local_sig_path, self.local_metadata_sig_path]:
             if not os.path.exists(sig_file):
-                logging.warning(sig_missing_msg % sig_file)
+                log_message(LoggingScope.VERIFICATION, 'WARNING', sig_missing_msg, sig_file)
                 sig_missing = True
+                log_message(LoggingScope.VERIFICATION, 'INFO', "Signature file %s is missing.", sig_file)
 
         if sig_missing:
             # If signature files are missing, we return a failure,
             # unless the configuration specifies that signatures are not required.
             if self.config['signatures'].getboolean('signatures_required', True):
+                log_message(LoggingScope.ERROR, 'ERROR', "Signature file %s is missing.", sig_file)
                 return False
             else:
+                log_msg = "Signature file %s is missing, but signatures are not required."
+                log_message(LoggingScope.VERIFICATION, 'INFO', log_msg, sig_file)
                 return True
 
         # If signatures are provided, we should always verify them, regardless of the signatures_required.
         # In order to do so, we need the verification script and an allowed signers file.
+        verify_runenv = self.config['signatures']['signature_verification_runenv'].split()
         verify_script = self.config['signatures']['signature_verification_script']
         allowed_signers_file = self.config['signatures']['allowed_signers_file']
         if not os.path.exists(verify_script):
-            logging.error(f'Unable to verify signatures, the specified signature verification script does not exist!')
+            log_msg = 'Unable to verify signatures, the specified signature verification script does not exist!'
+            log_message(LoggingScope.ERROR, 'ERROR', log_msg)
             return False
 
         if not os.path.exists(allowed_signers_file):
-            logging.error(f'Unable to verify signatures, the specified allowed signers file does not exist!')
+            log_msg = 'Unable to verify signatures, the specified allowed signers file does not exist!'
+            log_message(LoggingScope.ERROR, 'ERROR', log_msg)
             return False
 
-        for (file, sig_file) in [(self.local_path, self.local_sig_path), (self.local_metadata_path, self.local_metadata_sig_path)]:
+        for (file, sig_file) in [
+            (self.local_path, self.local_sig_path),
+            (self.local_metadata_path, self.local_metadata_sig_path)
+        ]:
+            command = verify_runenv + [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file,
+                                       '--file', file, '--signature-file', sig_file]
+            log_message(LoggingScope.VERIFICATION, 'INFO', "Running command: %s", ' '.join(command))
+
             verify_cmd = subprocess.run(
-                [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file, '--file', file, '--signature-file', sig_file],
+                command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             if verify_cmd.returncode == 0:
-                logging.debug(f'Signature for {file} successfully verified.')
+                log_message(LoggingScope.VERIFICATION, 'DEBUG', 'Signature for %s successfully verified.', file)
             else:
-                logging.error(f'Failed to verify signature for {file}.')
+                log_message(LoggingScope.ERROR, 'ERROR', 'Failed to verify signature for %s.', file)
+                log_message(LoggingScope.ERROR, 'ERROR', "  stdout: %s", verify_cmd.stdout.decode('UTF-8'))
+                log_message(LoggingScope.ERROR, 'ERROR', "  stderr: %s", verify_cmd.stderr.decode('UTF-8'))
                 return False
 
         self.sig_verified = True
         return True
 
+    @log_function_entry_exit()
     def verify_checksum(self):
         """Verify the checksum of the downloaded tarball with the one in its metadata file."""
         local_sha256 = sha256sum(self.local_path)
         meta_sha256 = None
         with open(self.local_metadata_path, 'r') as meta:
             meta_sha256 = json.load(meta)['payload']['sha256sum']
-        logging.debug(f'Checksum of downloaded tarball: {local_sha256}')
-        logging.debug(f'Checksum stored in metadata file: {meta_sha256}')
+        log_message(LoggingScope.VERIFICATION, 'DEBUG', 'Checksum of downloaded tarball: %s', local_sha256)
+        log_message(LoggingScope.VERIFICATION, 'DEBUG', 'Checksum stored in metadata file: %s', meta_sha256)
         return local_sha256 == meta_sha256
 
+    @log_function_entry_exit()
     def ingest(self):
         """Process a tarball that is ready to be ingested by running the ingestion script."""
-        #TODO: check if there is an open issue for this tarball, and if there is, skip it.
-        logging.info(f'Tarball {self.object} is ready to be ingested.')
+        # TODO: check if there is an open issue for this tarball, and if there is, skip it.
+        log_message(LoggingScope.STATE_OPS, 'INFO', 'Tarball %s is ready to be ingested.', self.object)
         self.download()
-        logging.info('Verifying its signature...')
+        log_message(LoggingScope.VERIFICATION, 'INFO', 'Verifying its signature...')
         if not self.verify_signatures():
             issue_msg = f'Failed to verify signatures for `{self.object}`'
-            logging.error(issue_msg)
+            log_message(LoggingScope.ERROR, 'ERROR', issue_msg)
             if not self.issue_exists(issue_msg, state='open'):
                 self.git_repo.create_issue(title=issue_msg, body=issue_msg)
             return
         else:
-            logging.debug(f'Signatures of {self.object} and its metadata file successfully verified.')
+            log_msg = 'Signatures of %s and its metadata file successfully verified.'
+            log_message(LoggingScope.VERIFICATION, 'DEBUG', log_msg, self.object)
 
-        logging.info('Verifying its checksum...')
+        log_message(LoggingScope.VERIFICATION, 'INFO', 'Verifying its checksum...')
         if not self.verify_checksum():
             issue_msg = f'Failed to verify checksum for `{self.object}`'
-            logging.error(issue_msg)
+            log_message(LoggingScope.ERROR, 'ERROR', issue_msg)
             if not self.issue_exists(issue_msg, state='open'):
                 self.git_repo.create_issue(title=issue_msg, body=issue_msg)
             return
         else:
-            logging.debug(f'Checksum of {self.object} matches the one in its metadata file.')
+            log_msg = 'Checksum of %s matches the one in its metadata file.'
+            log_message(LoggingScope.VERIFICATION, 'DEBUG', log_msg, self.object)
 
         script = self.config['paths']['ingestion_script']
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
-        logging.info(f'Running the ingestion script for {self.object}...')
+        log_message(LoggingScope.STATE_OPS, 'INFO', 'Running the ingestion script for %s...', self.object)
         ingest_cmd = subprocess.run(
             sudo + [script, self.cvmfs_repo, self.local_path],
             stdout=subprocess.PIPE,
@@ -273,7 +319,9 @@ class EessiTarball:
             if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
                 send_slack_message(
                     self.config['secrets']['slack_webhook'],
-                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.object), cvmfs_repo=self.cvmfs_repo)
+                    self.config['slack']['ingestion_message'].format(
+                        tarball=os.path.basename(self.object),
+                        cvmfs_repo=self.cvmfs_repo)
                 )
         else:
             issue_title = f'Failed to ingest {self.object}'
@@ -285,133 +333,262 @@ class EessiTarball:
                 stderr=ingest_cmd.stderr.decode('UTF-8'),
             )
             if self.issue_exists(issue_title, state='open'):
-                logging.info(f'Failed to ingest {self.object}, but an open issue already exists, skipping...')
+                log_msg = 'Failed to ingest %s, but an open issue already exists, skipping...'
+                log_message(LoggingScope.STATE_OPS, 'INFO', log_msg, self.object)
             else:
                 self.git_repo.create_issue(title=issue_title, body=issue_body)
 
     def print_ingested(self):
         """Process a tarball that has already been ingested."""
-        logging.info(f'{self.object} has already been ingested, skipping...')
+        log_message(LoggingScope.STATE_OPS, 'INFO', '%s has already been ingested, skipping...', self.object)
 
-    def mark_new_tarball_as_staged(self):
+    @log_function_entry_exit()
+    def mark_new_tarball_as_staged(self, branch=None):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
-        logging.info(f'Found new tarball {self.object}, downloading it...')
+        log_msg = 'Found new tarball %s, downloading it...'
+        log_message(LoggingScope.STATE_OPS, 'INFO', log_msg, self.object)
         # Download the tarball and its metadata file.
         # Use force as it may be a new attempt for an existing tarball that failed before.
         self.download(force=True)
         if not self.local_path or not self.local_metadata_path:
-            logging.warn('Skipping this tarball...')
+            log_msg = "Skipping tarball %s - download failed"
+            log_message(LoggingScope.STATE_OPS, 'WARNING', log_msg, self.object)
             return
 
         # Verify the signatures of the tarball and metadata file.
         if not self.verify_signatures():
-            logging.warn('Signature verification of the tarball or its metadata failed, skipping this tarball...')
+            log_msg = "Skipping tarball %s - signature verification failed"
+            log_message(LoggingScope.STATE_OPS, 'WARNING', log_msg, self.object)
+            return
 
+        # If no branch is provided, use the main branch
+        target_branch = branch if branch else 'main'
+        log_msg = "Adding metadata to '%s' folder in %s branch"
+        log_message(LoggingScope.STATE_OPS, 'INFO', log_msg, next_state, target_branch)
+
+        file_path_staged = next_state + '/' + self.metadata_file
         contents = ''
         with open(self.local_metadata_path, 'r') as meta:
             contents = meta.read()
-
-        logging.info(f'Adding tarball\'s metadata to the "{next_state}" folder of the git repository.')
-        file_path_staged = next_state + '/' + self.metadata_file
-        new_file = self.git_repo.create_file(file_path_staged, 'new tarball', contents, branch='main')
+        self.git_repo.create_file(file_path_staged, 'new tarball', contents, branch=target_branch)
 
         self.state = next_state
-        self.run_handler()
+        if not branch:  # Only run handler if we're not part of a group
+            self.run_handler()
 
     def print_rejected(self):
         """Process a (rejected) tarball for which the corresponding PR has been closed witout merging."""
-        logging.info("This tarball was rejected, so we're skipping it.")
+        log_message(LoggingScope.STATE_OPS, 'INFO', "This tarball was rejected, so we're skipping it.")
         # Do we want to delete rejected tarballs at some point?
 
     def print_unknown(self):
         """Process a tarball which has an unknown state."""
-        logging.info("The state of this tarball could not be determined, so we're skipping it.")
+        log_msg = "The state of this tarball could not be determined,"
+        log_msg += " so we're skipping it."
+        log_message(LoggingScope.STATE_OPS, 'INFO', log_msg)
 
-    def make_approval_request(self):
+    def find_next_sequence_number(self, repo, pr_id):
+        """Find the next available sequence number for staging PRs of a source PR."""
+        # Search for existing branches for this source PR
+        base_branch = f'staging-{repo.replace("/", "-")}-pr-{pr_id}-seq-'
+        existing_branches = [
+            ref.ref for ref in self.git_repo.get_git_refs()
+            if ref.ref.startswith(f'refs/heads/{base_branch}')
+        ]
+
+        if not existing_branches:
+            return 1
+
+        # Extract sequence numbers from existing branches
+        sequence_numbers = []
+        for branch in existing_branches:
+            try:
+                # Extract the sequence number from branch name
+                # Format: staging-<repo>-pr-<pr_id>-seq-<sequence>
+                sequence = int(branch.split('-')[-1])
+                sequence_numbers.append(sequence)
+            except (ValueError, IndexError):
+                continue
+
+        if not sequence_numbers:
+            return 1
+
+        # Return next available sequence number
+        return max(sequence_numbers) + 1
+
+    @log_function_entry_exit()
+    def make_approval_request(self, tarballs_in_group=None):
         """Process a staged tarball by opening a pull request for ingestion approval."""
         next_state = self.next_state(self.state)
-        file_path_staged = self.state + '/' + self.metadata_file
-        file_path_to_ingest = next_state + '/' + self.metadata_file
-
-        filename = os.path.basename(self.object)
-        tarball_metadata = self.git_repo.get_contents(file_path_staged)
-        git_branch = filename + '_' + next_state
-        self.download()
-
-        main_branch = self.git_repo.get_branch('main')
-        if git_branch in [branch.name for branch in self.git_repo.get_branches()]:
-            # Existing branch found for this tarball, so we've run this step before.
-            # Try to find out if there's already a PR as well...
-            logging.info("Branch already exists for " + self.object)
-            # Filtering with only head=<branch name> returns all prs if there's no match, so double-check
-            find_pr = [pr for pr in self.git_repo.get_pulls(head=git_branch, state='all') if pr.head.ref == git_branch]
-            logging.debug('Found PRs: ' + str(find_pr))
-            if find_pr:
-                # So, we have a branch and a PR for this tarball (if there are more, pick the first one)...
-                pr = find_pr.pop(0)
-                logging.info(f'PR {pr.number} found for {self.object}')
-                if pr.state == 'open':
-                    # The PR is still open, so it hasn't been reviewed yet: ignore this tarball.
-                    logging.info('PR is still open, skipping this tarball...')
-                    return
-                elif pr.state == 'closed' and not pr.merged:
-                    # The PR was closed but not merged, i.e. it was rejected for ingestion.
-                    logging.info('PR was rejected')
-                    self.reject()
-                    return
-                else:
-                    logging.warn(f'Warning, tarball {self.object} is in a weird state:')
-                    logging.warn(f'Branch: {git_branch}\nPR: {pr}\nPR state: {pr.state}\nPR merged: {pr.merged}')
-            else:
-                # There is a branch, but no PR for this tarball.
-                # This is weird, so let's remove the branch and reprocess the tarball.
-                logging.info(f'Tarball {self.object} has a branch, but no PR.')
-                logging.info(f'Removing existing branch...')
-                ref = self.git_repo.get_git_ref(f'heads/{git_branch}')
-                ref.delete()
-        logging.info(f'Making pull request to get ingestion approval for {self.object}.')
-        # Create a new branch
-        self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
-        # Move the file to the directory of the next stage in this branch
-        self.move_metadata_file(self.state, next_state, branch=git_branch)
-        # Get metadata file contents
-        metadata = ''
+        log_msg = "Making approval request for tarball %s in state %s to %s"
+        log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, self.object, self.state, next_state)
+        # obtain link2pr information (repo and pr_id) from metadata file
         with open(self.local_metadata_path, 'r') as meta:
             metadata = meta.read()
         meta_dict = json.loads(metadata)
         repo, pr_id = meta_dict['link2pr']['repo'], meta_dict['link2pr']['pr']
-        pr_url = f"https://github.com/{repo}/pull/{pr_id}"
-        # Try to get the tarball contents and open a PR to get approval for the ingestion
-        try:
-            tarball_contents = self.get_contents_overview()
-            pr_body = self.config['github']['pr_body'].format(
-                cvmfs_repo=self.cvmfs_repo,
-                pr_url=pr_url,
-                tar_overview=self.get_contents_overview(),
-                metadata=metadata,
-            )
-            pr_title = '[%s] Ingest %s' % (self.cvmfs_repo, filename)
-            if self.sig_verified:
-                pr_body += "\n\n:heavy_check_mark: :closed_lock_with_key: The signature of this tarball has been successfully verified."
-                pr_title += ' :closed_lock_with_key:'
-            self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
-        except Exception as err:
-            issue_title = f'Failed to get contents of {self.object}'
-            issue_body = self.config['github']['failed_tarball_overview_issue_body'].format(
-                tarball=self.object,
-                error=err
-            )
-            if len([i for i in self.git_repo.get_issues(state='open') if i.title == issue_title]) == 0:
-                self.git_repo.create_issue(title=issue_title, body=issue_body)
+
+        # find next sequence number for staging PRs of this source PR
+        sequence = self.find_next_sequence_number(repo, pr_id)
+        git_branch = f'staging-{repo.replace("/", "-")}-pr-{pr_id}-seq-{sequence}'
+
+        # Check if git_branch exists and what the status of the corressponding PR is
+        main_branch = self.git_repo.get_branch('main')
+        if git_branch in [branch.name for branch in self.git_repo.get_branches()]:
+            log_msg = "Branch %s already exists, checking the status of the corresponding PR..."
+            log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, git_branch)
+            find_pr = [pr for pr in self.git_repo.get_pulls(head=git_branch, state='all')
+                       if pr.head.ref == git_branch]
+            if find_pr:
+                pr = find_pr.pop(0)
+                if pr.state == 'open':
+                    log_message(LoggingScope.GITHUB_OPS, 'INFO', 'PR is still open, skipping this tarball...')
+                    return
+                elif pr.state == 'closed' and not pr.merged:
+                    log_message(LoggingScope.GITHUB_OPS, 'INFO', 'PR was rejected')
+                    self.reject()
+                    return
+                else:
+                    log_msg = 'Warning, tarball %s is in a weird state:'
+                    log_message(LoggingScope.GITHUB_OPS, 'WARNING', log_msg, self.object)
+                    log_msg = 'Branch: %s\nPR: %s\nPR state: %s\nPR merged: %s'
+                    log_message(LoggingScope.GITHUB_OPS, 'WARNING', log_msg,
+                                git_branch, pr, pr.state, pr.merged)
+                    # TODO: should we delete the branch or open an issue?
+                    return
             else:
-                logging.info(f'Failed to create tarball overview, but an issue already exists.')
+                log_msg = 'Tarball %s has a branch, but no PR.'
+                log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, self.object)
+                log_message(LoggingScope.GITHUB_OPS, 'INFO', 'Removing existing branch...')
+                ref = self.git_repo.get_git_ref(f'heads/{git_branch}')
+                ref.delete()
+
+        # Create new branch
+        self.git_repo.create_git_ref(ref='refs/heads/' + git_branch, sha=main_branch.commit.sha)
+
+        # Move metadata file(s) to approved directory
+        log_msg = "Moving metadata for %s from %s to %s in branch %s"
+        log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg,
+                    self.object, self.state, next_state, git_branch)
+        if tarballs_in_group is None:
+            log_message(LoggingScope.GITHUB_OPS, 'INFO', "Moving metadata for individual tarball to staged")
+            self.move_metadata_file(self.state, next_state, branch=git_branch)
+        else:
+            log_msg = "Moving metadata for %d tarballs to staged"
+            log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, len(tarballs_in_group))
+            for tarball in tarballs_in_group:
+                temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
+                temp_tar.move_metadata_file(self.state, next_state, branch=git_branch)
+
+        # Create PR with appropriate template
+        try:
+            pr_url = f"https://github.com/{repo}/pull/{pr_id}"
+            if tarballs_in_group is None:
+                log_msg = "Creating PR for individual tarball: %s"
+                log_message(LoggingScope.GITHUB_OPS, 'INFO', log_msg, self.object)
+                tarball_contents = self.get_contents_overview()
+                pr_body = self.config['github']['individual_pr_body'].format(
+                    cvmfs_repo=self.cvmfs_repo,
+                    pr_url=pr_url,
+                    tar_overview=tarball_contents,
+                    metadata=metadata,
+                )
+                pr_title = f'[{self.cvmfs_repo}] Ingest {os.path.basename(self.object)}'
+            else:
+                # Group of tarballs
+                tar_overviews = []
+                for tarball in tarballs_in_group:
+                    try:
+                        temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
+                        temp_tar.download()
+                        overview = temp_tar.get_contents_overview()
+                        tar_details_tpl = "<details>\n<summary>Contents of %s</summary>\n\n%s\n</details>\n"
+                        tar_overviews.append(tar_details_tpl % (tarball, overview))
+                    except Exception as err:
+                        log_msg = "Failed to get contents overview for %s: %s"
+                        log_message(LoggingScope.ERROR, 'ERROR', log_msg, tarball, err)
+                        tar_details_tpl = "<details>\n<summary>Contents of %s</summary>\n\n"
+                        tar_details_tpl += "Failed to get contents overview: %s\n</details>\n"
+                        tar_overviews.append(tar_details_tpl % (tarball, err))
+
+                pr_body = self.config['github']['grouped_pr_body'].format(
+                    cvmfs_repo=self.cvmfs_repo,
+                    pr_url=pr_url,
+                    tarballs=self.format_tarball_list(tarballs_in_group),
+                    metadata=self.format_metadata_list(tarballs_in_group),
+                    tar_overview="\n".join(tar_overviews)
+                )
+                pr_title = f'[{self.cvmfs_repo}] Staging PR #{sequence} for {repo}#{pr_id}'
+
+            # Add signature verification status if applicable
+            if self.sig_verified:
+                pr_body += "\n\n:heavy_check_mark: :closed_lock_with_key: "
+                pr_body += "The signature of this tarball has been successfully verified."
+                pr_title += ' :closed_lock_with_key:'
+
+            self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
+            log_message(LoggingScope.GITHUB_OPS, 'INFO', "Created PR: %s", pr_title)
+
+        except Exception as err:
+            log_message(LoggingScope.ERROR, 'ERROR', "Failed to create PR: %s", err)
+            if not self.issue_exists(f'Failed to get contents of {self.object}', state='open'):
+                self.git_repo.create_issue(
+                    title=f'Failed to get contents of {self.object}',
+                    body=self.config['github']['failed_tarball_overview_issue_body'].format(
+                        tarball=self.object,
+                        error=err
+                    )
+                )
+
+    def format_tarball_list(self, tarballs):
+        """Format a list of tarballs with checkboxes for approval."""
+        formatted = "### Tarballs to be ingested\n\n"
+        for tarball in tarballs:
+            formatted += f"- [ ] {tarball}\n"
+        return formatted
+
+    def format_metadata_list(self, tarballs):
+        """Format metadata for all tarballs in collapsible sections."""
+        formatted = "### Metadata\n\n"
+        for tarball in tarballs:
+            with open(self.get_metadata_path(tarball), 'r') as meta:
+                metadata = meta.read()
+                formatted += (
+                    f"<details>\n<summary>Metadata for {tarball}</summary>\n\n"
+                    f"```\n{metadata}\n```\n</details>\n\n"
+                )
+        return formatted
+
+    def get_metadata_path(self, tarball=None):
+        """
+        Return the local path of the metadata file.
+
+        Args:
+            tarball (str, optional): Name of the tarball to get metadata path for.
+                                   If None, use the current tarball's metadata file.
+        """
+        if tarball is None:
+            # For single tarball, use the instance's metadata file
+            if not self.local_metadata_path:
+                self.local_metadata_path = os.path.join(
+                    self.config['paths']['download_dir'],
+                    os.path.basename(self.metadata_file)
+                )
+            return self.local_metadata_path
+        else:
+            # For group of tarballs, construct path from tarball name
+            return os.path.join(
+                self.config['paths']['download_dir'],
+                os.path.basename(tarball) + self.config['paths']['metadata_file_extension']
+            )
 
     def move_metadata_file(self, old_state, new_state, branch='main'):
         """Move the metadata file of a tarball from an old state's directory to a new state's directory."""
         file_path_old = old_state + '/' + self.metadata_file
         file_path_new = new_state + '/' + self.metadata_file
-        logging.debug(f'Moving metadata file {self.metadata_file} from {file_path_old} to {file_path_new}.')
+        log_message(LoggingScope.GITHUB_OPS, 'INFO', 'Moving metadata file %s from %s to %s in branch %s',
+                    self.metadata_file, file_path_old, file_path_new, branch)
         tarball_metadata = self.git_repo.get_contents(file_path_old)
         # Remove the metadata file from the old state's directory...
         self.git_repo.delete_file(file_path_old, 'remove from ' + old_state, sha=tarball_metadata.sha, branch=branch)
@@ -419,10 +596,54 @@ class EessiTarball:
         self.git_repo.create_file(file_path_new, 'move to ' + new_state, tarball_metadata.decoded_content,
                                   branch=branch)
 
+    def process_pr_merge(self, pr_number):
+        """Process a merged PR by handling the checkboxes and moving tarballs to appropriate states."""
+        pr = self.git_repo.get_pull(pr_number)
+
+        # Get the branch name
+        branch_name = pr.head.ref
+
+        # Get the list of tarballs from the PR body
+        tarballs = self.extract_tarballs_from_pr_body(pr.body)
+
+        # Get the checked status for each tarball
+        checked_tarballs = self.extract_checked_tarballs(pr.body)
+
+        # Process each tarball
+        for tarball in tarballs:
+            if tarball in checked_tarballs:
+                # Move to approved state
+                self.move_metadata_file('staged', 'approved', branch=branch_name)
+            else:
+                # Move to rejected state
+                self.move_metadata_file('staged', 'rejected', branch=branch_name)
+
+        # Delete the branch after processing
+        ref = self.git_repo.get_git_ref(f'heads/{branch_name}')
+        ref.delete()
+
+    def extract_checked_tarballs(self, pr_body):
+        """Extract list of checked tarballs from PR body."""
+        checked_tarballs = []
+        for line in pr_body.split('\n'):
+            if line.strip().startswith('- [x] '):
+                tarball = line.strip()[6:]  # Remove '- [x] ' prefix
+                checked_tarballs.append(tarball)
+        return checked_tarballs
+
+    def extract_tarballs_from_pr_body(self, pr_body):
+        """Extract list of all tarballs from PR body."""
+        tarballs = []
+        for line in pr_body.split('\n'):
+            if line.strip().startswith('- ['):
+                tarball = line.strip()[6:]  # Remove '- [ ] ' or '- [x] ' prefix
+                tarballs.append(tarball)
+        return tarballs
+
     def reject(self):
         """Reject a tarball for ingestion."""
         # Let's move the the tarball to the directory for rejected tarballs.
-        logging.info(f'Marking tarball {self.object} as rejected...')
+        log_message(LoggingScope.STATE_OPS, 'INFO', 'Marking tarball %s as rejected...', self.object)
         next_state = 'rejected'
         self.move_metadata_file(self.state, next_state)
 
@@ -434,3 +655,82 @@ class EessiTarball:
                 return True
         else:
             return False
+
+    def get_link2pr_info(self):
+        """Get the link2pr information from the metadata file."""
+        with open(self.local_metadata_path, 'r') as meta:
+            metadata = json.load(meta)
+        return metadata['link2pr']['repo'], metadata['link2pr']['pr']
+
+
+class EessiTarballGroup:
+    """Class to handle a group of tarballs that share the same link2pr information."""
+
+    def __init__(self, first_tarball, config, git_staging_repo, s3_bucket, cvmfs_repo):
+        """Initialize with the first tarball in the group."""
+        self.first_tar = EessiTarball(first_tarball, config, git_staging_repo, s3_bucket, cvmfs_repo)
+        self.config = config
+        self.git_repo = git_staging_repo
+        self.s3_bucket = s3_bucket
+        self.cvmfs_repo = cvmfs_repo
+
+    def download_tarballs_and_more(self, tarballs):
+        """Download all files associated with this group of tarballs."""
+        for tarball in tarballs:
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
+            log_message(LoggingScope.GROUP_OPS, 'INFO', "downloading files for '%s'", temp_tar.object)
+            temp_tar.download(force=True)
+            if not temp_tar.local_path or not temp_tar.local_metadata_path:
+                log_message(LoggingScope.GROUP_OPS, 'WARNING', "Skipping this tarball: %s", temp_tar.object)
+                return False
+        return True
+
+    def process_group(self, tarballs):
+        """Process a group of tarballs together."""
+        log_message(LoggingScope.GROUP_OPS, 'INFO', "Processing group of %d tarballs", len(tarballs))
+
+        if not self.download_tarballs_and_more(tarballs):
+            log_msg = "Downloading tarballs, metadata files and/or their signatures failed"
+            log_message(LoggingScope.ERROR, 'ERROR', log_msg)
+            return
+
+        # Verify all tarballs have the same link2pr info
+        if not self.verify_group_consistency(tarballs):
+            log_message(LoggingScope.ERROR, 'ERROR', "Tarballs have inconsistent link2pr information")
+            return
+
+        # Mark all tarballs as staged in the group branch, however need to handle first tarball differently
+        log_msg = "Processing first tarball in group: %s"
+        log_message(LoggingScope.GROUP_OPS, 'INFO', log_msg, self.first_tar.object)
+        self.first_tar.mark_new_tarball_as_staged('main')  # this sets the state of the first tarball to 'staged'
+        for tarball in tarballs[1:]:
+            log_msg = "Processing tarball in group: %s"
+            log_message(LoggingScope.GROUP_OPS, 'INFO', log_msg, tarball)
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
+            temp_tar.mark_new_tarball_as_staged('main')
+
+        # Process the group for approval, only works correctly if first tarball is already in state 'staged'
+        self.first_tar.make_approval_request(tarballs)
+
+    def to_string(self, oneline=False):
+        """Serialize tarball group info so it can be printed."""
+        str = f"first tarball: {self.first_tar.to_string(oneline)}"
+        sep = "\n" if not oneline else ","
+        str += f"{sep} config: {self.config}"
+        str += f"{sep} GHrepo: {self.git_repo}"
+        str += f"{sep} s3....: {self.s3_bucket}"
+        str += f"{sep} bucket: {self.s3_bucket.bucket}"
+        str += f"{sep} cvmfs.: {self.cvmfs_repo}"
+        return str
+
+    def verify_group_consistency(self, tarballs):
+        """Verify all tarballs in the group have the same link2pr information."""
+        first_repo, first_pr = self.first_tar.get_link2pr_info()
+
+        for tarball in tarballs[1:]:  # Skip first tarball as we already have its info
+            temp_tar = EessiTarball(tarball, self.config, self.git_repo, self.s3_bucket, self.cvmfs_repo)
+            log_message(LoggingScope.DEBUG, 'DEBUG', "temp tar: %s", temp_tar.to_string())
+            repo, pr = temp_tar.get_link2pr_info()
+            if repo != first_repo or pr != first_pr:
+                return False
+        return True
