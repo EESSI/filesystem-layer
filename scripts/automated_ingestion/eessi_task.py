@@ -13,6 +13,7 @@ from utils import log_message, LoggingScope, log_function_entry_exit
 
 from github import Github, GithubException, InputGitTreeElement, UnknownObjectException
 from github.PullRequest import PullRequest
+from github.Branch import Branch
 
 
 class SequenceStatus(Enum):
@@ -471,17 +472,21 @@ class EESSITask:
         return config_dict.get('target_dir', None)
 
     @log_function_entry_exit()
-    def _branch_exists(self, branch_name: str) -> bool:
+    def _get_branch_from_name(self, branch_name: str = None) -> Optional[Branch]:
         """
-        Check if a branch exists.
+        Get a branch object from its name.
         """
+        if not branch_name:
+            return self.git_repo.default_branch
+
         try:
-            self.git_repo.get_branch(branch_name)
-            return True
+            branch = self.git_repo.get_branch(branch_name)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "branch %s exists: %s", branch_name, branch)
+            return branch
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "error checking if branch %s exists: %s",
                         branch_name, err)
-            return False
+            return None
 
     @log_function_entry_exit()
     def _read_task_state_from_file(self, path: str, branch: str = None) -> TaskState:
@@ -523,7 +528,7 @@ class EESSITask:
             # - obtain repo, pr, seq from target dir
             org, repo, pr, seq, _ = target_dir.split('/')
             staging_branch_name = f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
-            if self._branch_exists(staging_branch_name):
+            if self._get_branch_from_name(staging_branch_name):
                 # read the TaskState file in staging branch
                 task_state_staging_branch = self._read_task_state_from_file(task_state_file_path, staging_branch_name)
                 log_message(LoggingScope.TASK_OPS, 'INFO', "task state in staging branch %s: %s",
@@ -767,18 +772,21 @@ class EESSITask:
     def _handle_add_new_task(self):
         """Handler for ADD action in NEW_TASK state"""
         print("Handling ADD action in NEW_TASK state")
-        # Implementation for adding in NEW_TASK state: a task is only NEW_TASK if it was not processed yet
+
         # get name of of payload from metadata
         payload_name = self.description.metadata['payload']['filename']
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload_name: %s", payload_name)
+
         # get config and remote_client from self.description.task_object
         config = self.description.task_object.config
         remote_client = self.description.task_object.remote_client
+
         # determine remote_file_path by replacing basename of remote_file_path in self.description.task_object
         #   with payload_name
         description_remote_file_path = self.description.task_object.remote_file_path
         payload_remote_file_path = os.path.join(os.path.dirname(description_remote_file_path), payload_name)
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload_remote_file_path: %s", payload_remote_file_path)
+
         # initialize payload object
         payload_object = EESSIDataAndSignatureObject(config, payload_remote_file_path, remote_client)
         self.payload = EESSITaskPayload(payload_object)
@@ -805,65 +813,59 @@ class EESSITask:
         return next_state
 
     @log_function_entry_exit()
+    def _determine_branch_name_from_sequence_number(self, sequence_number: int = None) -> str:
+        """Determine the branch name from the sequence number"""
+        sequence_number = self._get_fixed_sequence_number() if sequence_number is None else sequence_number
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        return f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+
+    @log_function_entry_exit()
+    def _find_pr_for_branch(self, branch_name: str) -> Optional[PullRequest]:
+        """
+        Find the single PR for the given branch in any state.
+
+        Args:
+            repo: GitHub repository
+            branch_name: Name of the branch
+
+        Returns:
+            PullRequest object if found, None otherwise
+        """
+        try:
+            head_ref = f"{self.git_repo.owner.login}:{branch_name}"
+            prs = list(self.git_repo.get_pulls(state='all', head=head_ref))
+            return prs[0] if prs else None
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error finding PR for branch %s: %s", branch_name, err)
+            return None
+
+    @log_function_entry_exit()
     def _handle_add_payload_staged(self):
         """Handler for ADD action in PAYLOAD_STAGED state"""
         print("Handling ADD action in PAYLOAD_STAGED state")
-        # Implementation for adding in PAYLOAD_STAGED state
-        #  - create or find PR
-        #  - update PR contents
-        # determine PR
-        #  - no PR -> create one
-        #  - PR && closed -> create one (may require to move task file to different sequence number)
-        #  - PR && open -> update PR contents, task file status, etc
-        # TODO: determine sequence number, then use it to find staging pr
-        # find staging PR
-        sequence_number = self._get_sequence_number_for_task_file()
-        staging_pr, staging_branch = self._find_staging_pr(sequence_number)
-        # create PR if necessary
-        if staging_pr is None and sequence_number is None:
-            # no PR found, create one
-            staging_pr, staging_branch = self._create_staging_pr(sequence_number)
-        elif staging_pr is None and sequence_number is not None:
-            # no PR found, create one
-            staging_pr, staging_branch = self._create_staging_pr(sequence_number)
-        elif staging_pr.state == 'closed':
-            # PR closed, create new one
-            staging_pr, staging_branch = self._create_staging_pr(sequence_number + 1)
-        if staging_pr is None:
-            # something went wrong, we cannot continue
-            log_message(LoggingScope.ERROR, 'ERROR', "no staging PR found for task %s", self.description)
-            return False
-        # update PR contents
-        self._update_pr_contents(staging_pr)
-        # update task file status
-        self._update_task_file_status(staging_branch)
 
-        repo_name = self.description.get_repo_name()
-        pr_number = self.description.get_pr_number()
-        # current sequence
-        sequence_number = self._get_current_sequence_number()
-        sequence_status = self._determine_sequence_status(sequence_number)
-        if sequence_status == SequenceStatus.FINISHED:
-            sequence_number += 1
-            # re-determine sequence status
-            sequence_status = self._determine_sequence_status(sequence_number)
-        if sequence_status == SequenceStatus.DOES_NOT_EXIST:
-            # something is odd, the task file should already be in the default branch
-            log_message(LoggingScope.ERROR, 'ERROR', "sequence number %s does not exist", sequence_number)
-            return False
-        elif sequence_status == SequenceStatus.FINISHED:
-            # we need to figure out the status of the last deployment (with the highest sequence number)
-            branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
-            log_message(LoggingScope.TASK_OPS, 'INFO', "branch %s exists", branch_name)
-        # check if branch exists
-        # - yes: check if corresponding PR exists
-        #   - yes: check status of PR
-        #     - open: rename file and add it to branch, set state, update PR contents, return
-        #     - closed && !merged: rename file to rejected, set state
-        #     - else: weird state, log message, return
-        #   - no: delete branch
-        # create new branch, add task file to branch, set state, create PR, update PR contents, return
-        return True
+        branch_name = self._determine_branch_name_from_sequence_number()
+        branch = self._get_branch_from_name(branch_name)
+        if not branch:
+            # branch for sequence number does not exist
+            # TODO: could have been merged already --> check if sequence directory exists
+            # ASSUME: it has not existed before --> create it
+            branch = self.git_repo.create_git_ref(f"refs/heads/{branch_name}", self.git_repo.default_branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "branch %s created: %s", branch_name, branch)
+        else:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "found existing branch for %s: %s", branch_name, branch)
+
+        pr = self._find_pr_for_branch(branch_name)
+        if not pr:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "no PR found for branch %s", branch_name)
+            # TODO: create PR
+        else:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "found existing PR for branch %s: %s", branch_name, pr)
+            # TODO: check if PR is open or closed
+            # TODO: if closed, create issue (PR already closed)
+
+        return TaskState.PAYLOAD_STAGED
 
     @log_function_entry_exit()
     def _handle_add_pull_request(self):
