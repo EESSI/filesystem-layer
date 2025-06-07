@@ -633,7 +633,7 @@ class EESSITask:
                 "mode": "100644"
             },
             task_state_file_path: {
-                "content": f"{TaskState.NEW_TASK.name}",
+                "content": f"{TaskState.NEW_TASK.name}\n",
                 "mode": "100644"
             },
             remote_file_path: {
@@ -643,9 +643,11 @@ class EESSITask:
         }
 
         try:
-            commit = self._create_multi_file_commit(files_to_commit,
-                                                    f"new task for {repo_name} PR {pr_number} seq {sequence_number}",
-                                                    branch=branch)
+            commit = self._create_multi_file_commit(
+                files_to_commit,
+                f"new task for {repo_name} PR {pr_number} seq {sequence_number}",
+                branch=branch
+            )
             log_message(LoggingScope.TASK_OPS, 'INFO', "commit created: %s", commit)
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating commit: %s", err)
