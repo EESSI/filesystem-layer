@@ -417,14 +417,15 @@ class EESSITask:
             raise err
 
     @log_function_entry_exit()
-    def _next_state(self) -> TaskState:
+    def _next_state(self, state: TaskState = None) -> TaskState:
         """
         Determine the next state based on the current state using the valid_transitions dictionary.
 
         NOTE, it assumes that function is only called for non-terminal states and that the next state is the first
         element of the list returned by the valid_transitions dictionary.
         """
-        return self.valid_transitions[self.state][0]
+        the_state = state if state is not None else self.determine_state()
+        return self.valid_transitions[the_state][0]
 
     @log_function_entry_exit()
     def _path_exists_in_branch(self, path: str, branch: str = None) -> bool:
@@ -504,24 +505,22 @@ class EESSITask:
         """
         Determine the state of the task based on the state of the staging repository.
         """
-        # High-level logic:
-        # 1. Check if path representing the task file exists in the default branch
+        # check if path representing the task file exists in the default branch
         path_in_default_branch = self.description.task_object.remote_file_path
         default_branch = self.git_repo.default_branch
         if self._path_exists_in_branch(path_in_default_branch, branch=default_branch):
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in default branch",
                         path_in_default_branch)
-            # TODO: determine state
-            # - get state from task file in default branch
-            #   - get target_dir from path_in_default_branch
+            # get state from task file in default branch
+            # - get target_dir from path_in_default_branch
             target_dir = self._read_target_dir_from_file(path_in_default_branch, default_branch)
             # read the TaskState file in target dir
             task_state_file_path = f"{target_dir}/TaskState"
             task_state_default_branch = self._read_task_state_from_file(task_state_file_path, default_branch)
-            # - if branch for sequence number exists, get state from task file in corresponding branch
-            #   - branch name is of the form REPO-PR-SEQ
-            #   - target dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/
-            #   - obtain repo, pr, seq from target dir
+            # if branch for sequence number exists, get state from task file in corresponding branch
+            # - branch name is of the form REPO-PR-SEQ
+            # - target dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/
+            # - obtain repo, pr, seq from target dir
             org, repo, pr, seq, _ = target_dir.split('/')
             staging_branch_name = f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
             if self._branch_exists(staging_branch_name):
@@ -691,6 +690,31 @@ class EESSITask:
         return new_commit
 
     @log_function_entry_exit()
+    def _update_file(self, file_path, new_content, commit_message, branch=None):
+        try:
+            branch = self.git_repo.default_branch if branch is None else branch
+
+            # Get the current file
+            file = self.git_repo.get_contents(file_path, ref=branch)
+
+            # Update the file
+            result = self.git_repo.update_file(
+                path=file_path,
+                message=commit_message,
+                content=new_content,
+                sha=file.sha,
+                branch=branch
+            )
+
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "File updated successfully. Commit SHA: %s", result['commit'].sha)
+            return result
+
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error updating file: %s", err)
+            return None
+
+    @log_function_entry_exit()
     def _handle_add_undetermined(self):
         """Handler for ADD action in UNDETERMINED state"""
         print("Handling ADD action in UNDETERMINED state")
@@ -759,40 +783,24 @@ class EESSITask:
         payload_object = EESSIDataAndSignatureObject(config, payload_remote_file_path, remote_client)
         self.payload = EESSITaskPayload(payload_object)
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload: %s", self.payload)
-        # determine next state (NEXT_STATE), put metadata/task file into GH staging repo in main branch under directory
-        # REPO/PR_NUM/SEQ_NUM/task_file_name.NEXT_STATE
+
+        # determine next state (NEXT_STATE), update TaskState file content
         next_state = self._next_state()
         log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
+        target_dir = self._read_target_dir_from_file(self.description.task_object.remote_file_path,
+                                                     self.git_repo.default_branch)
+        task_state_file_path = f"{target_dir}/TaskState"
+        default_branch = self.git_repo.default_branch
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
-        repo_pr_dir = f"{repo_name}/{pr_number}"
-        sequence_numbers = self._determine_sequence_numbers_including_task_file(repo_name, pr_number)
-        if len(sequence_numbers) == 0:
-            sequence_number = 0
-        else:
-            # we need to figure out the status of the last deployment (with the highest sequence number)
-            # if a PR exists and it is closed, we add the task to the *next* higher sequence number
-            # otherwise we add the task to the highest sequence number
-            sequence_number = self._find_highest_number(sequence_numbers.keys())
-            branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
-            if branch_name in [branch.name for branch in self.git_repo.get_branches()]:
-                # branch exists, check if PR exists
-                find_pr = [pr for pr in self.git_repo.get_pulls(head=branch_name, state='all')]
-                if find_pr:
-                    pr = find_pr.pop(0)
-                    if pr.state == 'closed':
-                        sequence_number += 1
-        # we use the basename of the remote file path for the task description file
-        task_file_name = self.description.get_task_file_name()
-        staging_repo_path = f"{repo_pr_dir}/{sequence_number}/{task_file_name}.{next_state}"
-        log_message(LoggingScope.TASK_OPS, 'INFO', "staging_repo_path: %s", staging_repo_path)
-        # contents of task description / metadata file
-        contents = self.description.get_contents()
-        self.git_repo.create_file(staging_repo_path,
-                                  f"new task for {repo_name} PR {pr_number} seq {sequence_number}: add build for arch",
-                                  contents)
-        self.state = next_state
-        return True
+        seq_num = self._get_fixed_sequence_number()
+        commit_message = f"changing task state for repo {repo_name} PR {pr_number} seq {seq_num} to {next_state}"
+        self._update_file(task_state_file_path,
+                          f"{next_state.name}\n",
+                          commit_message,
+                          branch=default_branch)
+
+        return next_state
 
     @log_function_entry_exit()
     def _handle_add_payload_staged(self):
