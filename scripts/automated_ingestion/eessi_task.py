@@ -46,19 +46,8 @@ class TaskState(Enum):
         except KeyError:
             return default
 
-#        try:
-#            log_message(LoggingScope.TASK_OPS, 'INFO', "from_string will iterate over: %s", cls.__members__)
-#            to_return = next(
-#                member for member_name, member in cls.__members__.items()
-#                if member_name.lower() == name.lower()
-#            )
-#            log_message(LoggingScope.TASK_OPS, 'INFO', "from_string will return: %s", to_return)
-#            return to_return
-#        except StopIteration:
-#            return default
-
     def __str__(self):
-        return self.name.lower()
+        return self.name.upper()
 
 
 class EESSITask:
