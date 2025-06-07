@@ -188,7 +188,7 @@ function update_lmod_caches() {
         ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
     else
         ${cvmfs_server} abort "${cvmfs_repo}"
-        error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed\!"
+        error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
     fi
 }
 
