@@ -33,16 +33,29 @@ class TaskState(Enum):
 
     @classmethod
     def from_string(cls, name, default=None, case_sensitive=False):
+        log_message(LoggingScope.TASK_OPS, 'INFO', "from_string: %s", name)
         if case_sensitive:
-            return cls.__members__.get(name, default)
+            to_return = cls.__members__.get(name, default)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "from_string will return: %s", to_return)
+            return to_return
 
         try:
-            return next(
-                member for member_name, member in cls.__members__.items()
-                if member_name.lower() == name.lower()
-            )
-        except StopIteration:
+            to_return = cls[name.upper()]
+            log_message(LoggingScope.TASK_OPS, 'INFO', "from_string will return: %s", to_return)
+            return to_return
+        except KeyError:
             return default
+
+#        try:
+#            log_message(LoggingScope.TASK_OPS, 'INFO', "from_string will iterate over: %s", cls.__members__)
+#            to_return = next(
+#                member for member_name, member in cls.__members__.items()
+#                if member_name.lower() == name.lower()
+#            )
+#            log_message(LoggingScope.TASK_OPS, 'INFO', "from_string will return: %s", to_return)
+#            return to_return
+#        except StopIteration:
+#            return default
 
     def __str__(self):
         return self.name.lower()
@@ -489,7 +502,7 @@ class EESSITask:
         content = self.git_repo.get_contents(path, ref=branch)
 
         # Decode the content from base64
-        content_str = content.decoded_content.decode('utf-8')
+        content_str = content.decoded_content.decode('utf-8').strip()
         log_message(LoggingScope.TASK_OPS, 'INFO', "content in TaskState file: %s", content_str)
 
         task_state = TaskState.from_string(content_str)
