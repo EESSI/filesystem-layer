@@ -547,7 +547,7 @@ class EESSITask:
         state_before_handle = self.determine_state()
 
         # Construct handler method name
-        handler_name = f"_handle_{self.action}_{state_before_handle.lower()}"
+        handler_name = f"_handle_{self.action}_{str(state_before_handle).lower()}"
 
         # Check if the handler exists
         handler = getattr(self, handler_name, None)
