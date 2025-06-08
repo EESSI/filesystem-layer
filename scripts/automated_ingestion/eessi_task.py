@@ -771,6 +771,9 @@ class EESSITask:
     def _handle_add_new_task(self):
         """Handler for ADD action in NEW_TASK state"""
         print("Handling ADD action in NEW_TASK state")
+        # determine next state
+        next_state = self._next_state(TaskState.NEW_TASK)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
 
         # get name of of payload from metadata
         payload_name = self.description.metadata['payload']['filename']
@@ -791,9 +794,7 @@ class EESSITask:
         self.payload = EESSITaskPayload(payload_object)
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload: %s", self.payload)
 
-        # determine next state (NEXT_STATE), update TaskState file content
-        next_state = self._next_state()
-        log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
+        # update TaskState file content
         default_branch_name = self.git_repo.default_branch
         target_dir = self._read_target_dir_from_file(self.description.task_object.remote_file_path,
                                                      default_branch_name)
