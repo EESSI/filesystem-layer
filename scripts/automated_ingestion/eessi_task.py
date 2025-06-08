@@ -832,7 +832,7 @@ class EESSITask:
         """
         try:
             head_ref = f"{self.git_repo.owner.login}:{branch_name}"
-            filter_prs = [16, 17, 18]  # TODO: remove this once the PR is merged
+            filter_prs = [16, 17, 18, 19]  # TODO: remove this once the PR is merged
             prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
                    if pr.number not in filter_prs]
             return prs[0] if prs else None
@@ -896,7 +896,7 @@ class EESSITask:
             # try to first update the task state file in the feature branch to
             # next state (attempt to avoid merge conflicts)
             self._update_task_state_file(next_state, branch_name=feature_branch_name)
-            # self._update_task_state_file(approved_state, branch_name=feature_branch_name)
+            self._update_task_state_file(approved_state, branch_name=feature_branch_name)
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "TaskState file updated to %s in default branch (%s) and to %s in feature branch (%s)",
                         next_state, default_branch_name, approved_state, feature_branch_name)
