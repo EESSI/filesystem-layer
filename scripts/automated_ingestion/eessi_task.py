@@ -507,39 +507,30 @@ class EESSITask:
         return task_state
 
     @log_function_entry_exit()
-    def determine_state(self) -> TaskState:
+    def determine_state(self, branch: str = None) -> TaskState:
         """
         Determine the state of the task based on the state of the staging repository.
         """
-        # check if path representing the task file exists in the default branch
-        # (name of task pointer file is the same in both the default branch and the "feature" branch)
+        # check if path representing the task file exists in the default branch or the "feature" branch
         task_pointer_file = self.description.task_object.remote_file_path
-        branch_to_use = self.git_repo.default_branch
+        branch_to_use = self.git_repo.default_branch if branch is None else branch
 
         if self._path_exists_in_branch(task_pointer_file, branch_name=branch_to_use):
-            log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in default branch",
-                        task_pointer_file)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in branch %s",
+                        task_pointer_file, branch_to_use)
 
-            # determine if there is a "feature" branch for the sequence number
-            # - read target dir from task pointer file in default branch
-            # - construct feature branch name from target dir
-            target_dir = self._read_target_dir_from_file(task_pointer_file, branch_to_use)
-            org, repo, pr, seq, _ = target_dir.split('/')
-            feature_branch_name = f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
-            if self._get_branch_from_name(feature_branch_name):
-                branch_to_use = feature_branch_name
-
-            # get state from task file in branch to use (default or feature)
+            # get state from task file in branch to use
             # - read the TaskState file in target dir
+            target_dir = self._read_target_dir_from_file(task_pointer_file, branch_to_use)
             task_state_file_path = f"{target_dir}/TaskState"
             task_state = self._read_task_state_from_file(task_state_file_path, branch_to_use)
 
-            log_message(LoggingScope.TASK_OPS, 'INFO', "task state in %s branch: %s",
+            log_message(LoggingScope.TASK_OPS, 'INFO', "task state in branch %s: %s",
                         branch_to_use, task_state)
             return task_state
         else:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in default branch",
-                        task_pointer_file)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in branch %s",
+                        task_pointer_file, branch_to_use)
             return TaskState.UNDETERMINED
 
     @log_function_entry_exit()
