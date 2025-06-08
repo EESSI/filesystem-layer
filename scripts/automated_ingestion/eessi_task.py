@@ -863,7 +863,8 @@ class EESSITask:
         """Handler for ADD action in PAYLOAD_STAGED state"""
         print("Handling ADD action in PAYLOAD_STAGED state")
         next_state = self._next_state(TaskState.PAYLOAD_STAGED)
-        log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
+        approved_state = TaskState.APPROVED
+        log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s, approved_state: %s", next_state, approved_state)
 
         default_branch_name = self.git_repo.default_branch
         default_branch = self._get_branch_from_name(default_branch_name)
@@ -888,8 +889,15 @@ class EESSITask:
         if not pull_request:
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "no PR found for branch %s", feature_branch_name)
-            # update TaskState file content in feature branch
-            self._update_task_state_file(next_state, branch_name=feature_branch_name)
+            # update TaskState file content
+            # - next state in default branch (interpreted as current state)
+            # - approved state in feature branch (interpreted as future state, ie, after the PR is merged)
+            self._update_task_state_file(next_state, branch_name=default_branch_name)
+            self._update_task_state_file(approved_state, branch_name=feature_branch_name)
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "TaskState file updated to %s in default branch (%s) and to %s in feature branch (%s)",
+                        next_state, default_branch_name, approved_state, feature_branch_name)
+
             # create PR
             pr_title_format = self.config['github']['grouped_pr_title']
             pr_body_format = self.config['github']['grouped_pr_body']
