@@ -832,7 +832,7 @@ class EESSITask:
         """
         try:
             head_ref = f"{self.git_repo.owner.login}:{branch_name}"
-            filter_prs = [16, 17]  # TODO: remove this once the PR is merged
+            filter_prs = [16, 17, 18]  # TODO: remove this once the PR is merged
             prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
                    if pr.number not in filter_prs]
             return prs[0] if prs else None
