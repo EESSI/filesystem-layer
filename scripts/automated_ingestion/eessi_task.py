@@ -832,31 +832,46 @@ class EESSITask:
             return None
 
     @log_function_entry_exit()
+    def _determine_feature_branch_name(self) -> str:
+        """Determine the feature branch name from the target directory name"""
+        task_pointer_file = self.description.task_object.remote_file_path
+        target_dir = self._read_target_dir_from_file(task_pointer_file, self.git_repo.default_branch)
+        # target_dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/ (REPO contains a '/' separating the org and repo)
+        org, repo, pr, seq, _ = target_dir.split('/')
+        return f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
+
+    @log_function_entry_exit()
     def _handle_add_payload_staged(self):
         """Handler for ADD action in PAYLOAD_STAGED state"""
         print("Handling ADD action in PAYLOAD_STAGED state")
 
-        branch_name = self._determine_branch_name_from_sequence_number()
-        branch = self._get_branch_from_name(branch_name)
-        default_branch_name = self.git_repo.default_branch
-        default_branch = self._get_branch_from_name(default_branch_name)
-        default_sha = default_branch.commit.sha
-        if not branch:
-            # branch for sequence number does not exist
-            # TODO: could have been merged already --> check if sequence directory exists
+        feature_branch_name = self._determine_feature_branch_name()
+        feature_branch = self._get_branch_from_name(feature_branch_name)
+        if not feature_branch:
+            # feature branch does not exist
+            # TODO: could have been merged already --> check if PR corresponding to the feature branch exists
             # ASSUME: it has not existed before --> create it
-            log_message(LoggingScope.TASK_OPS, 'INFO', "branch %s does not exist, creating it", branch_name)
-            branch = self.git_repo.create_git_ref(f"refs/heads/{branch_name}", default_sha)
-            log_message(LoggingScope.TASK_OPS, 'INFO', "branch %s created: %s", branch_name, branch)
-        else:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "found existing branch for %s: %s", branch_name, branch)
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "branch %s does not exist, creating it", feature_branch_name)
 
-        pr = self._find_pr_for_branch(branch_name)
-        if not pr:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "no PR found for branch %s", branch_name)
+            default_branch_name = self.git_repo.default_branch
+            default_branch = self._get_branch_from_name(default_branch_name)
+            default_sha = default_branch.commit.sha
+            feature_branch = self.git_repo.create_git_ref(f"refs/heads/{feature_branch_name}", default_sha)
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "branch %s created: %s", feature_branch_name, feature_branch)
+        else:
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "found existing branch for %s: %s", feature_branch_name, feature_branch)
+
+        pull_request = self._find_pr_for_branch(feature_branch_name)
+        if not pull_request:
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "no PR found for branch %s", feature_branch_name)
             # TODO: create PR
         else:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "found existing PR for branch %s: %s", branch_name, pr)
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "found existing PR for branch %s: %s", feature_branch_name, pull_request)
             # TODO: check if PR is open or closed
             # TODO: if closed, create issue (PR already closed)
 
