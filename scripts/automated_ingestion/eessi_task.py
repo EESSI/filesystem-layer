@@ -512,36 +512,34 @@ class EESSITask:
         Determine the state of the task based on the state of the staging repository.
         """
         # check if path representing the task file exists in the default branch
-        path_in_default_branch = self.description.task_object.remote_file_path
-        default_branch_name = self.git_repo.default_branch
-        if self._path_exists_in_branch(path_in_default_branch, branch_name=default_branch_name):
+        # (name of task pointer file is the same in both the default branch and the "feature" branch)
+        task_pointer_file = self.description.task_object.remote_file_path
+        branch_to_use = self.git_repo.default_branch
+
+        if self._path_exists_in_branch(task_pointer_file, branch_name=branch_to_use):
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in default branch",
-                        path_in_default_branch)
-            # get state from task file in default branch
-            # - get target_dir from path_in_default_branch
-            target_dir = self._read_target_dir_from_file(path_in_default_branch, default_branch_name)
-            # read the TaskState file in target dir
-            task_state_file_path = f"{target_dir}/TaskState"
-            task_state_default_branch = self._read_task_state_from_file(task_state_file_path, default_branch_name)
-            # if branch for sequence number exists, get state from task file in corresponding branch
-            # - branch name is of the form REPO-PR-SEQ
-            # - target dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/
-            # - obtain repo, pr, seq from target dir
+                        task_pointer_file)
+
+            # determine if there is a "feature" branch for the sequence number
+            # - read target dir from task pointer file in default branch
+            # - construct feature branch name from target dir
+            target_dir = self._read_target_dir_from_file(task_pointer_file, branch_to_use)
             org, repo, pr, seq, _ = target_dir.split('/')
-            staging_branch_name = f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
-            if self._get_branch_from_name(staging_branch_name):
-                # read the TaskState file in staging branch
-                task_state_staging_branch = self._read_task_state_from_file(task_state_file_path, staging_branch_name)
-                log_message(LoggingScope.TASK_OPS, 'INFO', "task state in staging branch %s: %s",
-                            staging_branch_name, task_state_staging_branch)
-                return task_state_staging_branch
-            else:
-                log_message(LoggingScope.TASK_OPS, 'INFO', "task state in default branch: %s",
-                            task_state_default_branch)
-                return task_state_default_branch
+            feature_branch_name = f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
+            if self._get_branch_from_name(feature_branch_name):
+                branch_to_use = feature_branch_name
+
+            # get state from task file in branch to use (default or feature)
+            # - read the TaskState file in target dir
+            task_state_file_path = f"{target_dir}/TaskState"
+            task_state = self._read_task_state_from_file(task_state_file_path, branch_to_use)
+
+            log_message(LoggingScope.TASK_OPS, 'INFO', "task state in %s branch: %s",
+                        branch_to_use, task_state)
+            return task_state
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in default branch",
-                        path_in_default_branch)
+                        task_pointer_file)
             return TaskState.UNDETERMINED
 
     @log_function_entry_exit()
