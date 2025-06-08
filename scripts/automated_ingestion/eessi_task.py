@@ -832,7 +832,9 @@ class EESSITask:
         """
         try:
             head_ref = f"{self.git_repo.owner.login}:{branch_name}"
-            prs = list(self.git_repo.get_pulls(state='all', head=head_ref))
+            filter_prs = [16]  # TODO: remove this once the PR is merged
+            prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
+                   if pr.number not in filter_prs]
             return prs[0] if prs else None
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error finding PR for branch %s: %s", branch_name, err)
