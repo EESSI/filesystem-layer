@@ -832,7 +832,7 @@ class EESSITask:
         """
         try:
             head_ref = f"{self.git_repo.owner.login}:{branch_name}"
-            filter_prs = [16, 17, 18, 19]  # TODO: remove this once the PR is merged
+            filter_prs = [16, 17, 18, 19, 20]  # TODO: remove this once the PR is merged
             prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
                    if pr.number not in filter_prs]
             return prs[0] if prs else None
@@ -857,6 +857,39 @@ class EESSITask:
         # target_dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/ (REPO contains a '/' separating the org and repo)
         org, repo, pr, seq, _ = target_dir.split('/')
         return f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
+
+    @log_function_entry_exit()
+    def _sync_task_state_file(self, source_branch: str, target_branch: str):
+        """Update task state file from source to target branch"""
+        task_pointer_file = self.description.task_object.remote_file_path
+        target_dir = self._read_target_dir_from_file(task_pointer_file, self.git_repo.default_branch)
+        task_state_file_path = f"{target_dir}/TaskState"
+
+        try:
+            # Get content from source branch
+            source_content = self.git_repo.get_contents(task_state_file_path, ref=source_branch)
+
+            # Get current file in target branch
+            target_file = self.git_repo.get_contents(task_state_file_path, ref=target_branch)
+
+            # Update if content is different
+            if source_content.sha != target_file.sha:
+                result = self.git_repo.update_file(
+                    path=task_state_file_path,
+                    message=f"Sync {task_state_file_path} from {source_branch} to {target_branch}",
+                    content=source_content.decoded_content,
+                    sha=target_file.sha,
+                    branch=target_branch
+                )
+                log_message(LoggingScope.TASK_OPS, 'INFO', "Updated %s", task_state_file_path)
+                return result
+            else:
+                log_message(LoggingScope.TASK_OPS, 'INFO', "No changes needed for %s", task_state_file_path)
+                return None
+
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error syncing task state file: %s", err)
+            return None
 
     @log_function_entry_exit()
     def _handle_add_payload_staged(self):
@@ -893,9 +926,8 @@ class EESSITask:
             # - next state in default branch (interpreted as current state)
             # - approved state in feature branch (interpreted as future state, ie, after the PR is merged)
             self._update_task_state_file(next_state, branch_name=default_branch_name)
-            # try to first update the task state file in the feature branch to
-            # next state (attempt to avoid merge conflicts)
-            self._update_task_state_file(next_state, branch_name=feature_branch_name)
+            # sync task state file from default to feature branch (attempt to avoid merge conflicts)
+            self._sync_task_state_file(default_branch_name, feature_branch_name)
             self._update_task_state_file(approved_state, branch_name=feature_branch_name)
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "TaskState file updated to %s in default branch (%s) and to %s in feature branch (%s)",
