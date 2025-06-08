@@ -257,6 +257,8 @@ def main():
                                 EESSITaskDescription(
                                     EESSIDataAndSignatureObject(config, task_path, s3_bucket)
                                 ),
+                                config,
+                                cvmfs_repo,
                                 gh_staging_repo
                             )
 

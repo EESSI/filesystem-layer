@@ -55,12 +55,14 @@ class EESSITask:
     description: EESSITaskDescription
     payload: EESSITaskPayload
     action: EESSITaskAction
-    state: TaskState
     git_repo: Github
+    config: Dict
 
     @log_function_entry_exit()
-    def __init__(self, description: EESSITaskDescription, git_repo: Github):
+    def __init__(self, description: EESSITaskDescription, config: Dict, cvmfs_repo: str, git_repo: Github):
         self.description = description
+        self.config = config
+        self.cvmfs_repo = cvmfs_repo
         self.git_repo = git_repo
         self.action = self._determine_task_action()
 
@@ -685,7 +687,7 @@ class EESSITask:
         return new_commit
 
     @log_function_entry_exit()
-    def _update_file(self, file_path, new_content, commit_message, branch_name: str = None):
+    def _update_file(self, file_path, new_content, commit_message, branch_name: str = None) -> Optional[Dict]:
         try:
             branch_name = self.git_repo.default_branch if branch_name is None else branch_name
 
@@ -759,6 +761,22 @@ class EESSITask:
         return TaskState.NEW_TASK
 
     @log_function_entry_exit()
+    def _update_task_state_file(self, next_state: TaskState, branch_name: str = None) -> Optional[Dict]:
+        """Update the TaskState file content in default or given branch"""
+        branch_name = self.git_repo.default_branch if branch_name is None else branch_name
+
+        task_pointer_file = self.description.task_object.remote_file_path
+        target_dir = self._read_target_dir_from_file(task_pointer_file, branch_name)
+        task_state_file_path = f"{target_dir}/TaskState"
+        _, repo, pr, seq, _ = target_dir.split('/')
+        commit_message = f"changing task state for repo {repo} PR {pr} seq {seq} to {next_state}"
+        result = self._update_file(task_state_file_path,
+                                   f"{next_state.name}\n",
+                                   commit_message,
+                                   branch_name=branch_name)
+        return result
+
+    @log_function_entry_exit()
     def _handle_add_new_task(self):
         """Handler for ADD action in NEW_TASK state"""
         print("Handling ADD action in NEW_TASK state")
@@ -786,18 +804,7 @@ class EESSITask:
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload: %s", self.payload)
 
         # update TaskState file content
-        default_branch_name = self.git_repo.default_branch
-        target_dir = self._read_target_dir_from_file(self.description.task_object.remote_file_path,
-                                                     default_branch_name)
-        task_state_file_path = f"{target_dir}/TaskState"
-        repo_name = self.description.get_repo_name()
-        pr_number = self.description.get_pr_number()
-        seq_num = self._get_fixed_sequence_number()
-        commit_message = f"changing task state for repo {repo_name} PR {pr_number} seq {seq_num} to {next_state}"
-        self._update_file(task_state_file_path,
-                          f"{next_state.name}\n",
-                          commit_message,
-                          branch_name=default_branch_name)
+        self._update_task_state_file(next_state)
 
         # TODO: verify that the sequence number is still valid (PR corresponding to the sequence number
         #   is still open or yet to be created); if it is not valid, perform corrective actions
@@ -832,6 +839,15 @@ class EESSITask:
             return None
 
     @log_function_entry_exit()
+    def _determine_sequence_number(self) -> int:
+        """Determine the sequence number from the target directory name"""
+        task_pointer_file = self.description.task_object.remote_file_path
+        target_dir = self._read_target_dir_from_file(task_pointer_file, self.git_repo.default_branch)
+        # target_dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/ (REPO contains a '/' separating the org and repo)
+        _, _, _, seq, _ = target_dir.split('/')
+        return int(seq)
+
+    @log_function_entry_exit()
     def _determine_feature_branch_name(self) -> str:
         """Determine the feature branch name from the target directory name"""
         task_pointer_file = self.description.task_object.remote_file_path
@@ -844,7 +860,12 @@ class EESSITask:
     def _handle_add_payload_staged(self):
         """Handler for ADD action in PAYLOAD_STAGED state"""
         print("Handling ADD action in PAYLOAD_STAGED state")
+        next_state = self._next_state(TaskState.PAYLOAD_STAGED)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
 
+        default_branch_name = self.git_repo.default_branch
+        default_branch = self._get_branch_from_name(default_branch_name)
+        default_sha = default_branch.commit.sha
         feature_branch_name = self._determine_feature_branch_name()
         feature_branch = self._get_branch_from_name(feature_branch_name)
         if not feature_branch:
@@ -854,9 +875,6 @@ class EESSITask:
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "branch %s does not exist, creating it", feature_branch_name)
 
-            default_branch_name = self.git_repo.default_branch
-            default_branch = self._get_branch_from_name(default_branch_name)
-            default_sha = default_branch.commit.sha
             feature_branch = self.git_repo.create_git_ref(f"refs/heads/{feature_branch_name}", default_sha)
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "branch %s created: %s", feature_branch_name, feature_branch)
@@ -868,21 +886,52 @@ class EESSITask:
         if not pull_request:
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "no PR found for branch %s", feature_branch_name)
-            # TODO: create PR
+            # update TaskState file content in feature branch
+            self._update_task_state_file(next_state, branch_name=feature_branch_name)
+            # create PR
+            pr_title_format = self.config['github']['grouped_pr_title']
+            pr_body_format = self.config['github']['grouped_pr_body']
+            repo_name = self.description.get_repo_name()
+            pr_number = self.description.get_pr_number()
+            pr_url = f"https://github.com/{repo_name}/pull/{pr_number}"
+            seq_num = self._determine_sequence_number()
+            pr_title = pr_title_format.format(
+                cvmfs_repo=self.cvmfs_repo,
+                pr=pr_number,
+                repo=repo_name,
+                seq_num=seq_num,
+            )
+            pr_body = pr_body_format.format(
+                cvmfs_repo=self.cvmfs_repo,
+                pr=pr_number,
+                pr_url=pr_url,
+                repo=repo_name,
+                seq_num=seq_num,
+                contents="TO BE DONE",
+                analysis="TO BE DONE",
+                action="TO BE DONE",
+            )
+            pr = self.git_repo.create_pull(
+                title=pr_title,
+                body=pr_body,
+                head=feature_branch_name,
+                base=default_branch_name
+            )
+            log_message(LoggingScope.TASK_OPS, 'INFO', "PR created: %s", pr)
+            return TaskState.PULL_REQUEST
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "found existing PR for branch %s: %s", feature_branch_name, pull_request)
             # TODO: check if PR is open or closed
             # TODO: if closed, create issue (PR already closed)
-
-        return TaskState.PAYLOAD_STAGED
+            return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
     def _handle_add_pull_request(self):
         """Handler for ADD action in PULL_REQUEST state"""
         print("Handling ADD action in PULL_REQUEST state")
         # Implementation for adding in PULL_REQUEST state
-        return True
+        return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
     def _handle_add_approved(self):
