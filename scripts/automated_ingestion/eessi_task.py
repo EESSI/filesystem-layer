@@ -832,7 +832,7 @@ class EESSITask:
         """
         try:
             head_ref = f"{self.git_repo.owner.login}:{branch_name}"
-            filter_prs = [16, 17, 18, 19, 20, 21]  # TODO: remove this once the PR is merged
+            filter_prs = [16, 17, 18, 19, 20, 21, 22]  # TODO: remove this once the PR is merged
             prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
                    if pr.number not in filter_prs]
             return prs[0] if prs else None
@@ -892,6 +892,85 @@ class EESSITask:
             return None
 
     @log_function_entry_exit()
+    def _update_task_states(self, next_state: TaskState, default_branch_name: str,
+                            approved_state: TaskState, feature_branch_name: str):
+        """
+        Update task states in default and feature branches
+
+        States have to be updated in a specific order and in particular the default branch has to be
+        merged into the feature branch before the feature branch can be updated to avoid a merge conflict.
+
+        Args:
+            next_state: next state to be applied to the default branch
+            default_branch_name: name of the default branch
+            approved_state: state to be applied to the feature branch
+            feature_branch_name: name of the feature branch
+        """
+        # TODO: add failure handling (capture failures and return them somehow)
+
+        # update TaskState file content
+        # - next_state in default branch (interpreted as current state)
+        # - approved_state in feature branch (interpreted as future state, ie, after
+        #   the PR corresponding to the feature branch will be merged)
+
+        # first, update the task state file in the default branch
+        self._update_task_state_file(next_state, branch_name=default_branch_name)
+
+        # second, merge default branch into feature branch (to avoid a merge conflict)
+        arch = self.description.task_object.arch
+        commit_message = f"merge {default_branch_name} into {feature_branch_name} for {arch}"
+        self.git_repo.merge(
+            head=default_branch_name,
+            base=feature_branch_name,
+            commit_message=commit_message
+        )
+
+        # last, update task state file in feature branch
+        self._update_task_state_file(approved_state, branch_name=feature_branch_name)
+        log_message(LoggingScope.TASK_OPS, 'INFO',
+                    "TaskState file updated to %s in default branch (%s) and to %s in feature branch (%s)",
+                    next_state, default_branch_name, approved_state, feature_branch_name)
+
+    @log_function_entry_exit()
+    def _create_pull_request(self, feature_branch_name: str, default_branch_name: str):
+        """
+        Create a PR from the feature branch to the default branch
+
+        Args:
+            feature_branch_name: name of the feature branch
+            default_branch_name: name of the default branch
+        """
+        pr_title_format = self.config['github']['grouped_pr_title']
+        pr_body_format = self.config['github']['grouped_pr_body']
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        pr_url = f"https://github.com/{repo_name}/pull/{pr_number}"
+        seq_num = self._determine_sequence_number()
+        pr_title = pr_title_format.format(
+            cvmfs_repo=self.cvmfs_repo,
+            pr=pr_number,
+            repo=repo_name,
+            seq_num=seq_num,
+        )
+        pr_body = pr_body_format.format(
+            cvmfs_repo=self.cvmfs_repo,
+            pr=pr_number,
+            pr_url=pr_url,
+            repo=repo_name,
+            seq_num=seq_num,
+            contents="TO BE DONE",
+            analysis="TO BE DONE",
+            action="TO BE DONE",
+        )
+        pr = self.git_repo.create_pull(
+            title=pr_title,
+            body=pr_body,
+            head=feature_branch_name,
+            base=default_branch_name
+        )
+        log_message(LoggingScope.TASK_OPS, 'INFO', "PR created: %s", pr)
+
+    @log_function_entry_exit()
     def _handle_add_payload_staged(self):
         """Handler for ADD action in PAYLOAD_STAGED state"""
         print("Handling ADD action in PAYLOAD_STAGED state")
@@ -922,52 +1001,13 @@ class EESSITask:
         if not pull_request:
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "no PR found for branch %s", feature_branch_name)
-            # update TaskState file content
-            # - next state in default branch (interpreted as current state)
-            # - approved state in feature branch (interpreted as future state, ie, after the PR is merged)
-            self._update_task_state_file(next_state, branch_name=default_branch_name)
-            # merge default branch into feature branch (attempt to avoid merge conflicts)
-            self.git_repo.merge(
-                head=default_branch_name,
-                base=feature_branch_name,
-                commit_message=f"Merge {default_branch_name} into {feature_branch_name}"
-            )
-            # update task state file in feature branch
-            self._update_task_state_file(approved_state, branch_name=feature_branch_name)
-            log_message(LoggingScope.TASK_OPS, 'INFO',
-                        "TaskState file updated to %s in default branch (%s) and to %s in feature branch (%s)",
-                        next_state, default_branch_name, approved_state, feature_branch_name)
 
-            # create PR
-            pr_title_format = self.config['github']['grouped_pr_title']
-            pr_body_format = self.config['github']['grouped_pr_body']
-            repo_name = self.description.get_repo_name()
-            pr_number = self.description.get_pr_number()
-            pr_url = f"https://github.com/{repo_name}/pull/{pr_number}"
-            seq_num = self._determine_sequence_number()
-            pr_title = pr_title_format.format(
-                cvmfs_repo=self.cvmfs_repo,
-                pr=pr_number,
-                repo=repo_name,
-                seq_num=seq_num,
-            )
-            pr_body = pr_body_format.format(
-                cvmfs_repo=self.cvmfs_repo,
-                pr=pr_number,
-                pr_url=pr_url,
-                repo=repo_name,
-                seq_num=seq_num,
-                contents="TO BE DONE",
-                analysis="TO BE DONE",
-                action="TO BE DONE",
-            )
-            pr = self.git_repo.create_pull(
-                title=pr_title,
-                body=pr_body,
-                head=feature_branch_name,
-                base=default_branch_name
-            )
-            log_message(LoggingScope.TASK_OPS, 'INFO', "PR created: %s", pr)
+            # TODO: add failure handling (capture result and act on it)
+            self._update_task_states(next_state, default_branch_name, approved_state, feature_branch_name)
+
+            # TODO: add failure handling (capture result and act on it)
+            self._create_pull_request(feature_branch_name, default_branch_name)
+
             return TaskState.PULL_REQUEST
         else:
             log_message(LoggingScope.TASK_OPS, 'INFO',
