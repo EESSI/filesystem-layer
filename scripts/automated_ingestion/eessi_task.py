@@ -941,6 +941,7 @@ class EESSITask:
         task_pointer_file = self.description.task_object.remote_file_path
         target_dir = self._read_target_dir_from_file(task_pointer_file, feature_branch_name)
         directories = self._list_directory_contents(target_dir, feature_branch_name)
+        print(f"target_dir: {target_dir}")
         for directory in directories:
             print(directory)
         # tarball_contents = self.description.task_object.get_contents_overview()
