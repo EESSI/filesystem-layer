@@ -934,6 +934,20 @@ class EESSITask:
                     next_state, default_branch_name, approved_state, feature_branch_name)
 
     @log_function_entry_exit()
+    def _create_contents_overview(self) -> str:
+        """Create a contents overview for the pull request"""
+        # TODO: implement
+        feature_branch_name = self._determine_feature_branch_name()
+        task_pointer_file = self.description.task_object.remote_file_path
+        target_dir = self._read_target_dir_from_file(task_pointer_file, feature_branch_name)
+        directories = self._list_directory_contents(target_dir, feature_branch_name)
+        for directory in directories:
+            print(directory)
+        # tarball_contents = self.description.task_object.get_contents_overview()
+
+        return "TO BE DONE"
+
+    @log_function_entry_exit()
     def _create_pull_request(self, feature_branch_name: str, default_branch_name: str):
         """
         Create a PR from the feature branch to the default branch
@@ -954,13 +968,14 @@ class EESSITask:
             repo=repo_name,
             seq_num=seq_num,
         )
+        # contents_overview = self._create_contents_overview()
         pr_body = pr_body_format.format(
             cvmfs_repo=self.cvmfs_repo,
             pr=pr_number,
             pr_url=pr_url,
             repo=repo_name,
             seq_num=seq_num,
-            contents="TO BE DONE",
+            contents=contents_overview,
             analysis="TO BE DONE",
             action="TO BE DONE",
         )
@@ -1044,6 +1059,8 @@ class EESSITask:
         """Handler for ADD action in PULL_REQUEST state"""
         print("Handling ADD action in PULL_REQUEST state")
         # Implementation for adding in PULL_REQUEST state
+        contents_overview = self._create_contents_overview()
+        log_message(LoggingScope.TASK_OPS, 'INFO', "contents_overview: %s", contents_overview)
         return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
