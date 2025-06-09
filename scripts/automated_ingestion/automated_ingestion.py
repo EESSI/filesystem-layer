@@ -254,12 +254,8 @@ def main():
                         # Create EESSITask for the task file
                         try:
                             task = EESSITask(
-                                EESSITaskDescription(
-                                    EESSIDataAndSignatureObject(config, task_path, s3_bucket)
-                                ),
-                                config,
-                                cvmfs_repo,
-                                gh_staging_repo
+                                EESSITaskDescription(EESSIDataAndSignatureObject(config, task_path, s3_bucket)),
+                                config, cvmfs_repo, gh_staging_repo
                             )
 
                         except Exception as err:
@@ -281,7 +277,6 @@ def main():
                             log_message(LoggingScope.GROUP_OPS, 'INFO',
                                         "Task '%s': previous state = '%s', current state = '%s'",
                                         task_path, previous_state.name, current_state.name)
-                            exit(0)  # run loop body only once
 
                         # # TODO: update the information shown below (what makes sense to show?)
                         # # Log information about the task
