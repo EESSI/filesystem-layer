@@ -917,7 +917,9 @@ class EESSITask:
         self._update_task_state_file(next_state, branch_name=default_branch_name)
 
         # second, merge default branch into feature branch (to avoid a merge conflict)
-        arch = self.description.task_object.arch
+        # TODO: store arch info (CPU+ACCEL) in task/metdata file and then access that rather
+        #       than using a part of the file name
+        arch = self.description.get_metadata_file_components()[3]
         commit_message = f"merge {default_branch_name} into {feature_branch_name} for {arch}"
         self.git_repo.merge(
             head=default_branch_name,
