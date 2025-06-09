@@ -973,6 +973,14 @@ class EESSITask:
         log_message(LoggingScope.TASK_OPS, 'INFO', "PR created: %s", pr)
 
     @log_function_entry_exit()
+    def _update_pull_request(self, pull_request: PullRequest, feature_branch_name: str):
+        """Update the pull request"""
+        # TODO: update sections (contents analysis, action)
+        # for now, function just logs a message
+        log_message(LoggingScope.TASK_OPS, 'INFO',
+                    "updating pull request %s for branch %s", pull_request, feature_branch_name)
+
+    @log_function_entry_exit()
     def _handle_add_payload_staged(self):
         """Handler for ADD action in PAYLOAD_STAGED state"""
         print("Handling ADD action in PAYLOAD_STAGED state")
@@ -1015,8 +1023,21 @@ class EESSITask:
             log_message(LoggingScope.TASK_OPS, 'INFO',
                         "found existing PR for branch %s: %s", feature_branch_name, pull_request)
             # TODO: check if PR is open or closed
-            # TODO: if closed, create issue (PR already closed)
-            return TaskState.PULL_REQUEST
+            if pull_request.state == 'closed':
+                log_message(LoggingScope.TASK_OPS, 'INFO',
+                            "PR %s is closed, creating issue", pull_request)
+                # TODO: create issue
+                return TaskState.PAYLOAD_STAGED
+            else:
+                log_message(LoggingScope.TASK_OPS, 'INFO',
+                            "PR %s is open, updating task states", pull_request)
+                # TODO: add failure handling (capture result and act on it)
+                self._update_task_states(next_state, default_branch_name, approved_state, feature_branch_name)
+
+                # TODO: add failure handling (capture result and act on it)
+                self._update_pull_request(pull_request, feature_branch_name)
+
+                return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
     def _handle_add_pull_request(self):
