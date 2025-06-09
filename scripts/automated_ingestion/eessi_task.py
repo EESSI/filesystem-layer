@@ -768,8 +768,8 @@ class EESSITask:
         task_pointer_file = self.description.task_object.remote_file_path
         target_dir = self._read_target_dir_from_file(task_pointer_file, branch_name)
         task_state_file_path = f"{target_dir}/TaskState"
-        _, repo, pr, seq, _ = target_dir.split('/')
-        commit_message = f"changing task state for repo {repo} PR {pr} seq {seq} to {next_state}"
+        arch = self.description.get_metadata_file_components()[3]
+        commit_message = f"change task state to {next_state} in {branch_name} for {arch}"
         result = self._update_file(task_state_file_path,
                                    f"{next_state.name}\n",
                                    commit_message,
