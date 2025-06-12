@@ -1,6 +1,7 @@
 ARG cvmfsversion=2.13.0
 ARG awscliversion=1.32.22
 ARG fuseoverlayfsversion=1.10
+ARG bwrapversion=0.11.0
 
 FROM debian:11.7 AS prepare-deb
 ARG cvmfsversion
@@ -12,6 +13,7 @@ FROM debian:11.5
 ARG cvmfsversion
 ARG awscliversion
 ARG fuseoverlayfsversion
+ARG bwrapversion
 
 COPY --from=prepare-deb /root/deb /root/deb
 
@@ -39,3 +41,19 @@ RUN useradd -ms /bin/bash eessi
 
 # stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
 RUN pip3 install archspec awscli==${awscliversion}
+
+# build + install bwrap from source
+RUN apt-get install -y libcap-dev meson ninja-build pkg-config \
+  && curl -OL https://github.com/containers/bubblewrap/releases/download/v${bwrapversion}/bubblewrap-${bwrapversion}.tar.xz \
+  && tar xvf bubblewrap-${bwrapversion}.tar.xz \
+  && cd bubblewrap-${bwrapversion} \
+  && meson setup _build \
+  && meson compile -C _build \
+  && meson test -C _build \
+  && meson install -C _build \
+  && which bwrap \
+  && bwrap --version \
+  && bwrap --help \
+  && cd .. \
+  && rm -r bubblewrap-${bwrapversion} \
+  && apt-get remove -y libcap-dev meson ninja-build pkg-config
