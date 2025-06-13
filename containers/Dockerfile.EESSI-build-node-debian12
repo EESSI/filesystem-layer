@@ -1,0 +1,59 @@
+ARG cvmfsversion=2.13.0
+ARG awscliversion=1.40.35
+ARG fuseoverlayfsversion=1.15
+ARG bwrapversion=0.11.0
+
+FROM debian:12.11 AS prepare-deb
+ARG cvmfsversion
+COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
+RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
+
+
+FROM debian:12.11
+ARG cvmfsversion
+ARG awscliversion
+ARG fuseoverlayfsversion
+ARG bwrapversion
+
+COPY --from=prepare-deb /root/deb /root/deb
+
+RUN apt-get update
+RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev lsof strace
+# python3 and jq are required for eessi-upload-to-staging script (next to awscli)
+RUN apt-get install -y python3-pip jq
+RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian12_$(dpkg --print-architecture).deb \
+            /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian12_$(dpkg --print-architecture).deb \
+            /root/deb/cvmfs-libs_${cvmfsversion}~1+debian12_$(dpkg --print-architecture).deb \
+            /root/deb/cvmfs-config-default_latest_all.deb \
+            /root/deb/cvmfs-config-eessi_latest_all.deb
+
+# download binary for specific version of fuse-overlayfs
+RUN curl -L -o /usr/local/bin/fuse-overlayfs https://github.com/containers/fuse-overlayfs/releases/download/v${fuseoverlayfsversion}/fuse-overlayfs-$(uname -m) \
+  && chmod +x /usr/local/bin/fuse-overlayfs
+
+RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
+  && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local \
+  && echo 'CVMFS_HIDE_MAGIC_XATTRS=yes' >> /etc/cvmfs/default.local
+
+RUN mkdir -p /cvmfs/software.eessi.io
+
+RUN useradd -ms /bin/bash eessi
+
+# stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
+RUN pip3 install --break-system-packages archspec awscli==${awscliversion}
+
+# build + install bwrap from source
+RUN apt-get install -y libcap-dev meson ninja-build pkg-config \
+  && curl -OL https://github.com/containers/bubblewrap/releases/download/v${bwrapversion}/bubblewrap-${bwrapversion}.tar.xz \
+  && tar xvf bubblewrap-${bwrapversion}.tar.xz \
+  && cd bubblewrap-${bwrapversion} \
+  && meson setup _build \
+  && meson compile -C _build \
+  && meson test -C _build \
+  && meson install -C _build \
+  && which bwrap \
+  && bwrap --version \
+  && bwrap --help \
+  && cd .. \
+  && rm -r bubblewrap-${bwrapversion} \
+  && apt-get remove -y libcap-dev meson ninja-build pkg-config
