@@ -307,6 +307,7 @@ class EessiTarball:
         # Verify the signatures of the tarball and metadata file.
         if not self.verify_signatures():
             logging.warn('Signature verification of the tarball or its metadata failed, skipping this tarball...')
+            return
 
         contents = ''
         with open(self.local_metadata_path, 'r') as meta:
