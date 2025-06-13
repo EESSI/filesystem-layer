@@ -41,6 +41,8 @@ jobs:
             platform: riscv64
           - tag: build-node:debian11
             platform: riscv64
+          - tag: build-node:debian12
+            platform: riscv64
 
     steps:
       - name: Check out the repo
