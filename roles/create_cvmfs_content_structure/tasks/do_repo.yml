@@ -10,6 +10,14 @@
 
 - name: Apply changes to CVMFS repository, if there are any
   block:
+  - name: "Create directories"
+    ansible.builtin.file:
+      path: "/cvmfs/{{ cvmfs_repo }}/{{ item.name }}"
+      state: directory
+      mode: "{{ item.mode }}"
+    with_items: "{{ directories }}"
+    register: create_directories
+
   - name: "Create symlinks"
     ansible.builtin.file:
       path: "/cvmfs/{{ cvmfs_repo }}/{{ item }}"
@@ -41,7 +49,7 @@
 
   rescue:
     - name: Abort transaction
-      ansible.builtin.command: "cvmfs_server abort {{ cvmfs_repo }}"
+      ansible.builtin.command: "cvmfs_server abort -f {{ cvmfs_repo }}"
       when: cvmfs_start_transaction and cvmfs_abort_transaction_on_failures
 
     - name: Exit because of failure
