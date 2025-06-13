@@ -207,7 +207,9 @@ function ingest_software_tarball() {
     check_arch
     check_os
     cvmfs_ingest_tarball
-    update_lmod_caches
+    if [ "${cvmfs_repo}" = "software.eessi.io" ]; then
+        update_lmod_caches
+    fi
 }
 
 function ingest_compat_tarball() {
