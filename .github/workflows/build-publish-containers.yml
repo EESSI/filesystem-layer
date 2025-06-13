@@ -33,13 +33,15 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian13']
+        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian12', 'build-node:debian13']
         platform: [amd64, arm64, riscv64]
         exclude:
           # exclude images that don't support RISC-V
           - tag: client:rocky8
             platform: riscv64
           - tag: build-node:debian11
+            platform: riscv64
+          - tag: build-node:debian12
             platform: riscv64
 
     steps:
@@ -98,7 +100,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian13']
+        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian12', 'build-node:debian13']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
