@@ -1,7 +1,7 @@
 ARG cvmfsversion=2.13.0
 ARG awscliversion=1.40.35
-ARG fuseoverlayfsversion=1.15
-ARG bwrapversion=0.11.0
+ARG unionfsfuseversion=3.6
+
 
 FROM debian:12.11 AS prepare-deb
 ARG cvmfsversion
@@ -12,8 +12,7 @@ RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 FROM debian:12.11
 ARG cvmfsversion
 ARG awscliversion
-ARG fuseoverlayfsversion
-ARG bwrapversion
+ARG unionfsfuseversion
 
 COPY --from=prepare-deb /root/deb /root/deb
 
@@ -27,24 +26,19 @@ RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian12_$(dpkg --print-architectu
             /root/deb/cvmfs-config-default_latest_all.deb \
             /root/deb/cvmfs-config-eessi_latest_all.deb
 
-# build and install patched version of fuse-overlayfs,
-# see also https://github.com/EESSI/software-layer/issues/556
-# and https://github.com/containers/fuse-overlayfs/issues/428
-RUN apt-get install -y autoconf automake pkg-config libfuse3-dev \
-  && curl -OL https://github.com/containers/fuse-overlayfs/archive/refs/tags/v${fuseoverlayfsversion}.tar.gz \
-  && tar xfvz v${fuseoverlayfsversion}.tar.gz \
-  && cd fuse-overlayfs-${fuseoverlayfsversion} \
-  && cp main.c main.c.orig \
-  && sed -i 's/find_mapping (st->st_\([ug]id\)/find_mapping (get\1()/g' main.c \
-  && sed -i 's/if (st.st_uid.*/if (0)/g' main.c \
-  && diff -u main.c.orig main.c || true \
-  && sh autogen.sh \
-  && LIBS="-ldl" LDFLAGS="-static" ./configure --prefix /usr \
+#RUN apt-get install -y unionfs-fuse
+RUN apt-get install -y cmake pkg-config libfuse3-dev \
+  && curl -OL https://github.com/rpodgorny/unionfs-fuse/archive/refs/tags/v${unionfsfuseversion}.tar.gz \
+  && tar xfvz v${unionfsfuseversion}.tar.gz \
+  && cd unionfs-fuse-${unionfsfuseversion} \
+  && mkdir build \
+  && cd build \
+  && cmake .. \
   && make install \
-  && command -v fuse-overlayfs \
-  && fuse-overlayfs --version \
-  && fuse-overlayfs --help \
-  && apt-get remove -y autoconf automake pkg-config libfuse3-dev
+  && command -v unionfs \
+  && unionfs --version \
+  && unionfs --help \
+  && apt-get remove -y cmake pkg-config libfuse3-dev
 
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
   && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local \
