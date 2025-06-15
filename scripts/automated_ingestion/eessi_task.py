@@ -947,10 +947,10 @@ class EESSITask:
         task_summary_file_path = f"{target_dir}/TaskSummary.html"
 
         # check if task summary file already exists in repo on GitHub
-        task_summary_file = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
-        if task_summary_file:
+        if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
             log_message(LoggingScope.TASK_OPS, 'INFO', "task summary file already exists: %s", task_summary_file_path)
-            return task_summary_file
+            # TODO: read contents of task summary file
+            return "DUMMY TASK SUMMARY"
 
         # create task summary
         payload_name = self.description.metadata['payload']['filename']
