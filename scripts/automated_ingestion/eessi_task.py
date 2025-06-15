@@ -1,5 +1,6 @@
 from enum import Enum, auto
 from typing import Dict, List, Tuple, Optional
+from functools import total_ordering
 
 import os
 import traceback
@@ -22,6 +23,7 @@ class SequenceStatus(Enum):
     FINISHED = auto()
 
 
+@total_ordering
 class TaskState(Enum):
     UNDETERMINED = auto()  # The task state was not determined yet
     NEW_TASK = auto()  # The task has been created but not yet processed
@@ -46,6 +48,11 @@ class TaskState(Enum):
             return to_return
         except KeyError:
             return default
+
+    def __lt__(self, other):
+        if self.__class__ is other.__class__:
+            return self.value < other.value
+        return NotImplemented
 
     def __str__(self):
         return self.name.upper()
