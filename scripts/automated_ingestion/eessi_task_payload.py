@@ -35,6 +35,13 @@ class EESSITaskPayload:
         # Verify signature
         self.signature_verified = self.payload_object.verify_signature()
 
+    @log_function_entry_exit()
+    def analyse_contents(self) -> str:
+        """Analyse the contents of the payload and return a summary in a ready-to-use HTML format."""
+        # TODO: implement
+        return "TO BE DONE"
+
+    @log_function_entry_exit()
     def __str__(self) -> str:
         """Return a string representation of the EESSITaskPayload object."""
         return f"EESSITaskPayload({self.payload_object.local_file_path}, verified={self.signature_verified})"

@@ -934,7 +934,45 @@ class EESSITask:
                     next_state, default_branch_name, approved_state, feature_branch_name)
 
     @log_function_entry_exit()
-    def _create_contents_overview(self) -> str:
+    def _create_task_summary(self) -> str:
+        """Analyse contents of current task and create a file for it in the REPO-PR-SEQ directory."""
+
+        # determine task summary file path in feature branch on GitHub
+        feature_branch_name = self._determine_feature_branch_name()
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        sequence_number = self._get_fixed_sequence_number()  # corresponds to an open PR
+        task_file_name = self.description.get_task_file_name()
+        target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
+        task_summary_file_path = f"{target_dir}/TaskSummary.html"
+
+        # check if task summary file already exists in repo on GitHub
+        task_summary_file = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
+        if task_summary_file:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "task summary file already exists: %s", task_summary_file_path)
+            return task_summary_file
+
+        # create task summary
+        payload_name = self.description.metadata['payload']['filename']
+        payload_summary = self.payload.analyse_contents()
+        metadata_contents = self.description.get_contents()
+        task_summary = f"<details><summary>{payload_name}</summary>\n<ul>\n"
+        task_summary += "<li><details><summary>Metadata</summary>\n"
+        task_summary += f"<pre>{metadata_contents}</pre>\n</details></li>\n"
+        task_summary += f"<li><details><summary>Payload</summary>\n{payload_summary}\n</details></li>\n"
+        task_summary += "</ul>\n"
+        task_summary += "</details>\n"
+
+        # create HTML file with task summary in REPO-PR-SEQ directory
+        # TODO: add failure handling (capture result and act on it)
+        # self._safe_create_file(task_summary_file_path, f"create task summary for {task_file_name}",
+        #                        task_summary, branch_name=feature_branch_name)
+
+        # return task summary
+        return task_summary
+
+    @log_function_entry_exit()
+    def _create_pr_contents_overview(self) -> str:
         """Create a contents overview for the pull request"""
         # TODO: implement
         feature_branch_name = self._determine_feature_branch_name()
@@ -971,7 +1009,8 @@ class EESSITask:
             repo=repo_name,
             seq_num=seq_num,
         )
-        # contents_overview = self._create_contents_overview()
+        self._create_task_summary()
+        # contents_overview = self._create_pr_contents_overview()
         pr_body = pr_body_format.format(
             cvmfs_repo=self.cvmfs_repo,
             pr=pr_number,
@@ -1062,8 +1101,8 @@ class EESSITask:
         """Handler for ADD action in PULL_REQUEST state"""
         print("Handling ADD action in PULL_REQUEST state")
         # Implementation for adding in PULL_REQUEST state
-        contents_overview = self._create_contents_overview()
-        log_message(LoggingScope.TASK_OPS, 'INFO', "contents_overview: %s", contents_overview)
+        task_summary = self._create_task_summary()
+        log_message(LoggingScope.TASK_OPS, 'INFO', "task summary: %s", task_summary)
         return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
