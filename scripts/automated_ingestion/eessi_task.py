@@ -87,6 +87,7 @@ class EESSITask:
             TaskState.DONE: []  # Terminal state
         }
 
+        self.payload = None
         state = self.determine_state()
         if state >= TaskState.PAYLOAD_STAGED:
             log_message(LoggingScope.TASK_OPS, 'INFO', "initializing payload object in constructor for EESSITask")
