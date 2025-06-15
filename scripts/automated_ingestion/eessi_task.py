@@ -80,7 +80,10 @@ class EESSITask:
             TaskState.DONE: []  # Terminal state
         }
 
-        # self.state = self._find_state()
+        state = self.determine_state()
+        if state >= TaskState.PAYLOAD_STAGED:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "initializing payload object in constructor for EESSITask")
+            self._init_payload_object()
 
     @log_function_entry_exit()
     def _determine_task_action(self) -> EESSITaskAction:
@@ -777,12 +780,11 @@ class EESSITask:
         return result
 
     @log_function_entry_exit()
-    def _handle_add_new_task(self):
-        """Handler for ADD action in NEW_TASK state"""
-        print("Handling ADD action in NEW_TASK state")
-        # determine next state
-        next_state = self._next_state(TaskState.NEW_TASK)
-        log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
+    def _init_payload_object(self):
+        """Initialize the payload object"""
+        if self.payload is not None:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "payload object already initialized")
+            return
 
         # get name of of payload from metadata
         payload_name = self.description.metadata['payload']['filename']
@@ -802,6 +804,17 @@ class EESSITask:
         payload_object = EESSIDataAndSignatureObject(config, payload_remote_file_path, remote_client)
         self.payload = EESSITaskPayload(payload_object)
         log_message(LoggingScope.TASK_OPS, 'INFO', "payload: %s", self.payload)
+
+    @log_function_entry_exit()
+    def _handle_add_new_task(self):
+        """Handler for ADD action in NEW_TASK state"""
+        print("Handling ADD action in NEW_TASK state")
+        # determine next state
+        next_state = self._next_state(TaskState.NEW_TASK)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
+
+        # initialize payload object
+        self._init_payload_object()
 
         # update TaskState file content
         self._update_task_state_file(next_state)
