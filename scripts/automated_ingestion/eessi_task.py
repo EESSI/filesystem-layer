@@ -261,7 +261,7 @@ class EESSITask:
         """
         Get a fixed sequence number.
         """
-        return 2
+        return 3
 
     @log_function_entry_exit()
     def _determine_sequence_status(self, sequence_number: int = None) -> int:
@@ -1057,7 +1057,7 @@ class EESSITask:
             repo=repo_name,
             seq_num=seq_num,
             contents=contents_overview,
-            analysis="TO BE DONE",
+            analysis=str(contents_overview),
             action="TO BE DONE",
         )
         pr = self.git_repo.create_pull(
