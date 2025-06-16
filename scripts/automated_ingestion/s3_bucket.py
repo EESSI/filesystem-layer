@@ -154,3 +154,34 @@ class EESSIS3Bucket(RemoteStorageClient):
 
         # Store the ETag
         self._write_etag(local_path, etag)
+
+    @log_function_entry_exit()
+    def get_bucket_url(self) -> str:
+        """
+        Get the HTTPS URL for a bucket from an initialized boto3 client.
+        Works with both AWS S3 and MinIO/S3-compatible services.
+        """
+        try:
+            # Check if this is a custom endpoint (MinIO) or AWS S3
+            endpoint_url = self.client.meta.endpoint_url
+
+            if endpoint_url:
+                # Custom endpoint (MinIO, DigitalOcean Spaces, etc.)
+                # Most S3-compatible services use path-style URLs
+                bucket_url = f"{endpoint_url}/{self.bucket}"
+
+            else:
+                # AWS S3 (no custom endpoint specified)
+                region = self.client.meta.region_name or 'us-east-1'
+
+                # AWS S3 virtual-hosted-style URLs
+                if region == 'us-east-1':
+                    bucket_url = f"https://{self.bucket}.s3.amazonaws.com"
+                else:
+                    bucket_url = f"https://{self.bucket}.s3.{region}.amazonaws.com"
+
+            return bucket_url
+
+        except Exception as err:
+            log_message(LoggingScope.ERROR, 'ERROR', "Error getting bucket URL: %s", str(err))
+            return None
