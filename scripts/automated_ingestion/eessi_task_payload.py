@@ -89,8 +89,8 @@ class EESSITaskPayload:
         tar_members = '\n'.join(members_list)
         overview = f"Total number of items in the tarball: {tar_num_members}"
         overview += f"\nURL to the tarball: {self.payload_object.get_url()}"
-        overview += f"\n{tar_members_desc}\n"
-        overview += f"```\n{tar_members}\n```"
+        overview += f"\n{tar_members_desc}\n\n"
+        overview += f"```\n{tar_members}\n```\n"
 
         # Make sure that the overview does not exceed Github's maximum length (65536 characters).
         if len(overview) > 60000:
