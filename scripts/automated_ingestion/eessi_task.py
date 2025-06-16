@@ -1073,7 +1073,7 @@ class EESSITask:
         # TODO: update sections (contents analysis, action)
         # for now, function just logs a message
         log_message(LoggingScope.TASK_OPS, 'INFO',
-                    "updating pull request %s for branch %s", pull_request, feature_branch_name)
+                    "TODO: updating pull request %s for branch %s", pull_request, feature_branch_name)
 
     @log_function_entry_exit()
     def _handle_add_payload_staged(self):
