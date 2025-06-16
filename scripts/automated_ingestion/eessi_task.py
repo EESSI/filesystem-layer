@@ -1009,11 +1009,22 @@ class EESSITask:
         directories = self._list_directory_contents(pr_dir, feature_branch_name)
         print(f"target_dir: {target_dir}")
         print(f"pr_dir: {pr_dir}")
-        for directory in directories:
-            print(f"directory: {directory}")
-        # tarball_contents = self.description.task_object.get_contents_overview()
+        contents_overview = ""
+        if directories:
+            contents_overview += "<ul>\n"
+            for directory in directories:
+                task_summary_file_path = f"{directory}/TaskSummary.html"
+                if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
+                    task_summary = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
+                    contents_overview += f"<li>{task_summary.decoded_content}</li>\n"
+                else:
+                    contents_overview += f"<li>Task summary file not found: {task_summary_file_path}</li>\n"
+            contents_overview += "</ul>\n"
+        else:
+            contents_overview += "No tasks found in this PR\n"
 
-        return "TO BE DONE"
+        print(f"contents_overview: {contents_overview}")
+        return contents_overview
 
     @log_function_entry_exit()
     def _create_pull_request(self, feature_branch_name: str, default_branch_name: str):
@@ -1037,14 +1048,14 @@ class EESSITask:
             seq_num=seq_num,
         )
         self._create_task_summary()
-        # contents_overview = self._create_pr_contents_overview()
+        contents_overview = self._create_pr_contents_overview()
         pr_body = pr_body_format.format(
             cvmfs_repo=self.cvmfs_repo,
             pr=pr_number,
             pr_url=pr_url,
             repo=repo_name,
             seq_num=seq_num,
-            contents="TO BE DONE",
+            contents=contents_overview,
             analysis="TO BE DONE",
             action="TO BE DONE",
         )
@@ -1130,6 +1141,8 @@ class EESSITask:
         # Implementation for adding in PULL_REQUEST state
         task_summary = self._create_task_summary()
         log_message(LoggingScope.TASK_OPS, 'INFO', "task summary: %s", task_summary)
+        contents_overview = self._create_pr_contents_overview()
+        log_message(LoggingScope.TASK_OPS, 'INFO', "PR contents overview: %s", contents_overview)
         return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
