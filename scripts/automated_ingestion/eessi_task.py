@@ -990,8 +990,10 @@ class EESSITask:
 
         # create HTML file with task summary in REPO-PR-SEQ directory
         # TODO: add failure handling (capture result and act on it)
-        # self._safe_create_file(task_summary_file_path, f"create task summary for {task_file_name}",
-        #                        task_summary, branch_name=feature_branch_name)
+        commit_message = f"create summary for {task_file_name} in {feature_branch_name}"
+        self._safe_create_file(task_summary_file_path, commit_message, task_summary,
+                               branch_name=feature_branch_name)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "task summary file created: %s", task_summary_file_path)
 
         # return task summary
         return task_summary
