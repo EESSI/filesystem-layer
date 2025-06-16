@@ -114,9 +114,9 @@ grouped_pr_body = A group of tarballs has been staged for {pr_url}.
     
     {metadata}
 
-# Template for individual tarball PRs
+# Template for payload overview
 task_summary_payload_template =
-    {tar_overview}
+    {payload_overview}
     
 
 [slack]
