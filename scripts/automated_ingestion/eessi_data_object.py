@@ -324,6 +324,11 @@ class EESSIDataAndSignatureObject:
             log_message(LoggingScope.ERROR, 'ERROR', "Failed to download %s: %s", self.remote_file_path, str(err))
             raise
 
+    @log_function_entry_exit()
+    def get_url(self) -> str:
+        """Get the URL of the data file."""
+        return f"https://{self.remote_client.bucket}.s3.amazonaws.com/{self.remote_file_path}"
+
     def __str__(self) -> str:
         """Return a string representation of the EESSI data and signature object."""
         return f"EESSIDataAndSignatureObject({self.remote_file_path})"
