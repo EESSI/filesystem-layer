@@ -261,7 +261,7 @@ class EESSITask:
         """
         Get a fixed sequence number.
         """
-        return 3
+        return 4
 
     @log_function_entry_exit()
     def _determine_sequence_status(self, sequence_number: int = None) -> int:
@@ -1008,19 +1008,18 @@ class EESSITask:
         target_dir = self._read_target_dir_from_file(task_pointer_file, feature_branch_name)
         pr_dir = os.path.dirname(target_dir)
         directories = self._list_directory_contents(pr_dir, feature_branch_name)
-        print(f"target_dir: {target_dir}")
-        print(f"pr_dir: {pr_dir}")
         contents_overview = ""
         if directories:
-            contents_overview += "<ul>\n"
+            contents_overview += "\n"
             for directory in directories:
                 task_summary_file_path = f"{pr_dir}/{directory.name}/TaskSummary.html"
                 if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
-                    task_summary = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
-                    contents_overview += f"<li>{task_summary.decoded_content}</li>\n"
+                    file_contents = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
+                    task_summary = base64.b64decode(file_contents).decode('utf-8')
+                    contents_overview += f"{task_summary}\n"
                 else:
-                    contents_overview += f"<li>Task summary file not found: {task_summary_file_path}</li>\n"
-            contents_overview += "</ul>\n"
+                    contents_overview += f"Task summary file not found: {task_summary_file_path}\n"
+            contents_overview += "\n"
         else:
             contents_overview += "No tasks found in this PR\n"
 
@@ -1057,7 +1056,7 @@ class EESSITask:
             repo=repo_name,
             seq_num=seq_num,
             contents=contents_overview,
-            analysis=str(contents_overview),
+            analysis=contents_overview,
             action="TO BE DONE",
         )
         pr = self.git_repo.create_pull(
