@@ -1013,7 +1013,7 @@ class EESSITask:
         if directories:
             contents_overview += "<ul>\n"
             for directory in directories:
-                task_summary_file_path = f"{directory.name}/TaskSummary.html"
+                task_summary_file_path = f"{pr_dir}/{directory.name}/TaskSummary.html"
                 if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
                     task_summary = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
                     contents_overview += f"<li>{task_summary.decoded_content}</li>\n"
