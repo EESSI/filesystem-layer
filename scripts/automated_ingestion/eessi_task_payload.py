@@ -88,7 +88,9 @@ class EESSITaskPayload:
         # Construct the overview.
         tar_members = '\n'.join(members_list)
         overview = f"Total number of items in the tarball: {tar_num_members}"
-        overview += f"\nURL to the tarball: {self.payload_object.remote_client.get_bucket_url()}"
+        bucket_url = self.payload_object.remote_client.get_bucket_url()
+        remote_file_path = self.payload_object.remote_file_path
+        overview += f"\nURL to the tarball: {bucket_url}/{remote_file_path}"
         overview += f"\n{tar_members_desc}\n\n"
         overview += f"```\n{tar_members}\n```\n"
 

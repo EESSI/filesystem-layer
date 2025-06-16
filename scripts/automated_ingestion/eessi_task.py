@@ -1056,7 +1056,7 @@ class EESSITask:
             repo=repo_name,
             seq_num=seq_num,
             contents=contents_overview,
-            analysis=contents_overview,
+            analysis="TO BE DONE",
             action="TO BE DONE",
         )
         pr = self.git_repo.create_pull(
@@ -1068,12 +1068,35 @@ class EESSITask:
         log_message(LoggingScope.TASK_OPS, 'INFO', "PR created: %s", pr)
 
     @log_function_entry_exit()
-    def _update_pull_request(self, pull_request: PullRequest, feature_branch_name: str):
-        """Update the pull request"""
+    def _update_pull_request(self, pull_request: PullRequest):
+        """
+        Update the pull request
+
+        Args:
+            pull_request: instance of the pull request
+        """
         # TODO: update sections (contents analysis, action)
-        # for now, function just logs a message
-        log_message(LoggingScope.TASK_OPS, 'INFO',
-                    "TODO: updating pull request %s for branch %s", pull_request, feature_branch_name)
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        pr_url = f"https://github.com/{repo_name}/pull/{pr_number}"
+        seq_num = self._determine_sequence_number()
+
+        self._create_task_summary()
+        contents_overview = self._create_pr_contents_overview()
+        pr_body_format = self.config['github']['grouped_pr_body']
+        pr_body = pr_body_format.format(
+            cvmfs_repo=self.cvmfs_repo,
+            pr=pr_number,
+            pr_url=pr_url,
+            repo=repo_name,
+            seq_num=seq_num,
+            contents=contents_overview,
+            analysis="TO BE DONE",
+            action="TO BE DONE",
+        )
+        pull_request.edit(body=pr_body)
+
+        log_message(LoggingScope.TASK_OPS, 'INFO', "PR updated: %s", pull_request)
 
     @log_function_entry_exit()
     def _handle_add_payload_staged(self):
@@ -1130,7 +1153,7 @@ class EESSITask:
                 self._update_task_states(next_state, default_branch_name, approved_state, feature_branch_name)
 
                 # TODO: add failure handling (capture result and act on it)
-                self._update_pull_request(pull_request, feature_branch_name)
+                self._update_pull_request(pull_request)
 
                 return TaskState.PULL_REQUEST
 
@@ -1139,10 +1162,10 @@ class EESSITask:
         """Handler for ADD action in PULL_REQUEST state"""
         print("Handling ADD action in PULL_REQUEST state")
         # Implementation for adding in PULL_REQUEST state
-        task_summary = self._create_task_summary()
-        log_message(LoggingScope.TASK_OPS, 'INFO', "task summary: %s", task_summary)
-        contents_overview = self._create_pr_contents_overview()
-        log_message(LoggingScope.TASK_OPS, 'INFO', "PR contents overview: %s", contents_overview)
+        # task_summary = self._create_task_summary()
+        # log_message(LoggingScope.TASK_OPS, 'INFO', "task summary: %s", task_summary)
+        # contents_overview = self._create_pr_contents_overview()
+        # log_message(LoggingScope.TASK_OPS, 'INFO', "PR contents overview: %s", contents_overview)
         return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
