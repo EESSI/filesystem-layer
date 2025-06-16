@@ -970,8 +970,8 @@ class EESSITask:
         # check if task summary file already exists in repo on GitHub
         if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
             log_message(LoggingScope.TASK_OPS, 'INFO', "task summary file already exists: %s", task_summary_file_path)
-            # TODO: read contents of task summary file
-            return "DUMMY TASK SUMMARY"
+            task_summary = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
+            return task_summary.decoded_content
 
         # create task summary
         payload_name = self.description.metadata['payload']['filename']
@@ -980,7 +980,11 @@ class EESSITask:
         task_summary = f"<details><summary>{payload_name}</summary>\n<ul>\n"
         task_summary += "<li><details><summary>Metadata</summary>\n"
         task_summary += f"<pre>{metadata_contents}</pre>\n</details></li>\n"
-        task_summary += f"<li><details><summary>Payload</summary>\n{payload_summary}\n</details></li>\n"
+        task_summary += "<li><details><summary>Overview of payload contents</summary>\n"
+        task_summary += self.config['github']['task_summary_payload_template'].format(
+            payload_overview=payload_summary,
+        )
+        task_summary += "</details></li>\n"
         task_summary += "</ul>\n"
         task_summary += "</details>\n"
 
@@ -1038,7 +1042,7 @@ class EESSITask:
             pr_url=pr_url,
             repo=repo_name,
             seq_num=seq_num,
-            contents=contents_overview,
+            contents="TO BE DONE",
             analysis="TO BE DONE",
             action="TO BE DONE",
         )

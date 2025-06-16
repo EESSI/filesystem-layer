@@ -114,6 +114,11 @@ grouped_pr_body = A group of tarballs has been staged for {pr_url}.
     
     {metadata}
 
+# Template for individual tarball PRs
+task_summary_payload_template =
+    {tar_overview}
+    
+
 [slack]
 ingestion_notification = yes
 ingestion_message = Tarball `{tarball}` has been ingested into the CVMFS repository `{cvmfs_repo}`.
