@@ -1015,7 +1015,7 @@ class EESSITask:
                 task_summary_file_path = f"{pr_dir}/{directory.name}/TaskSummary.html"
                 if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
                     file_contents = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
-                    task_summary = base64.b64decode(file_contents).decode('utf-8')
+                    task_summary = base64.b64decode(file_contents.content).decode('utf-8')
                     contents_overview += f"{task_summary}\n"
                 else:
                     contents_overview += f"Task summary file not found: {task_summary_file_path}\n"
