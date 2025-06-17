@@ -730,7 +730,6 @@ class EESSITask:
         # create task file in target directory (TARGET_DIR/TaskDescription)
         # create task status file in target directory (TARGET_DIR/TaskState.NEW_TASK)
         # create pointer file from task file path to target directory (remote_file_path -> TARGET_DIR)
-        branch_name = self.git_repo.default_branch
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         sequence_number = self._get_fixed_sequence_number()  # corresponds to an open or yet to be created PR
@@ -755,6 +754,7 @@ class EESSITask:
             }
         }
 
+        branch_name = self.git_repo.default_branch
         try:
             commit = self._create_multi_file_commit(
                 files_to_commit,
@@ -1150,6 +1150,7 @@ class EESSITask:
                 log_message(LoggingScope.TASK_OPS, 'INFO',
                             "PR %s is open, updating task states", pull_request)
                 # TODO: add failure handling (capture result and act on it)
+                #   THINK about what a failure would mean and what to do about it.
                 self._update_task_states(next_state, default_branch_name, approved_state, feature_branch_name)
 
                 # TODO: add failure handling (capture result and act on it)
@@ -1162,6 +1163,72 @@ class EESSITask:
         """Handler for ADD action in PULL_REQUEST state"""
         print("Handling ADD action in PULL_REQUEST state")
         # Implementation for adding in PULL_REQUEST state
+        # we got here because the state of the task is PULL_REQUEST in the default branch
+        # determine branch and PR and state of PR
+        # PR is open --> just return TaskState.PULL_REQUEST
+        # PR is closed & merged --> deployment is approved
+        # PR is closed & not merged --> deployment is rejected
+        sequence_number = self._determine_sequence_number()
+        feature_branch_name = self._determine_feature_branch_name(sequence_number)
+        # TODO: check if feature branch exists, for now ASSUME it does
+        pull_request = self._find_pr_for_branch(feature_branch_name)
+        if pull_request:
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "found PR for branch %s: %s", feature_branch_name, pull_request)
+            if pull_request.state == 'closed':
+                if pull_request.merged:
+                    log_message(LoggingScope.TASK_OPS, 'INFO',
+                                "PR %s is closed and merged, returning APPROVED state", pull_request)
+                    # TODO: How could we ended up here? state in default branch is PULL_REQUEST but
+                    #         PR is merged, hence it should have been in the APPROVED state
+                    #    ==> for now, just return TaskState.PULL_REQUEST
+                    #
+                    #       there is the possibility that the PR was updated just before the
+                    #         PR was merged
+                    #       WHY is it a problem? because a task may have been accepted that wouldn't
+                    #         have been accepted or worse shouldn't been accepted
+                    #       WHAT to do? ACCEPT/IGNORE THE ISSUE FOR NOw
+                    #       HOWEVER, the contents of the PR directory may be inconsistent with
+                    #         respect to the TaskState file and missing TaskSummary.html file
+                    #       WE could create an issue and only return TaskState.APPROVED if the
+                    #         issue is closed
+                    #       WE could also defer all handling of this to the handler for the
+                    #         APPROVED state
+                    # NOPE, we have to do some handling here, at least for the tasks where their
+                    #   state file did
+                    #   --> check if we could have ended up here? If so, create an issue.
+                    #       Do we need a state ISSUE_OPENED to avoid processing the task again?
+                    return TaskState.PULL_REQUEST
+                else:
+                    log_message(LoggingScope.TASK_OPS, 'INFO',
+                                "PR %s is closed and not merged, returning REJECTED state", pull_request)
+                    # TODO: there is the possibility that the PR was updated just before the
+                    #         PR was closed
+                    #       WHY is it a problem? because a task may have been rejected that wouldn't
+                    #         have been rejected or worse shouldn't been rejected
+                    #       WHAT to do? ACCEPT/IGNORE THE ISSUE FOR NOw
+                    #       HOWEVER, the contents of the PR directory may be inconsistent with
+                    #         respect to the TaskState file and missing TaskSummary.html file
+                    #       WE could create an issue and only return TaskState.REJECTED if the
+                    #         issue is closed
+                    #       WE could also defer all handling of this to the handler for the
+                    #         REJECTED state
+                    # FOR NOW, we assume that the task was rejected on purpose
+                    #   we need to change the state of the task in the default branch to REJECTED
+                    self._update_task_state_file(TaskState.REJECTED)
+                    return TaskState.REJECTED
+            else:
+                log_message(LoggingScope.TASK_OPS, 'INFO',
+                            "PR %s is open, returning PULL_REQUEST state", pull_request)
+                return TaskState.PULL_REQUEST
+        else:
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "no PR found for branch %s", feature_branch_name)
+            # the method was called because the state of the task is PULL_REQUEST in the default branch
+            # however, it's weird that the PR was not found for the feature branch
+            # TODO: may create or update an issue for the task or deployment
+            return TaskState.PULL_REQUEST
+
         # task_summary = self._create_task_summary()
         # log_message(LoggingScope.TASK_OPS, 'INFO', "task summary: %s", task_summary)
         # contents_overview = self._create_pr_contents_overview()
@@ -1171,16 +1238,27 @@ class EESSITask:
     @log_function_entry_exit()
     def _handle_add_approved(self):
         """Handler for ADD action in APPROVED state"""
-        print("Handling ADD action in APPROVED state")
+        print("Handling ADD action in APPROVED state: %s", self.description.get_task_file_name())
         # Implementation for adding in APPROVED state
-        return True
+        # TODO: essentially, run the ingest function
+        # TODO: change state in default branch to INGESTED
+        return TaskState.INGESTED
 
     @log_function_entry_exit()
     def _handle_add_ingested(self):
         """Handler for ADD action in INGESTED state"""
-        print("Handling ADD action in INGESTED state")
+        print("Handling ADD action in INGESTED state: %s", self.description.get_task_file_name())
         # Implementation for adding in INGESTED state
-        return True
+        # TODO: change state in default branch to DONE
+        return TaskState.DONE
+
+    @log_function_entry_exit()
+    def _handle_add_rejected(self):
+        """Handler for ADD action in REJECTED state"""
+        print("Handling ADD action in REJECTED state: %s", self.description.get_task_file_name())
+        # Implementation for adding in REJECTED state
+        # TODO: change state in default branch to DONE
+        return TaskState.DONE
 
     @log_function_entry_exit()
     def transition_to(self, new_state: TaskState):
