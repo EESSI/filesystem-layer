@@ -725,7 +725,7 @@ class EESSITask:
     @log_function_entry_exit()
     def _handle_add_undetermined(self):
         """Handler for ADD action in UNDETERMINED state"""
-        print("Handling ADD action in UNDETERMINED state")
+        print("Handling ADD action in UNDETERMINED state: %s" % self.description.get_task_file_name())
         # create target directory (REPO/PR/SEQ/TASK_FILE_NAME/)
         # create task file in target directory (TARGET_DIR/TaskDescription)
         # create task status file in target directory (TARGET_DIR/TaskState.NEW_TASK)
@@ -816,7 +816,7 @@ class EESSITask:
     @log_function_entry_exit()
     def _handle_add_new_task(self):
         """Handler for ADD action in NEW_TASK state"""
-        print("Handling ADD action in NEW_TASK state")
+        print("Handling ADD action in NEW_TASK state: %s" % self.description.get_task_file_name())
         # determine next state
         next_state = self._next_state(TaskState.NEW_TASK)
         log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s", next_state)
@@ -1101,7 +1101,7 @@ class EESSITask:
     @log_function_entry_exit()
     def _handle_add_payload_staged(self):
         """Handler for ADD action in PAYLOAD_STAGED state"""
-        print("Handling ADD action in PAYLOAD_STAGED state")
+        print("Handling ADD action in PAYLOAD_STAGED state: %s" % self.description.get_task_file_name())
         next_state = self._next_state(TaskState.PAYLOAD_STAGED)
         approved_state = TaskState.APPROVED
         log_message(LoggingScope.TASK_OPS, 'INFO', "next_state: %s, approved_state: %s", next_state, approved_state)
@@ -1161,7 +1161,7 @@ class EESSITask:
     @log_function_entry_exit()
     def _handle_add_pull_request(self):
         """Handler for ADD action in PULL_REQUEST state"""
-        print("Handling ADD action in PULL_REQUEST state")
+        print("Handling ADD action in PULL_REQUEST state: %s" % self.description.get_task_file_name())
         # Implementation for adding in PULL_REQUEST state
         # we got here because the state of the task is PULL_REQUEST in the default branch
         # determine branch and PR and state of PR
@@ -1233,7 +1233,7 @@ class EESSITask:
     @log_function_entry_exit()
     def _handle_add_approved(self):
         """Handler for ADD action in APPROVED state"""
-        print("Handling ADD action in APPROVED state: %s", self.description.get_task_file_name())
+        print("Handling ADD action in APPROVED state: %s" % self.description.get_task_file_name())
         # Implementation for adding in APPROVED state
         # TODO: essentially, run the ingest function
         # TODO: change state in default branch to INGESTED
@@ -1242,7 +1242,7 @@ class EESSITask:
     @log_function_entry_exit()
     def _handle_add_ingested(self):
         """Handler for ADD action in INGESTED state"""
-        print("Handling ADD action in INGESTED state: %s", self.description.get_task_file_name())
+        print("Handling ADD action in INGESTED state: %s" % self.description.get_task_file_name())
         # Implementation for adding in INGESTED state
         # TODO: change state in default branch to DONE
         return TaskState.DONE
@@ -1250,7 +1250,7 @@ class EESSITask:
     @log_function_entry_exit()
     def _handle_add_rejected(self):
         """Handler for ADD action in REJECTED state"""
-        print("Handling ADD action in REJECTED state: %s", self.description.get_task_file_name())
+        print("Handling ADD action in REJECTED state: %s" % self.description.get_task_file_name())
         # Implementation for adding in REJECTED state
         # TODO: change state in default branch to DONE
         return TaskState.DONE
