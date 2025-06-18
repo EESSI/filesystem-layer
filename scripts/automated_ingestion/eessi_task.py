@@ -1240,6 +1240,18 @@ class EESSITask:
             raise ValueError(f"Task action '{self.action}' not supported (yet)")
 
     @log_function_entry_exit()
+    def _issue_exists(self, title: str, state: str = 'open') -> bool:
+        """
+        Check if an issue with the given title and state already exists.
+        """
+        issues = self.git_repo.get_issues(state=state)
+        for issue in issues:
+            if issue.title == title and issue.state == state:
+                return True
+        else:
+            return False
+
+    @log_function_entry_exit()
     def _perform_task_add(self):
         """Perform the ADD task action"""
         # TODO: verify checksum here or before?
@@ -1274,7 +1286,7 @@ class EESSITask:
             #     stdout=ingest_cmd.stdout.decode('UTF-8'),
             #     stderr=ingest_cmd.stderr.decode('UTF-8'),
             # )
-            if self.issue_exists(issue_title, state='open'):
+            if self._issue_exists(issue_title, state='open'):
                 log_message(LoggingScope.STATE_OPS, 'INFO',
                             'Failed to add %s, but an open issue already exists, skipping...',
                             os.path.basename(self.payload.payload_object.local_file_path))
