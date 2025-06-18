@@ -273,9 +273,12 @@ def main():
                                current_state != TaskState.DONE and
                                previous_state != current_state):
                             previous_state = current_state
+                            log_message(LoggingScope.GROUP_OPS, 'INFO',
+                                        "Task '%s': BEFORE handle(): previous state = '%s', current state = '%s'",
+                                        task_path, previous_state.name, current_state.name)
                             current_state = task.handle()
                             log_message(LoggingScope.GROUP_OPS, 'INFO',
-                                        "Task '%s': previous state = '%s', current state = '%s'",
+                                        "Task '%s': AFTER handle(): previous state = '%s', current state = '%s'",
                                         task_path, previous_state.name, current_state.name)
 
                         # # TODO: update the information shown below (what makes sense to show?)
