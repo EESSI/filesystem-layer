@@ -2,15 +2,16 @@ from enum import Enum, auto
 from typing import Dict, List, Tuple, Optional
 from functools import total_ordering
 
-import os
-import traceback
 import base64
+import os
+import subprocess
+import traceback
 
 from eessi_data_object import EESSIDataAndSignatureObject
 from eessi_task_action import EESSITaskAction
 from eessi_task_description import EESSITaskDescription
 from eessi_task_payload import EESSITaskPayload
-from utils import log_message, LoggingScope, log_function_entry_exit
+from utils import send_slack_message, log_message, LoggingScope, log_function_entry_exit
 
 from github import Github, GithubException, InputGitTreeElement, UnknownObjectException
 from github.PullRequest import PullRequest
@@ -82,9 +83,9 @@ class EESSITask:
             TaskState.PAYLOAD_STAGED: [TaskState.PULL_REQUEST],
             TaskState.PULL_REQUEST: [TaskState.APPROVED, TaskState.REJECTED],
             TaskState.APPROVED: [TaskState.INGESTED],
-            TaskState.REJECTED: [TaskState.DONE],
-            TaskState.INGESTED: [TaskState.DONE],
-            TaskState.DONE: []  # Terminal state
+            TaskState.REJECTED: [],  # terminal state
+            TaskState.INGESTED: [],  # terminal state
+            TaskState.DONE: []  # virtual terminal state, not used to write on GitHub
         }
 
         self.payload = None
@@ -1231,11 +1232,11 @@ class EESSITask:
         return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
-    def _perform_task_action(self):
+    def _perform_task_action(self) -> bool:
         """Perform the task action"""
         # TODO: support other actions than ADD
         if self.action == EESSITaskAction.ADD:
-            self._perform_task_add()
+            return self._perform_task_add()
         else:
             raise ValueError(f"Task action '{self.action}' not supported (yet)")
 
@@ -1252,7 +1253,7 @@ class EESSITask:
             return False
 
     @log_function_entry_exit()
-    def _perform_task_add(self):
+    def _perform_task_add(self) -> bool:
         """Perform the ADD task action"""
         # TODO: verify checksum here or before?
         script = self.config['paths']['ingestion_script']
@@ -1261,31 +1262,31 @@ class EESSITask:
                     'Running the ingestion script for %s...\n  with script: %s\n  with sudo: %s',
                     self.description.get_task_file_name(),
                     script, 'no' if sudo == [] else 'yes')
-        # ingest_cmd = subprocess.run(
-        #     sudo + [script, self.cvmfs_repo, self.payload.payload_object.local_file_path],
-        #     stdout=subprocess.PIPE,
-        #     stderr=subprocess.PIPE)
-        # if ingest_cmd.returncode == 0:
-        if False:
+        ingest_cmd = subprocess.run(
+            sudo + [script, self.cvmfs_repo, self.payload.payload_object.local_file_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE)
+        # TODO: if ingest_cmd.returncode == 0:
+        if True:
             next_state = self._next_state(self.state)
-            self._move_metadata_file(self.state, next_state)
+            self._update_task_state_file(next_state)
             if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
-                # send_slack_message(
-                #     self.config['secrets']['slack_webhook'],
-                #     self.config['slack']['ingestion_message'].format(
-                #         tarball=os.path.basename(self.payload.payload_object.local_file_path),
-                #         cvmfs_repo=self.cvmfs_repo)
-                # )
-                pass
+                send_slack_message(
+                    self.config['secrets']['slack_webhook'],
+                    self.config['slack']['ingestion_message'].format(
+                        tarball=os.path.basename(self.payload.payload_object.local_file_path),
+                        cvmfs_repo=self.cvmfs_repo)
+                )
+            return True
         else:
             issue_title = f'Failed to add {os.path.basename(self.payload.payload_object.local_file_path)}'
-            # issue_body = self.config['github']['failed_ingestion_issue_body'].format(
-            #     command=' '.join(ingest_cmd.args),
-            #     tarball=os.path.basename(self.payload.payload_object.local_file_path),
-            #     return_code=ingest_cmd.returncode,
-            #     stdout=ingest_cmd.stdout.decode('UTF-8'),
-            #     stderr=ingest_cmd.stderr.decode('UTF-8'),
-            # )
+            issue_body = self.config['github']['failed_ingestion_issue_body'].format(
+                command=' '.join(ingest_cmd.args),
+                tarball=os.path.basename(self.payload.payload_object.local_file_path),
+                return_code=ingest_cmd.returncode,
+                stdout=ingest_cmd.stdout.decode('UTF-8'),
+                stderr=ingest_cmd.stderr.decode('UTF-8'),
+            )
             if self._issue_exists(issue_title, state='open'):
                 log_message(LoggingScope.STATE_OPS, 'INFO',
                             'Failed to add %s, but an open issue already exists, skipping...',
@@ -1294,24 +1295,33 @@ class EESSITask:
                 log_message(LoggingScope.STATE_OPS, 'INFO',
                             'Failed to add %s, but an open issue does not exist, creating one...',
                             os.path.basename(self.payload.payload_object.local_file_path))
-                # TODO: self.git_repo.create_issue(title=issue_title, body=issue_body)
+                self.git_repo.create_issue(title=issue_title, body=issue_body)
+            return False
 
     @log_function_entry_exit()
     def _handle_add_approved(self):
         """Handler for ADD action in APPROVED state"""
         print("Handling ADD action in APPROVED state: %s" % self.description.get_task_file_name())
         # Implementation for adding in APPROVED state
-        # TODO: essentially, run the ingest function
-        self._perform_task_action()
-        # TODO: change state in default branch to INGESTED
-        return TaskState.INGESTED
+        # If successful, _perform_task_action() will change the state
+        #   to INGESTED on GitHub
+        try:
+            if self._perform_task_action():
+                return TaskState.INGESTED
+            else:
+                return TaskState.APPROVED
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR',
+                        "Error performing task action: %s", err)
+            return TaskState.APPROVED
 
     @log_function_entry_exit()
     def _handle_add_ingested(self):
         """Handler for ADD action in INGESTED state"""
         print("Handling ADD action in INGESTED state: %s" % self.description.get_task_file_name())
         # Implementation for adding in INGESTED state
-        # TODO: change state in default branch to DONE
+        # DONT change state on GitHub, because the result
+        #   (INGESTED/REJECTED) would be overwritten
         return TaskState.DONE
 
     @log_function_entry_exit()
@@ -1319,7 +1329,8 @@ class EESSITask:
         """Handler for ADD action in REJECTED state"""
         print("Handling ADD action in REJECTED state: %s" % self.description.get_task_file_name())
         # Implementation for adding in REJECTED state
-        # TODO: change state in default branch to DONE
+        # DONT change state on GitHub, because the result
+        #   (INGESTED/REJECTED) would be overwritten
         return TaskState.DONE
 
     @log_function_entry_exit()
