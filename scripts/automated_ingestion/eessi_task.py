@@ -1168,8 +1168,7 @@ class EESSITask:
         # PR is open --> just return TaskState.PULL_REQUEST
         # PR is closed & merged --> deployment is approved
         # PR is closed & not merged --> deployment is rejected
-        sequence_number = self._determine_sequence_number()
-        feature_branch_name = self._determine_feature_branch_name(sequence_number)
+        feature_branch_name = self._determine_feature_branch_name()
         # TODO: check if feature branch exists, for now ASSUME it does
         pull_request = self._find_pr_for_branch(feature_branch_name)
         if pull_request:
@@ -1229,10 +1228,6 @@ class EESSITask:
             # TODO: may create or update an issue for the task or deployment
             return TaskState.PULL_REQUEST
 
-        # task_summary = self._create_task_summary()
-        # log_message(LoggingScope.TASK_OPS, 'INFO', "task summary: %s", task_summary)
-        # contents_overview = self._create_pr_contents_overview()
-        # log_message(LoggingScope.TASK_OPS, 'INFO', "PR contents overview: %s", contents_overview)
         return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
