@@ -1268,7 +1268,7 @@ class EESSITask:
             stderr=subprocess.PIPE)
         # TODO: if ingest_cmd.returncode == 0:
         if True:
-            next_state = self._next_state(self.state)
+            next_state = self._next_state(TaskState.APPROVED)
             self._update_task_state_file(next_state)
             if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
                 send_slack_message(
@@ -1332,16 +1332,6 @@ class EESSITask:
         # DONT change state on GitHub, because the result
         #   (INGESTED/REJECTED) would be overwritten
         return TaskState.DONE
-
-    @log_function_entry_exit()
-    def transition_to(self, new_state: TaskState):
-        """
-        Transition the task to a new state if valid.
-        """
-        if new_state in self.valid_transitions[self.state]:
-            self.state = new_state
-            return True
-        return False
 
     @log_function_entry_exit()
     def __str__(self):
