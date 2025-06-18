@@ -1250,7 +1250,7 @@ class EESSITask:
                     self.description.get_task_file_name(),
                     script, 'no' if sudo == [] else 'yes')
         # ingest_cmd = subprocess.run(
-        #     sudo + [script, self.cvmfs_repo, self.local_path],
+        #     sudo + [script, self.cvmfs_repo, self.payload.payload_object.local_file_path],
         #     stdout=subprocess.PIPE,
         #     stderr=subprocess.PIPE)
         # if ingest_cmd.returncode == 0:
@@ -1261,15 +1261,15 @@ class EESSITask:
                 # send_slack_message(
                 #     self.config['secrets']['slack_webhook'],
                 #     self.config['slack']['ingestion_message'].format(
-                #         tarball=os.path.basename(self.payload.local_path),
+                #         tarball=os.path.basename(self.payload.payload_object.local_file_path),
                 #         cvmfs_repo=self.cvmfs_repo)
                 # )
                 pass
         else:
-            issue_title = f'Failed to add {os.path.basename(self.payload.local_path)}'
+            issue_title = f'Failed to add {os.path.basename(self.payload.payload_object.local_file_path)}'
             # issue_body = self.config['github']['failed_ingestion_issue_body'].format(
             #     command=' '.join(ingest_cmd.args),
-            #     tarball=os.path.basename(self.payload.local_path),
+            #     tarball=os.path.basename(self.payload.payload_object.local_file_path),
             #     return_code=ingest_cmd.returncode,
             #     stdout=ingest_cmd.stdout.decode('UTF-8'),
             #     stderr=ingest_cmd.stderr.decode('UTF-8'),
@@ -1277,11 +1277,11 @@ class EESSITask:
             if self.issue_exists(issue_title, state='open'):
                 log_message(LoggingScope.STATE_OPS, 'INFO',
                             'Failed to add %s, but an open issue already exists, skipping...',
-                            os.path.basename(self.payload.local_path))
+                            os.path.basename(self.payload.payload_object.local_file_path))
             else:
                 log_message(LoggingScope.STATE_OPS, 'INFO',
                             'Failed to add %s, but an open issue does not exist, creating one...',
-                            os.path.basename(self.payload.local_path))
+                            os.path.basename(self.payload.payload_object.local_file_path))
                 # TODO: self.git_repo.create_issue(title=issue_title, body=issue_body)
 
     @log_function_entry_exit()
