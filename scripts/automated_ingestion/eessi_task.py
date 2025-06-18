@@ -1231,11 +1231,66 @@ class EESSITask:
         return TaskState.PULL_REQUEST
 
     @log_function_entry_exit()
+    def _perform_task_action(self):
+        """Perform the task action"""
+        # TODO: support other actions than ADD
+        if self.action == EESSITaskAction.ADD:
+            self._perform_task_add()
+        else:
+            raise ValueError(f"Task action '{self.action}' not supported (yet)")
+
+    @log_function_entry_exit()
+    def _perform_task_add(self):
+        """Perform the ADD task action"""
+        # TODO: verify checksum here or before?
+        script = self.config['paths']['ingestion_script']
+        sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
+        log_message(LoggingScope.STATE_OPS, 'INFO',
+                    'Running the ingestion script for %s...\n  with script: %s\n  with sudo: %s',
+                    self.description.get_task_file_name(),
+                    script, 'no' if sudo == [] else 'yes')
+        # ingest_cmd = subprocess.run(
+        #     sudo + [script, self.cvmfs_repo, self.local_path],
+        #     stdout=subprocess.PIPE,
+        #     stderr=subprocess.PIPE)
+        # if ingest_cmd.returncode == 0:
+        if False:
+            next_state = self._next_state(self.state)
+            self._move_metadata_file(self.state, next_state)
+            if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
+                # send_slack_message(
+                #     self.config['secrets']['slack_webhook'],
+                #     self.config['slack']['ingestion_message'].format(
+                #         tarball=os.path.basename(self.payload.local_path),
+                #         cvmfs_repo=self.cvmfs_repo)
+                # )
+                pass
+        else:
+            issue_title = f'Failed to add {os.path.basename(self.payload.local_path)}'
+            # issue_body = self.config['github']['failed_ingestion_issue_body'].format(
+            #     command=' '.join(ingest_cmd.args),
+            #     tarball=os.path.basename(self.payload.local_path),
+            #     return_code=ingest_cmd.returncode,
+            #     stdout=ingest_cmd.stdout.decode('UTF-8'),
+            #     stderr=ingest_cmd.stderr.decode('UTF-8'),
+            # )
+            if self.issue_exists(issue_title, state='open'):
+                log_message(LoggingScope.STATE_OPS, 'INFO',
+                            'Failed to add %s, but an open issue already exists, skipping...',
+                            os.path.basename(self.payload.local_path))
+            else:
+                log_message(LoggingScope.STATE_OPS, 'INFO',
+                            'Failed to add %s, but an open issue does not exist, creating one...',
+                            os.path.basename(self.payload.local_path))
+                # TODO: self.git_repo.create_issue(title=issue_title, body=issue_body)
+
+    @log_function_entry_exit()
     def _handle_add_approved(self):
         """Handler for ADD action in APPROVED state"""
         print("Handling ADD action in APPROVED state: %s" % self.description.get_task_file_name())
         # Implementation for adding in APPROVED state
         # TODO: essentially, run the ingest function
+        self._perform_task_action()
         # TODO: change state in default branch to INGESTED
         return TaskState.INGESTED
 
