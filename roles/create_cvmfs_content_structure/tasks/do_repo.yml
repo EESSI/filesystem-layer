@@ -12,38 +12,38 @@
 
 - name: Apply changes to CVMFS repository, if there are any
   block:
-  - name: "Create symlinks"
-    ansible.builtin.file:
-      path: "/cvmfs/{{ cvmfs_repo }}/{{ item }}"
-      src: "{{ symlinks[item] }}"
-      state: link
-      force: true
-    with_items: "{{ symlinks }}"
-    register: create_symlinks
+    - name: "Create symlinks"
+      ansible.builtin.file:
+        path: "/cvmfs/{{ cvmfs_repo }}/{{ item }}"
+        src: "{{ symlinks[item] }}"
+        state: link
+        force: true
+      with_items: "{{ symlinks }}"
+      register: create_symlinks
 
-  - name: "Copy files"
-    ansible.builtin.copy:
-      src: "{{ item.name }}"
-      dest: "/cvmfs/{{ cvmfs_repo }}/{{ item.dest }}"
-      mode: "{{ item.mode }}"
-    with_items: "{{ files }}"
-    register: create_files
+    - name: "Copy files"
+      ansible.builtin.copy:
+        src: "{{ item.name }}"
+        dest: "/cvmfs/{{ cvmfs_repo }}/{{ item.dest }}"
+        mode: "{{ item.mode }}"
+      with_items: "{{ files }}"
+      register: create_files
 
-  - name: Publish transaction
-    ansible.builtin.command:
-      cmd: "cvmfs_server publish {{ cvmfs_repo }}"
-      removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
-    when:
-      - create_cvmfs_content_structure_start_transaction
-      - create_cvmfs_content_structure_publish_transaction
-      - create_symlinks.changed or create_files.changed
-    register: publish
+    - name: Publish transaction
+      ansible.builtin.command:
+        cmd: "cvmfs_server publish {{ cvmfs_repo }}"
+        removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
+      when:
+        - create_cvmfs_content_structure_start_transaction
+        - create_cvmfs_content_structure_publish_transaction
+        - create_symlinks.changed or create_files.changed
+      register: publish
 
-  - name: Abort transaction
-    ansible.builtin.command:
-      cmd: "cvmfs_server abort {{ cvmfs_repo }}"
-      removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
-    when: publish is skipped
+    - name: Abort transaction
+      ansible.builtin.command:
+        cmd: "cvmfs_server abort {{ cvmfs_repo }}"
+        removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
+      when: publish is skipped
 
   rescue:
     - name: Abort transaction
