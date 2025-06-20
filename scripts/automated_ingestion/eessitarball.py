@@ -211,13 +211,16 @@ class EessiTarball:
             logging.error(f'Unable to verify signatures, the specified allowed signers file does not exist!')
             return False
 
+        self.signatures = {}
         for (file, sig_file) in [(self.local_path, self.local_sig_path), (self.local_metadata_path, self.local_metadata_sig_path)]:
             verify_cmd = subprocess.run(
-                [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file, '--file', file, '--signature-file', sig_file],
+                [verify_script, '--verify', '--terse', '--allowed-signers-file', allowed_signers_file, '--file', file, '--signature-file', sig_file],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             if verify_cmd.returncode == 0:
-                logging.debug(f'Signature for {file} successfully verified.')
+                signature = json.loads(verify_cmd.stdout.decode('utf-8'))
+                self.signatures[file] = signature
+                logging.debug(f'Signature for {file} successfully verified: {signature}')
             else:
                 logging.error(f'Failed to verify signature for {file}.')
                 return False
@@ -394,7 +397,11 @@ class EessiTarball:
             )
             pr_title = '[%s] Ingest %s' % (self.cvmfs_repo, filename)
             if self.sig_verified:
-                pr_body += "\n\n:heavy_check_mark: :closed_lock_with_key: The signature of this tarball has been successfully verified."
+                pr_body += "\n\n:heavy_check_mark: :closed_lock_with_key: The signature of this tarball has been successfully verified:\n"
+                for path, meta in self.signatures.items():
+                    identity = meta.get("identity", "unknown")
+                    namespace = meta.get("namespace", "unknown")
+                    pr_body += f"- `{path}`\n  - identity=`{identity}`, namespace=`{namespace}`\n"
                 pr_title += ' :closed_lock_with_key:'
             self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
         except Exception as err:
