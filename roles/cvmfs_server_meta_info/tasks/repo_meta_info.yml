@@ -28,6 +28,7 @@
     changed_when: true
   when: (current_repo_meta.stdout | checksum) != json_file_stat.stat.checksum
   become_user: "{{ cvmfs_repo_owner | default('root') }}"
+  become: true
 
 - name: Remove temporary json file
   ansible.builtin.file:
