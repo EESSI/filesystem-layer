@@ -1,4 +1,4 @@
-name: Test Ansible Playbooks
+name: Test Ansible Playbooks # noqa: syntax-check[specific]
 
 on:
   push:
