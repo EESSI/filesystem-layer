@@ -1,11 +1,11 @@
 ---
-cvmfs_server_meta:
+cvmfs_server_meta_info_server:
   administrator: "{{ cvmfs_server_meta_administrator | default('Your Name') }}"
   email: "{{ cvmfs_server_meta_email | default('you@organisation.org') }}"
   organisation: "{{ cvmfs_server_meta_organisation | default('Your Organisation') }}"
   custom: "{{ cvmfs_server_meta_custom | default({'_comment': 'Put arbitrary structured data here'}) }}"
 
-cvmfs_repo_meta:
+cvmfs_server_meta_info_repo:
   administrator: "{{ cvmfs_server_meta_administrator | default('Your Name') }}"
   email: "{{ cvmfs_server_meta_email | default('you@organisation.org') }}"
   organisation: "{{ cvmfs_server_meta_organisation | default('Your Organisation') }}"
