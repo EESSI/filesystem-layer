@@ -397,7 +397,10 @@ class EessiTarball:
             pr_title = '[%s] Ingest %s' % (self.cvmfs_repo, filename)
             if self.sig_verified:
                 pr_body += "\n\n:heavy_check_mark: :closed_lock_with_key: The signature of this tarball has been successfully verified:\n"
-                pr_body += f"  {self.signatures}"
+                for path, meta in self.signatures.items():
+                    identity = meta.get("identity", "unknown")
+                    namespace = meta.get("namespace", "unknown")
+                    pr_body += f"- `{path}`: identity=`{identity}`, namespace=`{namespace}`\n"
                 pr_title += ' :closed_lock_with_key:'
             self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
         except Exception as err:
