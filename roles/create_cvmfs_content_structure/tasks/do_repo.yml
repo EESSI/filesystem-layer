@@ -6,7 +6,7 @@
 
 - name: Start transaction
   ansible.builtin.command: "cvmfs_server transaction {{ cvmfs_repo }}"
-  when: cvmfs_start_transaction
+  when: create_cvmfs_content_structure_start_transaction
 
 - name: Apply changes to CVMFS repository, if there are any
   block:
@@ -30,8 +30,8 @@
   - name: Publish transaction
     ansible.builtin.command: "cvmfs_server publish {{ cvmfs_repo }}"
     when:
-      - cvmfs_start_transaction
-      - cvmfs_publish_transaction
+      - create_cvmfs_content_structure_start_transaction
+      - create_cvmfs_content_structure_publish_transaction
       - create_symlinks.changed or create_files.changed
     register: publish
 
@@ -42,7 +42,9 @@
   rescue:
     - name: Abort transaction
       ansible.builtin.command: "cvmfs_server abort {{ cvmfs_repo }}"
-      when: cvmfs_start_transaction and cvmfs_abort_transaction_on_failures
+      when:
+        - create_cvmfs_content_structure_start_transaction
+        - create_cvmfs_content_structure_abort_transaction_on_failures
 
     - name: Exit because of failure
       ansible.builtin.fail:
