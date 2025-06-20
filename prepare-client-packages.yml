@@ -9,19 +9,19 @@
     package_source_dir: "{{ lookup('env', 'GITHUB_WORKSPACE') | default('/tmp', True) }}/package"
   tasks:
     - name: Check the number of defined domains (should be one!)
-      fail:
+      ansible.builtin.fail:
         msg: "Cannot build a client package when eessi_cvmfs_server_urls contains different domains"
       when: eessi_cvmfs_server_urls | selectattr('domain') | list | unique | count > 1
 
     - name: Determine domain name
-      set_fact:
+      ansible.builtin.set_fact:
         eessi_domain: "{{ eessi_cvmfs_server_urls[0].domain }}"
 
     - name: Create directory structure for the CVMFS config
-      file:
+      ansible.builtin.file:
         path: "{{ item }}"
         state: directory
-        mode: 0775
+        mode: "0775"
       with_items:
         - "{{ package_source_dir }}"
         - "{{ package_source_dir }}/etc"
@@ -31,14 +31,14 @@
         - "{{ package_source_dir }}/etc/cvmfs/domain.d"
 
     - name: Make EESSI CVMFS public key files
-      copy:
+      ansible.builtin.copy:
         content: "{{ item.key }}"
         dest: "{{ package_source_dir }}{{ item.path }}"
-        mode: 0644
+        mode: "0644"
       with_items: "{{ eessi_cvmfs_keys }}"
 
     - name: Make EESSI CVMFS domain configuration file
-      copy:
+      ansible.builtin.copy:
         content: |
           # Stratum 1 servers for the eessi.io domain
           CVMFS_SERVER_URL="{{ item.urls|join(';') }}"
@@ -59,5 +59,5 @@
           fi
 
         dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ item.domain }}.conf"
-        mode: 0644
+        mode: "0644"
       with_items: "{{ eessi_cvmfs_server_urls }}"
