@@ -400,7 +400,7 @@ class EessiTarball:
                 for path, meta in self.signatures.items():
                     identity = meta.get("identity", "unknown")
                     namespace = meta.get("namespace", "unknown")
-                    pr_body += f"- `{path}`: identity=`{identity}`, namespace=`{namespace}`\n"
+                    pr_body += f"- `{path}`\n  - identity=`{identity}`, namespace=`{namespace}`\n"
                 pr_title += ' :closed_lock_with_key:'
             self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
         except Exception as err:
