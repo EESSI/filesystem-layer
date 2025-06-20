@@ -5,7 +5,9 @@
   ansible.builtin.include_vars: "{{ cvmfs_repo }}.yml"
 
 - name: Start transaction
-  ansible.builtin.command: "cvmfs_server transaction {{ cvmfs_repo }}"
+  ansible.builtin.command:
+    cmd: "cvmfs_server transaction {{ cvmfs_repo }}"
+    creates: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
   when: create_cvmfs_content_structure_start_transaction
 
 - name: Apply changes to CVMFS repository, if there are any
@@ -28,7 +30,9 @@
     register: create_files
 
   - name: Publish transaction
-    ansible.builtin.command: "cvmfs_server publish {{ cvmfs_repo }}"
+    ansible.builtin.command:
+      cmd: "cvmfs_server publish {{ cvmfs_repo }}"
+      removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
     when:
       - create_cvmfs_content_structure_start_transaction
       - create_cvmfs_content_structure_publish_transaction
@@ -36,12 +40,16 @@
     register: publish
 
   - name: Abort transaction
-    ansible.builtin.command: "cvmfs_server abort {{ cvmfs_repo }}"
+    ansible.builtin.command:
+      cmd: "cvmfs_server abort {{ cvmfs_repo }}"
+      removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
     when: publish is skipped
 
   rescue:
     - name: Abort transaction
-      ansible.builtin.command: "cvmfs_server abort {{ cvmfs_repo }}"
+      ansible.builtin.command:
+        cmd: "cvmfs_server abort {{ cvmfs_repo }}"
+        removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
       when:
         - create_cvmfs_content_structure_start_transaction
         - create_cvmfs_content_structure_abort_transaction_on_failures
