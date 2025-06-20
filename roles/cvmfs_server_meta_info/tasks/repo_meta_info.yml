@@ -22,7 +22,7 @@
   changed_when: false
   register: current_repo_meta
 
-- name: Update the repository's meta information # noqa: [inline-env-var, no-changed-when]
+- name: Update the repository's meta information # noqa: inline-env-var no-changed-when
   ansible.builtin.command:
     cmd: "cvmfs_server update-repoinfo -f {{ tmp_json_file.path }} {{ this_cvmfs_repo.repository }}"
   when: (current_repo_meta.stdout | checksum) != json_file_stat.stat.checksum
