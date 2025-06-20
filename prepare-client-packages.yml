@@ -41,7 +41,7 @@
       ansible.builtin.copy:
         content: |
           # Stratum 1 servers for the eessi.io domain
-          CVMFS_SERVER_URL="{{ item.urls|join(';') }}"
+          CVMFS_SERVER_URL="{{ item.urls | join(';') }}"
 
           # Public keys for the eessi.io domain
           CVMFS_KEYS_DIR="/etc/cvmfs/keys/{{ item.domain }}"
