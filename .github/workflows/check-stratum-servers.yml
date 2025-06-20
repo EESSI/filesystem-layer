@@ -9,7 +9,7 @@ on:
       - main
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '30 5 * * *'
+    - cron: '30 5 * * *'
 
 # Declare default permissions as read only.
 permissions: read-all
@@ -39,4 +39,4 @@ jobs:
           SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
           SLACK_MESSAGE: ${{ env.STRATUM_ERRORS }}
           SLACK_COLOR: 'danger'
-          SLACK_FOOTER: 
+          SLACK_FOOTER:
