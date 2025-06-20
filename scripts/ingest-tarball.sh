@@ -222,11 +222,13 @@ function ingest_compat_tarball() {
     then
         echo_yellow "Compatibility layer for version ${version}, OS ${os}, and architecture ${arch} already exists!"
         ${cvmfs_server} transaction "${cvmfs_repo}"
-        last_suffix=$((ls -1d ${compat_layer_path}-* | tail -n 1 | xargs basename | cut -d- -f2) 2> /dev/null)
+        # hide the last dir in the path by prepending it with a dot
+        hidden_compat_layer_path="$(dirname ${compat_layer_path})/.$(basename ${compat_layer_path})"
+        last_suffix=$((ls -1d ${hidden_compat_layer_path}-* | tail -n 1 | xargs basename | cut -d- -f2) 2> /dev/null)
         new_suffix=$(printf '%03d\n' $((${last_suffix:-0} + 1)))
-        old_layer_suffixed_path="${compat_layer_path}-${new_suffix}"
-        echo_yellow "Moving the existing compat layer from ${compat_layer_path} to ${old_layer_suffixed_path}..."
-        mv ${compat_layer_path} ${old_layer_suffixed_path}
+        old_layer_hidden_suffixed_path="${hidden_compat_layer_path}-${new_suffix}"
+        echo_yellow "Moving the existing compat layer from ${compat_layer_path} to ${old_layer_hidden_suffixed_path}..."
+        mv ${compat_layer_path} ${old_layer_hidden_suffixed_path}
         tar -C "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/" -xzf "${tar_file}"
         ${cvmfs_server} publish -m "updated compat layer for ${version}, ${os}, ${arch}" "${cvmfs_repo}"
         ec=$?
