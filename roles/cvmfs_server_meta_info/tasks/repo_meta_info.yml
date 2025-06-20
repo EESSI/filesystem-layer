@@ -9,7 +9,7 @@
   ansible.builtin.copy:
     content: "{{ cvmfs_server_meta_info_repo | combine(this_cvmfs_repo_meta) | to_nice_json(indent=2, sort_keys=false) }}"
     dest: "{{ tmp_json_file.path }}"
-    mode: 0644
+    mode: "0644"
 
 - name: Calculate the checksum of the json file
   ansible.builtin.stat:
