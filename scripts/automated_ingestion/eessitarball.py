@@ -300,7 +300,7 @@ class EessiTarball:
         """Process a tarball that has already been ingested."""
         logging.info(f'{self.object} has already been ingested, skipping...')
 
-    def handle_failed_signature_verification():
+    def handle_failed_signature_verification(self):
         """Process a signature verification failure."""
         sig_failed_msg = f'Failed to verify signatures for `{self.object}`.'
         logging.error(sig_failed_msg)
