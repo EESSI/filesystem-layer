@@ -1284,6 +1284,10 @@ class EESSITask:
                 )
             return True
         else:
+            log_message(LoggingScope.STATE_OPS, 'ERROR',
+                        'Failed to add %s, return code %s',
+                        os.path.basename(self.payload.payload_object.local_file_path),
+                        ingest_cmd.returncode)
             issue_title = f'Failed to add {os.path.basename(self.payload.payload_object.local_file_path)}'
             issue_body = self.config['github']['failed_ingestion_issue_body'].format(
                 command=' '.join(ingest_cmd.args),
@@ -1292,6 +1296,9 @@ class EESSITask:
                 stdout=ingest_cmd.stdout.decode('UTF-8'),
                 stderr=ingest_cmd.stderr.decode('UTF-8'),
             )
+            log_message(LoggingScope.STATE_OPS, 'INFO',
+                        'Creating issue for failed ingestion: title: %s, body: %s',
+                        issue_title, issue_body)
             if self._issue_exists(issue_title, state='open'):
                 log_message(LoggingScope.STATE_OPS, 'INFO',
                             'Failed to add %s, but an open issue already exists, skipping...',
