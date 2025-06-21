@@ -1263,7 +1263,7 @@ class EESSITask:
                     self.description.get_task_file_name(),
                     script, 'no' if sudo == [] else 'yes')
         ingest_cmd = subprocess.run(
-            sudo + [script, self.cvmfs_repo, self.payload.payload_object.local_file_path],
+            sudo + [script, self.cvmfs_repo, str(self.payload.payload_object.local_file_path)],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         log_message(LoggingScope.STATE_OPS, 'INFO',
