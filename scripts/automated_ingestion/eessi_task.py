@@ -1292,11 +1292,12 @@ class EESSITask:
 
             issue_title = f'Failed to add {tarball}'
             log_message(LoggingScope.STATE_OPS, 'INFO',
-                        'Creating issue for failed ingestion: title: %s',
+                        "Creating issue for failed ingestion: title: '%s'",
                         issue_title)
 
             command = ' '.join(ingest_cmd.args)
-            issue_body = self.config['github']['failed_ingestion_issue_body'].format(
+            failed_ingestion_issue_body = self.config['github']['failed_ingestion_issue_body']
+            issue_body = failed_ingestion_issue_body.format(
                 command=command,
                 tarball=tarball,
                 return_code=ingest_cmd.returncode,
@@ -1304,7 +1305,7 @@ class EESSITask:
                 stderr=ingest_cmd.stderr.decode('UTF-8')
             )
             log_message(LoggingScope.STATE_OPS, 'INFO',
-                        'Creating issue for failed ingestion: body: %s',
+                        "Creating issue for failed ingestion: body: '%s'",
                         issue_body)
 
             if self._issue_exists(issue_title, state='open'):
@@ -1332,7 +1333,7 @@ class EESSITask:
                 return TaskState.APPROVED
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR',
-                        "Error performing task action: %s", err)
+                        "Error performing task action: '%s'\nTraceback:\n%s", err, traceback.format_exc())
             return TaskState.APPROVED
 
     @log_function_entry_exit()
