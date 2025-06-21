@@ -1284,21 +1284,29 @@ class EESSITask:
                 )
             return True
         else:
+            tarball = os.path.basename(self.payload.payload_object.local_file_path)
             log_message(LoggingScope.STATE_OPS, 'ERROR',
                         'Failed to add %s, return code %s',
-                        os.path.basename(self.payload.payload_object.local_file_path),
+                        tarball,
                         ingest_cmd.returncode)
-            issue_title = f'Failed to add {os.path.basename(self.payload.payload_object.local_file_path)}'
+
+            issue_title = f'Failed to add {tarball}'
+            log_message(LoggingScope.STATE_OPS, 'INFO',
+                        'Creating issue for failed ingestion: title: %s',
+                        issue_title)
+
+            command = ' '.join(ingest_cmd.args)
             issue_body = self.config['github']['failed_ingestion_issue_body'].format(
-                command=' '.join(ingest_cmd.args),
-                tarball=os.path.basename(self.payload.payload_object.local_file_path),
+                command=command,
+                tarball=tarball,
                 return_code=ingest_cmd.returncode,
                 stdout=ingest_cmd.stdout.decode('UTF-8'),
-                stderr=ingest_cmd.stderr.decode('UTF-8'),
+                stderr=ingest_cmd.stderr.decode('UTF-8')
             )
             log_message(LoggingScope.STATE_OPS, 'INFO',
-                        'Creating issue for failed ingestion: title: %s, body: %s',
-                        issue_title, issue_body)
+                        'Creating issue for failed ingestion: body: %s',
+                        issue_body)
+
             if self._issue_exists(issue_title, state='open'):
                 log_message(LoggingScope.STATE_OPS, 'INFO',
                             'Failed to add %s, but an open issue already exists, skipping...',
