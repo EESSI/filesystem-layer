@@ -1266,8 +1266,7 @@ class EESSITask:
             sudo + [script, self.cvmfs_repo, self.payload.payload_object.local_file_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
-        # TODO: if ingest_cmd.returncode == 0:
-        if True:
+        if ingest_cmd.returncode == 0:
             next_state = self._next_state(TaskState.APPROVED)
             self._update_task_state_file(next_state)
             if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
