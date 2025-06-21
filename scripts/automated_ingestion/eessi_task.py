@@ -1266,6 +1266,12 @@ class EESSITask:
             sudo + [script, self.cvmfs_repo, self.payload.payload_object.local_file_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
+        log_message(LoggingScope.STATE_OPS, 'INFO',
+                    'Ingestion script returned code %s', ingest_cmd.returncode)
+        log_message(LoggingScope.STATE_OPS, 'INFO',
+                    'Ingestion script stdout: %s', ingest_cmd.stdout.decode('UTF-8'))
+        log_message(LoggingScope.STATE_OPS, 'INFO',
+                    'Ingestion script stderr: %s', ingest_cmd.stderr.decode('UTF-8'))
         if ingest_cmd.returncode == 0:
             next_state = self._next_state(TaskState.APPROVED)
             self._update_task_state_file(next_state)
