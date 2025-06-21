@@ -262,7 +262,7 @@ class EESSITask:
         """
         Get a fixed sequence number.
         """
-        return 8
+        return 9
 
     @log_function_entry_exit()
     def _determine_sequence_status(self, sequence_number: int = None) -> int:
