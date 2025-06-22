@@ -678,6 +678,60 @@ class EESSITask:
             return None
 
     @log_function_entry_exit()
+    def _sorted_list_of_sequence_numbers(self) -> List[int]:
+        """Create a sorted list of sequence numbers from the pull requests directory"""
+        # a pull request's directory is of the form REPO/PR/SEQ
+        # hence, we can get all sequence numbers from the pull requests directory REPO/PR
+        sequence_numbers = []
+        repo_pr_dir = f"{self.description.get_repo_name()}/{self.description.get_pr_number()}"
+
+        # iterate over all directories under repo_pr_dir
+        try:
+            directories = self._list_directory_contents(repo_pr_dir)
+            for dir in directories:
+                # check if the directory is a number
+                if dir.name.isdigit():
+                    sequence_numbers.append(int(dir.name))
+                else:
+                    # directory is not a number, so we skip it
+                    continue
+        except FileNotFoundError:
+            # repo_pr_dir does not exist, so we return an empty dictionary
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Pull requests directory '%s' does not exist", repo_pr_dir)
+        except GithubException as err:
+            if err.status != 404:  # 404 is catched by FileNotFoundError
+                # some other error than the directory not existing
+                log_message(LoggingScope.TASK_OPS, 'ERROR',
+                            "Some other error than the directory not existing: %s", err)
+        except Exception as err:
+            log_message(LoggingScope.TASK_OPS, 'ERROR', "Unexpected error: %s", err)
+
+        return sorted(sequence_numbers)
+
+    @log_function_entry_exit()
+    def _determine_sequence_number(self) -> int:
+        """Determine the sequence number for the task"""
+
+        sequence_numbers = self._sorted_list_of_sequence_numbers()
+        if len(sequence_numbers) == 0:
+            return 0
+
+        # get the highest sequence number
+        highest_sequence_number = sequence_numbers[-1]
+
+        pull_request = self._find_pr_for_sequence_number(highest_sequence_number)
+        if pull_request is None:
+            # the directory for the sequence number exists but no PR yet
+            return highest_sequence_number
+        else:
+            if pull_request.is_merged():
+                # the PR is merged, so we use the next sequence number
+                return highest_sequence_number + 1
+            else:
+                # the PR is not merged, so we can use the current sequence number
+                return highest_sequence_number
+
+    @log_function_entry_exit()
     def _handle_add_undetermined(self):
         """Handler for ADD action in UNDETERMINED state"""
         print("Handling ADD action in UNDETERMINED state: %s" % self.description.get_task_file_name())
@@ -689,7 +743,7 @@ class EESSITask:
         # create pointer file from task file path to pull request directory (remote_file_path -> PULL_REQUEST_DIR)
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
-        sequence_number = self._get_fixed_sequence_number()  # corresponds to an open or yet to be created PR
+        sequence_number = self._determine_sequence_number()  # corresponds to an open or yet to be created PR
         task_file_name = self.description.get_task_file_name()
         # we cannot use self._determine_pull_request_dir() here because it requires a task pointer file
         #   and we don't have one yet
@@ -811,6 +865,14 @@ class EESSITask:
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error finding PR for branch %s: %s", branch_name, err)
             return None
+
+    @log_function_entry_exit()
+    def _find_pr_for_sequence_number(self, sequence_number: int) -> Optional[PullRequest]:
+        """Find the PR for the given sequence number"""
+        repo_name = self.description.get_repo_name()
+        pr_number = self.description.get_pr_number()
+        feature_branch_name = f"{repo_name}-PR-{pr_number}-SEQ-{sequence_number}"
+        return self._find_pr_for_branch(feature_branch_name)
 
     @log_function_entry_exit()
     def _determine_sequence_number_from_pull_request_directory(self) -> int:
