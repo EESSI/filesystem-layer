@@ -481,6 +481,8 @@ class EESSITask:
             task_pointer_file = self.description.task_object.remote_file_path
         if branch_name is None:
             branch_name = self.git_repo.default_branch
+        log_message(LoggingScope.TASK_OPS, 'INFO', "reading pull request directory from file '%s' in branch '%s'",
+                    task_pointer_file, branch_name)
 
         # read the pull request directory from the file in the given branch
         content = self.git_repo.get_contents(task_pointer_file, ref=branch_name)
@@ -491,7 +493,8 @@ class EESSITask:
         # Parse into dictionary
         config_dict = self._read_dict_from_string(content_str)
 
-        return config_dict.get('pull_request_dir', None)
+        target_dir = config_dict.get('target_dir', None)
+        return config_dict.get('pull_request_dir', target_dir)
 
     @log_function_entry_exit()
     def _determine_pull_request_dir(self, task_pointer_file: str = None, branch_name: str = None) -> str:
