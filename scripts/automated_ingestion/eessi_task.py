@@ -873,6 +873,11 @@ class EESSITask:
             head_ref = f"{self.git_repo.owner.login}:{branch_name}"
             log_message(LoggingScope.TASK_OPS, 'INFO', "searching for PRs with head_ref: '%s'", head_ref)
             filter_prs = [16, 17, 18, 19, 20, 21, 22]  # TODO: remove this once the PR is merged
+
+            all_prs = list(self.git_repo.get_pulls(state='all'))
+            for pr in all_prs:
+                log_message(LoggingScope.TASK_OPS, 'INFO', "PR #{pr.number}: {pr.head.ref}")
+
             prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
                    if pr.number not in filter_prs]
             log_message(LoggingScope.TASK_OPS, 'INFO', "number of PRs found: %d", len(prs))
