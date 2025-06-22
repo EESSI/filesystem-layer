@@ -737,6 +737,9 @@ class EESSITask:
             # the directory for the sequence number exists but no PR yet
             return highest_sequence_number
         else:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "pull request found: %s", pull_request)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "pull request state/merged: %s/%s",
+                        pull_request.state, str(pull_request.is_merged()))
             if pull_request.is_merged():
                 # the PR is merged, so we use the next sequence number
                 return highest_sequence_number + 1
@@ -872,15 +875,22 @@ class EESSITask:
         try:
             # head_ref = f"{self.git_repo.owner.login}:{branch_name}"
             # apparently, the head_ref does not contain the login
-            head_ref = f"{branch_name}"
-            log_message(LoggingScope.TASK_OPS, 'INFO', "searching for PRs with head_ref: '%s'", head_ref)
+            last_dash = branch_name.rfind('-')
+            if last_dash != -1:
+                head_ref_wout_seq_num = branch_name[:last_dash + 1]  # +1 to include the separator
+            else:
+                head_ref_wout_seq_num = branch_name
+
+            log_message(LoggingScope.TASK_OPS, 'INFO',
+                        "searching for PRs starting with head_ref: '%s'", head_ref_wout_seq_num)
             filter_prs = [16, 17, 18, 19, 20, 21, 22]  # TODO: remove this once the PR is merged
 
-            all_prs = list(self.git_repo.get_pulls(state='all'))
+            all_prs = [pr for pr in list(self.git_repo.get_pulls(state='all'))
+                       if pr.head.ref.startswith(head_ref_wout_seq_num)]
             for pr in all_prs:
                 log_message(LoggingScope.TASK_OPS, 'INFO', "PR #%d: %s", pr.number, pr.head.ref)
 
-            prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
+            prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=branch_name))
                    if pr.number not in filter_prs]
             log_message(LoggingScope.TASK_OPS, 'INFO', "number of PRs found: %d", len(prs))
             if len(prs):
@@ -896,7 +906,10 @@ class EESSITask:
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         feature_branch_name = f"{repo_name}-PR-{pr_number}-SEQ-{sequence_number}"
-        return self._find_pr_for_branch(feature_branch_name)
+        pull_request = self._find_pr_for_branch(feature_branch_name)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "pull request for branch '%s': %s",
+                    feature_branch_name, pull_request)
+        return pull_request
 
     @log_function_entry_exit()
     def _determine_sequence_number_from_pull_request_directory(self) -> int:
