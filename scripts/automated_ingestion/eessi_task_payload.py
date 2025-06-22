@@ -85,16 +85,16 @@ class EESSITaskPayload:
             ]
             members_list = sorted(swdirs + modfiles + other)
 
-        # Construct the overview.
-        tar_members = '\n'.join(members_list)
-        overview = f"Total number of items in the tarball: {tar_num_members}"
-        bucket_url = self.payload_object.remote_client.get_bucket_url()
-        remote_file_path = self.payload_object.remote_file_path
-        overview += f"\nURL to the tarball: {bucket_url}/{remote_file_path}"
-        overview += f"\n{tar_members_desc}\n\n"
-        overview += f"```\n{tar_members}\n```\n"
+        # Construct the overview
+        overview = self.config['github']['task_summary_payload_overview_template'].format(
+            tar_num_members=tar_num_members,
+            bucket_url=self.payload_object.remote_client.get_bucket_url(),
+            remote_file_path=self.payload_object.remote_file_path,
+            tar_members_desc=tar_members_desc,
+            tar_members='\n'.join(members_list)
+        )
 
-        # Make sure that the overview does not exceed Github's maximum length (65536 characters).
+        # Make sure that the overview does not exceed Github's maximum length (65536 characters)
         if len(overview) > 60000:
             overview = overview[:60000] + "\n\nWARNING: output exceeded the maximum length and was truncated!\n```"
         return overview

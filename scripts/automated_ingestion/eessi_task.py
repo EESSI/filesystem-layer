@@ -1027,16 +1027,12 @@ class EESSITask:
         payload_name = self.description.metadata['payload']['filename']
         payload_summary = self.payload.analyse_contents()
         metadata_contents = self.description.get_contents()
-        task_summary = f"<details><summary><code>{payload_name}</code></summary>\n\n"
-        task_summary += "<details><summary>Metadata</summary>\n\n"
-        task_summary += f"```\n{metadata_contents}\n```\n</details>\n"
-        task_summary += "<details><summary>Overview of payload contents</summary>\n\n"
-        task_summary += self.config['github']['task_summary_payload_template'].format(
-            payload_overview=payload_summary,
+
+        task_summary = self.config['github']['task_summary_payload_template'].format(
+            payload_name=payload_name,
+            metadata_contents=metadata_contents,
+            payload_overview=payload_summary
         )
-        task_summary += "</details>\n"
-        task_summary += "\n"
-        task_summary += "</details>\n"
 
         # create HTML file with task summary in REPO-PR-SEQ directory
         # TODO: add failure handling (capture result and act on it)
@@ -1106,8 +1102,8 @@ class EESSITask:
             repo=repo_name,
             seq_num=seq_num,
             contents=contents_overview,
-            analysis="TO BE DONE",
-            action="TO BE DONE",
+            analysis="<dd>TO BE DONE</dd>",
+            action="<dd>TO BE DONE</dd>",
         )
         pr = self.git_repo.create_pull(
             title=pr_title,
@@ -1141,8 +1137,8 @@ class EESSITask:
             repo=repo_name,
             seq_num=seq_num,
             contents=contents_overview,
-            analysis="TO BE DONE",
-            action="TO BE DONE",
+            analysis="<dd>TO BE DONE</dd>",
+            action="<dd>TO BE DONE</dd>",
         )
         pull_request.edit(body=pr_body)
 
