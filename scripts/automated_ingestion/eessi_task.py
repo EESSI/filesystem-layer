@@ -876,7 +876,7 @@ class EESSITask:
 
             all_prs = list(self.git_repo.get_pulls(state='all'))
             for pr in all_prs:
-                log_message(LoggingScope.TASK_OPS, 'INFO', "PR #{pr.number}: {pr.head.ref}")
+                log_message(LoggingScope.TASK_OPS, 'INFO', "PR #%d: %s", pr.number, pr.head.ref)
 
             prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
                    if pr.number not in filter_prs]
