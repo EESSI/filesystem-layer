@@ -472,12 +472,18 @@ class EESSITask:
         return config_dict
 
     @log_function_entry_exit()
-    def _read_pull_request_dir_from_file(self, path: str, branch_name: str = None) -> str:
+    def _read_pull_request_dir_from_file(self, task_pointer_file: str = None, branch_name: str = None) -> str:
         """
         Read the pull request directory from the file in the given branch.
         """
-        branch_name = self.git_repo.default_branch if branch_name is None else branch_name
-        content = self.git_repo.get_contents(path, ref=branch_name)
+        # set default values for task pointer file and branch name
+        if task_pointer_file is None:
+            task_pointer_file = self.description.task_object.remote_file_path
+        if branch_name is None:
+            branch_name = self.git_repo.default_branch
+
+        # read the pull request directory from the file in the given branch
+        content = self.git_repo.get_contents(task_pointer_file, ref=branch_name)
 
         # Decode the content from base64
         content_str = content.decoded_content.decode('utf-8')
@@ -486,6 +492,11 @@ class EESSITask:
         config_dict = self._read_dict_from_string(content_str)
 
         return config_dict.get('pull_request_dir', None)
+
+    @log_function_entry_exit()
+    def _determine_pull_request_dir(self, task_pointer_file: str = None, branch_name: str = None) -> str:
+        """Determine the pull request directory via the task pointer file"""
+        return self._read_pull_request_dir_from_file(task_pointer_file=task_pointer_file, branch_name=branch_name)
 
     @log_function_entry_exit()
     def _get_branch_from_name(self, branch_name: str = None) -> Optional[Branch]:
@@ -535,7 +546,7 @@ class EESSITask:
 
             # get state from task file in branch to use
             # - read the TaskState file in pull request directory
-            pull_request_dir = self._read_pull_request_dir_from_file(task_pointer_file, branch_to_use)
+            pull_request_dir = self._determine_pull_request_dir(branch_name=branch_to_use)
             task_state_file_path = f"{pull_request_dir}/TaskState"
             task_state = self._read_task_state_from_file(task_state_file_path, branch_to_use)
 
@@ -678,7 +689,7 @@ class EESSITask:
         pr_number = self.description.get_pr_number()
         sequence_number = self._get_fixed_sequence_number()  # corresponds to an open or yet to be created PR
         task_file_name = self.description.get_task_file_name()
-        pull_request_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
+        pull_request_dir = self._determine_pull_request_dir()
         task_description_file_path = f"{pull_request_dir}/TaskDescription"
         task_state_file_path = f"{pull_request_dir}/TaskState"
         remote_file_path = self.description.task_object.remote_file_path
