@@ -472,9 +472,9 @@ class EESSITask:
         return config_dict
 
     @log_function_entry_exit()
-    def _read_target_dir_from_file(self, path: str, branch_name: str = None) -> str:
+    def _read_pull_request_dir_from_file(self, path: str, branch_name: str = None) -> str:
         """
-        Read the target directory from the file in the given branch.
+        Read the pull request directory from the file in the given branch.
         """
         branch_name = self.git_repo.default_branch if branch_name is None else branch_name
         content = self.git_repo.get_contents(path, ref=branch_name)
@@ -485,7 +485,7 @@ class EESSITask:
         # Parse into dictionary
         config_dict = self._read_dict_from_string(content_str)
 
-        return config_dict.get('target_dir', None)
+        return config_dict.get('pull_request_dir', None)
 
     @log_function_entry_exit()
     def _get_branch_from_name(self, branch_name: str = None) -> Optional[Branch]:
@@ -534,9 +534,9 @@ class EESSITask:
                         task_pointer_file, branch_to_use)
 
             # get state from task file in branch to use
-            # - read the TaskState file in target dir
-            target_dir = self._read_target_dir_from_file(task_pointer_file, branch_to_use)
-            task_state_file_path = f"{target_dir}/TaskState"
+            # - read the TaskState file in pull request directory
+            pull_request_dir = self._read_pull_request_dir_from_file(task_pointer_file, branch_to_use)
+            task_state_file_path = f"{pull_request_dir}/TaskState"
             task_state = self._read_task_state_from_file(task_state_file_path, branch_to_use)
 
             log_message(LoggingScope.TASK_OPS, 'INFO', "task state in branch %s: %s",
@@ -727,17 +727,17 @@ class EESSITask:
     def _handle_add_undetermined(self):
         """Handler for ADD action in UNDETERMINED state"""
         print("Handling ADD action in UNDETERMINED state: %s" % self.description.get_task_file_name())
-        # create target directory (REPO/PR/SEQ/TASK_FILE_NAME/)
-        # create task file in target directory (TARGET_DIR/TaskDescription)
-        # create task status file in target directory (TARGET_DIR/TaskState.NEW_TASK)
-        # create pointer file from task file path to target directory (remote_file_path -> TARGET_DIR)
+        # create pull request directory (REPO/PR/SEQ/TASK_FILE_NAME/)
+        # create task file in pull request directory (PULL_REQUEST_DIR/TaskDescription)
+        # create task status file in pull request directory (PULL_REQUEST_DIR/TaskState.NEW_TASK)
+        # create pointer file from task file path to pull request directory (remote_file_path -> PULL_REQUEST_DIR)
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         sequence_number = self._get_fixed_sequence_number()  # corresponds to an open or yet to be created PR
         task_file_name = self.description.get_task_file_name()
-        target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
-        task_description_file_path = f"{target_dir}/TaskDescription"
-        task_state_file_path = f"{target_dir}/TaskState"
+        pull_request_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
+        task_description_file_path = f"{pull_request_dir}/TaskDescription"
+        task_state_file_path = f"{pull_request_dir}/TaskState"
         remote_file_path = self.description.task_object.remote_file_path
 
         files_to_commit = {
@@ -750,7 +750,7 @@ class EESSITask:
                 "mode": "100644"
             },
             remote_file_path: {
-                "content": f"remote_file_path = {remote_file_path}\ntarget_dir = {target_dir}",
+                "content": f"remote_file_path = {remote_file_path}\npull_request_dir = {pull_request_dir}",
                 "mode": "100644"
             }
         }
@@ -778,8 +778,8 @@ class EESSITask:
         branch_name = self.git_repo.default_branch if branch_name is None else branch_name
 
         task_pointer_file = self.description.task_object.remote_file_path
-        target_dir = self._read_target_dir_from_file(task_pointer_file, branch_name)
-        task_state_file_path = f"{target_dir}/TaskState"
+        pull_request_dir = self._read_pull_request_dir_from_file(task_pointer_file, branch_name)
+        task_state_file_path = f"{pull_request_dir}/TaskState"
         arch = self.description.get_metadata_file_components()[3]
         commit_message = f"change task state to {next_state} in {branch_name} for {arch}"
         result = self._update_file(task_state_file_path,
@@ -865,28 +865,28 @@ class EESSITask:
 
     @log_function_entry_exit()
     def _determine_sequence_number_from_pull_request_directory(self) -> int:
-        """Determine the sequence number from the target directory name"""
+        """Determine the sequence number from the pull request directory name"""
         task_pointer_file = self.description.task_object.remote_file_path
-        target_dir = self._read_target_dir_from_file(task_pointer_file, self.git_repo.default_branch)
-        # target_dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/ (REPO contains a '/' separating the org and repo)
-        _, _, _, seq, _ = target_dir.split('/')
+        pull_request_dir = self._read_pull_request_dir_from_file(task_pointer_file, self.git_repo.default_branch)
+        # pull_request_dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/ (REPO contains a '/' separating the org and repo)
+        _, _, _, seq, _ = pull_request_dir.split('/')
         return int(seq)
 
     @log_function_entry_exit()
     def _determine_feature_branch_name(self) -> str:
-        """Determine the feature branch name from the target directory name"""
+        """Determine the feature branch name from the pull request directory name"""
         task_pointer_file = self.description.task_object.remote_file_path
-        target_dir = self._read_target_dir_from_file(task_pointer_file, self.git_repo.default_branch)
-        # target_dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/ (REPO contains a '/' separating the org and repo)
-        org, repo, pr, seq, _ = target_dir.split('/')
+        pull_request_dir = self._read_pull_request_dir_from_file(task_pointer_file, self.git_repo.default_branch)
+        # pull_request_dir is of the form REPO/PR/SEQ/TASK_FILE_NAME/ (REPO contains a '/' separating the org and repo)
+        org, repo, pr, seq, _ = pull_request_dir.split('/')
         return f"{org}-{repo}-PR-{pr}-SEQ-{seq}"
 
     @log_function_entry_exit()
     def _sync_task_state_file(self, source_branch: str, target_branch: str):
         """Update task state file from source to target branch"""
         task_pointer_file = self.description.task_object.remote_file_path
-        target_dir = self._read_target_dir_from_file(task_pointer_file, self.git_repo.default_branch)
-        task_state_file_path = f"{target_dir}/TaskState"
+        pull_request_dir = self._read_pull_request_dir_from_file(task_pointer_file, self.git_repo.default_branch)
+        task_state_file_path = f"{pull_request_dir}/TaskState"
 
         try:
             # Get content from source branch
@@ -968,8 +968,8 @@ class EESSITask:
         #       for _get_fixed_sequence_number
         sequence_number = self._get_fixed_sequence_number()  # corresponds to an open PR
         task_file_name = self.description.get_task_file_name()
-        target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
-        task_summary_file_path = f"{target_dir}/TaskSummary.html"
+        pull_request_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
+        task_summary_file_path = f"{pull_request_dir}/TaskSummary.html"
 
         # check if task summary file already exists in repo on GitHub
         if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
@@ -1009,8 +1009,8 @@ class EESSITask:
         # TODO: implement
         feature_branch_name = self._determine_feature_branch_name()
         task_pointer_file = self.description.task_object.remote_file_path
-        target_dir = self._read_target_dir_from_file(task_pointer_file, feature_branch_name)
-        pr_dir = os.path.dirname(target_dir)
+        pull_request_dir = self._read_pull_request_dir_from_file(task_pointer_file, feature_branch_name)
+        pr_dir = os.path.dirname(pull_request_dir)
         directories = self._list_directory_contents(pr_dir, feature_branch_name)
         contents_overview = ""
         if directories:
