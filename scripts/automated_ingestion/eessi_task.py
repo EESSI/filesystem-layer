@@ -905,7 +905,7 @@ class EESSITask:
         """Find the PR for the given sequence number"""
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
-        feature_branch_name = f"{repo_name}-PR-{pr_number}-SEQ-{sequence_number}"
+        feature_branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
         pull_request = self._find_pr_for_branch(feature_branch_name)
         log_message(LoggingScope.TASK_OPS, 'INFO', "pull request for branch '%s': %s",
                     feature_branch_name, pull_request)
