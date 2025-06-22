@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import tarfile
 from pathlib import PurePosixPath
 import os
+from typing import Dict
 
 from eessi_data_object import EESSIDataAndSignatureObject
 from utils import log_function_entry_exit
@@ -39,7 +40,7 @@ class EESSITaskPayload:
         self.signature_verified = self.payload_object.verify_signature()
 
     @log_function_entry_exit()
-    def analyse_contents(self) -> str:
+    def analyse_contents(self, config: Dict) -> str:
         """Analyse the contents of the payload and return a summary in a ready-to-use HTML format."""
         tar = tarfile.open(self.payload_object.local_file_path, 'r')
         members = tar.getmembers()
@@ -86,7 +87,7 @@ class EESSITaskPayload:
             members_list = sorted(swdirs + modfiles + other)
 
         # Construct the overview
-        overview = self.config['github']['task_summary_payload_overview_template'].format(
+        overview = config['github']['task_summary_payload_overview_template'].format(
             tar_num_members=tar_num_members,
             bucket_url=self.payload_object.remote_client.get_bucket_url(),
             remote_file_path=self.payload_object.remote_file_path,
