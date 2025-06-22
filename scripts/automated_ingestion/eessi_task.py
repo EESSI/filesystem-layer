@@ -875,21 +875,7 @@ class EESSITask:
         try:
             # head_ref = f"{self.git_repo.owner.login}:{branch_name}"
             # apparently, the head_ref does not contain the login
-            last_dash = branch_name.rfind('-')
-            if last_dash != -1:
-                head_ref_wout_seq_num = branch_name[:last_dash + 1]  # +1 to include the separator
-            else:
-                head_ref_wout_seq_num = branch_name
-
-            log_message(LoggingScope.TASK_OPS, 'INFO',
-                        "searching for PRs starting with head_ref: '%s'", head_ref_wout_seq_num)
             filter_prs = [16, 17, 18, 19, 20, 21, 22]  # TODO: remove this once the PR is merged
-
-            all_prs = [pr for pr in list(self.git_repo.get_pulls(state='all'))
-                       if pr.head.ref.startswith(head_ref_wout_seq_num)]
-            for pr in all_prs:
-                log_message(LoggingScope.TASK_OPS, 'INFO', "PR #%d: %s", pr.number, pr.head.ref)
-
             prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=branch_name))
                    if pr.number not in filter_prs]
             log_message(LoggingScope.TASK_OPS, 'INFO', "number of PRs found: %d", len(prs))
@@ -906,6 +892,26 @@ class EESSITask:
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         feature_branch_name = f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
+
+        # list all PRs with head_ref starting with the feature branch name without the sequence number
+        last_dash = feature_branch_name.rfind('-')
+        if last_dash != -1:
+            head_ref_wout_seq_num = feature_branch_name[:last_dash + 1]  # +1 to include the separator
+        else:
+            head_ref_wout_seq_num = feature_branch_name
+
+        log_message(LoggingScope.TASK_OPS, 'INFO',
+                    "searching for PRs whose head_ref starts with: '%s'", head_ref_wout_seq_num)
+
+        all_prs = [pr for pr in list(self.git_repo.get_pulls(state='all'))
+                   if pr.head.ref.startswith(head_ref_wout_seq_num)]
+        log_message(LoggingScope.TASK_OPS, 'INFO', "  number of PRs found: %d", len(all_prs))
+        for pr in all_prs:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "  PR #%d: %s", pr.number, pr.head.ref)
+
+        # now, find the PR for the feature branch name (if any)
+        log_message(LoggingScope.TASK_OPS, 'INFO',
+                    "searching PR for feature branch name: '%s'", feature_branch_name)
         pull_request = self._find_pr_for_branch(feature_branch_name)
         log_message(LoggingScope.TASK_OPS, 'INFO', "pull request for branch '%s': %s",
                     feature_branch_name, pull_request)
