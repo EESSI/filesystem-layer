@@ -718,14 +718,22 @@ class EESSITask:
         """Determine the sequence number for the task"""
 
         sequence_numbers = self._sorted_list_of_sequence_numbers()
+        log_message(LoggingScope.TASK_OPS, 'INFO', "number of sequence numbers: %d", len(sequence_numbers))
         if len(sequence_numbers) == 0:
             return 0
 
+        log_message(LoggingScope.TASK_OPS, 'INFO', "sequence numbers: [%s]", ", ".join(map(str, sequence_numbers)))
+
         # get the highest sequence number
         highest_sequence_number = sequence_numbers[-1]
+        log_message(LoggingScope.TASK_OPS, 'INFO', "highest sequence number: %d", highest_sequence_number)
 
         pull_request = self._find_pr_for_sequence_number(highest_sequence_number)
+        log_message(LoggingScope.TASK_OPS, 'INFO', "pull request: %s", pull_request)
+
         if pull_request is None:
+            log_message(LoggingScope.TASK_OPS, 'INFO', "Did not find pull request for sequence number %d",
+                        highest_sequence_number)
             # the directory for the sequence number exists but no PR yet
             return highest_sequence_number
         else:
@@ -863,9 +871,13 @@ class EESSITask:
         """
         try:
             head_ref = f"{self.git_repo.owner.login}:{branch_name}"
+            log_message(LoggingScope.TASK_OPS, 'INFO', "searching for PRs with head_ref: '%s'", head_ref)
             filter_prs = [16, 17, 18, 19, 20, 21, 22]  # TODO: remove this once the PR is merged
             prs = [pr for pr in list(self.git_repo.get_pulls(state='all', head=head_ref))
                    if pr.number not in filter_prs]
+            log_message(LoggingScope.TASK_OPS, 'INFO', "number of PRs found: %d", len(prs))
+            if len(prs):
+                log_message(LoggingScope.TASK_OPS, 'INFO', "1st PR found: %d", prs[0].number)
             return prs[0] if prs else None
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, 'ERROR', "Error finding PR for branch %s: %s", branch_name, err)
