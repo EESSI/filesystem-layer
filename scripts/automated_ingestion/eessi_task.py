@@ -895,17 +895,15 @@ class EESSITask:
         """Analyse contents of current task and create a file for it in the REPO-PR-SEQ directory."""
 
         # determine task summary file path in feature branch on GitHub
-        feature_branch_name = self._determine_feature_branch_name()
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
-        # TODO: determine sequence number from task pointer file and thereby remove need
-        #       for _get_fixed_sequence_number
-        sequence_number = self._get_fixed_sequence_number()  # corresponds to an open PR
+        sequence_number = self._determine_sequence_number_from_pull_request_directory()
         task_file_name = self.description.get_task_file_name()
         pull_request_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
         task_summary_file_path = f"{pull_request_dir}/TaskSummary.html"
 
         # check if task summary file already exists in repo on GitHub
+        feature_branch_name = self._determine_feature_branch_name()
         if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
             log_message(LoggingScope.TASK_OPS, 'INFO', "task summary file already exists: %s", task_summary_file_path)
             task_summary = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
