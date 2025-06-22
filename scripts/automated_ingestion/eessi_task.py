@@ -541,20 +541,22 @@ class EESSITask:
         branch_to_use = self.git_repo.default_branch if branch is None else branch
 
         if self._path_exists_in_branch(task_pointer_file, branch_name=branch_to_use):
-            log_message(LoggingScope.TASK_OPS, 'INFO', "path %s exists in branch %s",
+            log_message(LoggingScope.TASK_OPS, 'INFO', "path '%s' exists in branch '%s'",
                         task_pointer_file, branch_to_use)
 
             # get state from task file in branch to use
             # - read the TaskState file in pull request directory
             pull_request_dir = self._determine_pull_request_dir(branch_name=branch_to_use)
+            log_message(LoggingScope.TASK_OPS, 'INFO', "pull request directory: '%s'", pull_request_dir)
             task_state_file_path = f"{pull_request_dir}/TaskState"
+            log_message(LoggingScope.TASK_OPS, 'INFO', "task state file path: '%s'", task_state_file_path)
             task_state = self._read_task_state_from_file(task_state_file_path, branch_to_use)
 
-            log_message(LoggingScope.TASK_OPS, 'INFO', "task state in branch %s: %s",
+            log_message(LoggingScope.TASK_OPS, 'INFO', "task state in branch '%s': %s",
                         branch_to_use, task_state)
             return task_state
         else:
-            log_message(LoggingScope.TASK_OPS, 'INFO', "path %s does not exist in branch %s",
+            log_message(LoggingScope.TASK_OPS, 'INFO', "path '%s' does not exist in branch '%s'",
                         task_pointer_file, branch_to_use)
             return TaskState.UNDETERMINED
 
