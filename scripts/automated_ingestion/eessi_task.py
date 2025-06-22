@@ -681,6 +681,8 @@ class EESSITask:
     def _handle_add_undetermined(self):
         """Handler for ADD action in UNDETERMINED state"""
         print("Handling ADD action in UNDETERMINED state: %s" % self.description.get_task_file_name())
+        # task is in state UNDETERMINED if there is no pull request directory for the task yet
+        #
         # create pull request directory (REPO/PR/SEQ/TASK_FILE_NAME/)
         # create task file in pull request directory (PULL_REQUEST_DIR/TaskDescription)
         # create task status file in pull request directory (PULL_REQUEST_DIR/TaskState.NEW_TASK)
@@ -689,7 +691,9 @@ class EESSITask:
         pr_number = self.description.get_pr_number()
         sequence_number = self._get_fixed_sequence_number()  # corresponds to an open or yet to be created PR
         task_file_name = self.description.get_task_file_name()
-        pull_request_dir = self._determine_pull_request_dir()
+        # we cannot use self._determine_pull_request_dir() here because it requires a task pointer file
+        #   and we don't have one yet
+        pull_request_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
         task_description_file_path = f"{pull_request_dir}/TaskDescription"
         task_state_file_path = f"{pull_request_dir}/TaskState"
         remote_file_path = self.description.task_object.remote_file_path
