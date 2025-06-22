@@ -910,15 +910,11 @@ class EESSITask:
         """Analyse contents of current task and create a file for it in the REPO-PR-SEQ directory."""
 
         # determine task summary file path in feature branch on GitHub
-        repo_name = self.description.get_repo_name()
-        pr_number = self.description.get_pr_number()
-        sequence_number = self._determine_sequence_number_from_pull_request_directory()
-        task_file_name = self.description.get_task_file_name()
-        pull_request_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
+        feature_branch_name = self._determine_feature_branch_name()
+        pull_request_dir = self._determine_pull_request_dir(branch_name=feature_branch_name)
         task_summary_file_path = f"{pull_request_dir}/TaskSummary.html"
 
         # check if task summary file already exists in repo on GitHub
-        feature_branch_name = self._determine_feature_branch_name()
         if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
             log_message(LoggingScope.TASK_OPS, 'INFO', "task summary file already exists: %s", task_summary_file_path)
             task_summary = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
@@ -942,6 +938,7 @@ class EESSITask:
 
         # create HTML file with task summary in REPO-PR-SEQ directory
         # TODO: add failure handling (capture result and act on it)
+        task_file_name = self.description.get_task_file_name()
         commit_message = f"create summary for {task_file_name} in {feature_branch_name}"
         self._safe_create_file(task_summary_file_path, commit_message, task_summary,
                                branch_name=feature_branch_name)
