@@ -572,63 +572,6 @@ class EESSITask:
 
     # Implement handlers for ADD action
     @log_function_entry_exit()
-    def _create_symlink(self, source_path: str, target_path: str, branch_name: str = None):
-        """Create a symlink in the given branch."""
-        try:
-            branch_name = self.git_repo.default_branch if branch_name is None else branch_name
-            ref = self.git_repo.get_git_ref(f"heads/{branch_name}")
-            commit = self.git_repo.get_git_commit(ref.object.sha)
-            base_tree = self.git_repo.get_git_tree(commit.tree.sha)
-
-            # Create blob for symlink target
-            blob = self.git_repo.create_git_blob(target_path, "utf-8")
-            log_message(LoggingScope.TASK_OPS, 'INFO', "blob created: %s", blob)
-
-            # Create tree element
-            tree_element = InputGitTreeElement(
-                path=source_path,
-                mode="120000",
-                type="blob",
-                sha=blob.sha
-            )
-            log_message(LoggingScope.TASK_OPS, 'INFO', "tree element created: %s", tree_element)
-
-            # Create new tree
-            try:
-                new_tree = self.git_repo.create_git_tree([tree_element], base_tree)
-                log_message(LoggingScope.TASK_OPS, 'INFO', "new tree created: %s", new_tree)
-            except GithubException as err:
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating new tree: %s", err)
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Status Code: %s", err.status)
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Error Message: %s", err.data)
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Headers: %s", err.headers)
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Raw Response: %s", err.response)
-                return False
-            except Exception as err:
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "\n=== General Exception ===")
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Type: %s", type(err).__name__)
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Message: %s", str(err))
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "  Traceback:")
-                log_message(LoggingScope.TASK_OPS, 'ERROR', "    %s", traceback.format_exc())
-                return False
-
-            # Create new commit
-            commit_message = f"Add symlink {source_path} -> {target_path}"
-            new_commit = self.git_repo.create_git_commit(commit_message, new_tree, [commit])
-            log_message(LoggingScope.TASK_OPS, 'INFO', "new commit created: %s", new_commit)
-
-            # Update reference
-            ref.edit(new_commit.sha)
-
-            log_message(LoggingScope.TASK_OPS, 'INFO', "Symlink created: %s -> %s",
-                        source_path, target_path)
-            return True
-
-        except Exception as err:
-            log_message(LoggingScope.TASK_OPS, 'ERROR', "Error creating symlink: %s", err)
-            return False
-
-    @log_function_entry_exit()
     def _safe_create_file(self, path: str, message: str, content: str, branch_name: str = None):
         """Create a file in the given branch."""
         try:
