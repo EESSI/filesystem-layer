@@ -835,6 +835,7 @@ class EESSITask:
     @log_function_entry_exit()
     def _determine_branch_name_from_sequence_number(self, sequence_number: int = None) -> str:
         """Determine the branch name from the sequence number"""
+        # TODO: make sequence_number mandatory and thereby remove need for _get_fixed_sequence_number
         sequence_number = self._get_fixed_sequence_number() if sequence_number is None else sequence_number
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
@@ -863,7 +864,7 @@ class EESSITask:
             return None
 
     @log_function_entry_exit()
-    def _determine_sequence_number(self) -> int:
+    def _determine_sequence_number_from_pull_request_directory(self) -> int:
         """Determine the sequence number from the target directory name"""
         task_pointer_file = self.description.task_object.remote_file_path
         target_dir = self._read_target_dir_from_file(task_pointer_file, self.git_repo.default_branch)
@@ -963,6 +964,8 @@ class EESSITask:
         feature_branch_name = self._determine_feature_branch_name()
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
+        # TODO: determine sequence number from task pointer file and thereby remove need
+        #       for _get_fixed_sequence_number
         sequence_number = self._get_fixed_sequence_number()  # corresponds to an open PR
         task_file_name = self.description.get_task_file_name()
         target_dir = f"{repo_name}/{pr_number}/{sequence_number}/{task_file_name}"
@@ -1041,7 +1044,7 @@ class EESSITask:
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         pr_url = f"https://github.com/{repo_name}/pull/{pr_number}"
-        seq_num = self._determine_sequence_number()
+        seq_num = self._determine_sequence_number_from_pull_request_directory()
         pr_title = pr_title_format.format(
             cvmfs_repo=self.cvmfs_repo,
             pr=pr_number,
@@ -1080,7 +1083,7 @@ class EESSITask:
         repo_name = self.description.get_repo_name()
         pr_number = self.description.get_pr_number()
         pr_url = f"https://github.com/{repo_name}/pull/{pr_number}"
-        seq_num = self._determine_sequence_number()
+        seq_num = self._determine_sequence_number_from_pull_request_directory()
 
         self._create_task_summary()
         contents_overview = self._create_pr_contents_overview()
