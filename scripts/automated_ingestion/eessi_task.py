@@ -870,7 +870,9 @@ class EESSITask:
             PullRequest object if found, None otherwise
         """
         try:
-            head_ref = f"{self.git_repo.owner.login}:{branch_name}"
+            # head_ref = f"{self.git_repo.owner.login}:{branch_name}"
+            # apparently, the head_ref does not contain the login
+            head_ref = f"{branch_name}"
             log_message(LoggingScope.TASK_OPS, 'INFO', "searching for PRs with head_ref: '%s'", head_ref)
             filter_prs = [16, 17, 18, 19, 20, 21, 22]  # TODO: remove this once the PR is merged
 
