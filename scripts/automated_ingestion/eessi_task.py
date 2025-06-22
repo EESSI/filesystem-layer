@@ -776,15 +776,6 @@ class EESSITask:
         return next_state
 
     @log_function_entry_exit()
-    def _determine_branch_name_from_sequence_number(self, sequence_number: int = None) -> str:
-        """Determine the branch name from the sequence number"""
-        # TODO: make sequence_number mandatory and thereby remove need for _get_fixed_sequence_number
-        sequence_number = self._get_fixed_sequence_number() if sequence_number is None else sequence_number
-        repo_name = self.description.get_repo_name()
-        pr_number = self.description.get_pr_number()
-        return f"{repo_name.replace('/', '-')}-PR-{pr_number}-SEQ-{sequence_number}"
-
-    @log_function_entry_exit()
     def _find_pr_for_branch(self, branch_name: str) -> Optional[PullRequest]:
         """
         Find the single PR for the given branch in any state.
