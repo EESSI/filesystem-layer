@@ -49,19 +49,25 @@ jobs:
         uses: bpicode/github-action-fpm@7502b06a5a58390398d4002bd284f8cb3caae6eb
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
+          fpm_opts: >
+            --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t rpm -a all -s dir
+            -C ./package --description 'CVMFS configuration package for EESSI.'
 
       - name: Build Deb package
         uses: bpicode/github-action-fpm@7502b06a5a58390398d4002bd284f8cb3caae6eb
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
+          fpm_opts: >
+            --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t deb -a all -s dir
+            -C ./package --description 'CVMFS configuration package for EESSI.'
 
       - name: Build tar package
         uses: bpicode/github-action-fpm@7502b06a5a58390398d4002bd284f8cb3caae6eb
         with:
           fpm_args: "etc"
-          fpm_opts: "--debug -n cvmfs-config-eessi-${{ steps.get_version.outputs.version }} -t tar -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.'"
+          fpm_opts: >
+            --debug -n cvmfs-config-eessi-${{ steps.get_version.outputs.version }} -t tar -a all -s dir
+            -C ./package --description 'CVMFS configuration package for EESSI.'
 
       - name: Upload packages as build artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -103,7 +109,9 @@ jobs:
 #        run: gem install --no-document fpm
 #
 #      - name: Build package
-#        run: "fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir -C ./package --description 'CVMFS configuration package for EESSI.' etc"
+#        run: >
+#          fpm --debug -n cvmfs-config-eessi -v ${{ steps.get_version.outputs.version }} -t osxpkg -a all -s dir
+#          -C ./package --description 'CVMFS configuration package for EESSI.' etc
 #
 #      - name: Find filename of generated package
 #        id: find_filename
@@ -192,7 +200,7 @@ jobs:
         run: echo "CVMFS_CLIENT_PROFILE=single" | tee /etc/cvmfs/default.local
 
       - name: Mount the repositories
-        #run: cvmfs_config setup
+        # run: cvmfs_config setup
         run: mkdir -p /cvmfs/software.eessi.io && mount -t cvmfs software.eessi.io /cvmfs/software.eessi.io
 
       - name: Test repository access
@@ -273,7 +281,7 @@ jobs:
 #        run: ls /Users/Shared/cvmfs/software.eessi.io/
 
   release:
-    #needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package, test-tar-package]
+    # needs: [build-linux-packages, build-macos-package, test-deb-package, test-rpm-package, test-macos-package, test-tar-package]
     needs: [build-linux-packages, test-deb-package, test-rpm-package, test-tar-package]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
@@ -351,8 +359,10 @@ jobs:
           tag: latest
           name: Filesystem Layer latest release
           body: |
-            Filesystem Layer release ${{ steps.find_version.outputs.version }} (see: https://github.com/${{github.repository}}/releases/tag/${{ steps.find_version.outputs.version }})
+            Filesystem Layer release ${{ steps.find_version.outputs.version }}
+            (see: https://github.com/${{github.repository}}/releases/tag/${{ steps.find_version.outputs.version }})
 
-            This `latest` tag is a moving tag that is updated automatically for each release, and provides easy access to the latest `cvmfs-config-eessi` packages.
+            This `latest` tag is a moving tag that is updated automatically for each release,
+            and provides easy access to the latest `cvmfs-config-eessi` packages.
           files: ${{ steps.find_filenames.outputs.package_filenames }}
           gzip: false
