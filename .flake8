@@ -11,8 +11,7 @@ exclude =
     scripts/check-stratum-servers.py,
     scripts/automated_ingestion/automated_ingestion.py,
     scripts/automated_ingestion/eessitarball.py,
-    scripts/automated_ingestion/utils.py,
-    scripts/automated_ingestion/unit_tests/*.py
+    scripts/automated_ingestion/utils.py
 
 # ignore "Black would make changes" produced by flake8-black
 # see also https://github.com/houndci/hound/issues/1769
