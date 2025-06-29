@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# from eessi_data_object import EESSIDataAndSignatureObject
+from eessi_data_object import EESSIDataAndSignatureObject
 # from eessi_task import EESSITask, TaskState
 # from eessi_task_description import EESSITaskDescription
 from eessi_s3_bucket import EESSIS3Bucket
@@ -170,8 +170,9 @@ def main():
             for task_path in tasks:
                 log_message(LoggingScope.GROUP_OPS, "INFO", "Processing task: '%s'", task_path)
 
-#                try:
-#                    # Create EESSITask for the task file
+                try:
+                    _ = EESSIDataAndSignatureObject(config, task_path, s3_bucket)
+#                    # create EESSITask for the task file
 #                    try:
 #                        task = EESSITask(
 #                            EESSITaskDescription(EESSIDataAndSignatureObject(config, task_path, s3_bucket)),
@@ -201,9 +202,9 @@ def main():
 #                                    "Task '%s': AFTER handle(): previous state = '%s', current state = '%s'",
 #                                    task_path, previous_state.name, current_state.name)
 #
-#                except Exception as err:
-#                    log_message(LoggingScope.ERROR, "ERROR", "Failed to process task %s: %s", task_path, str(err))
-#                    continue
+                except Exception as err:
+                    log_message(LoggingScope.ERROR, "ERROR", "Failed to process task '%s': '%s'", task_path, str(err))
+                    continue
 
 
 @log_function_entry_exit()
