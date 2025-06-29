@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from eessi_data_object import EESSIDataAndSignatureObject
-from eessi_task import EESSITask
+from eessi_task import EESSITask, EESSITaskState
 from eessi_task_description import EESSITaskDescription
 from eessi_s3_bucket import EESSIS3Bucket
 from eessi_logging import error, log_function_entry_exit, log_message, LoggingScope, LOG_LEVELS, set_logging_scopes
@@ -184,22 +184,22 @@ def main():
 
                     log_message(LoggingScope.GROUP_OPS, "INFO", "Created EESSITask: '%s'", task)
 
-#                    previous_state = None
-#                    current_state = task.determine_state()
-#                    log_message(LoggingScope.GROUP_OPS, "INFO", "Task '%s' is in state '%s'",
-#                                task_path, current_state.name)
-#                    while (current_state is not None and
-#                            current_state != TaskState.DONE and
-#                            previous_state != current_state):
-#                        previous_state = current_state
-#                        log_message(LoggingScope.GROUP_OPS, "INFO",
-#                                    "Task '%s': BEFORE handle(): previous state = '%s', current state = '%s'",
-#                                    task_path, previous_state.name, current_state.name)
-#                        current_state = task.handle()
-#                        log_message(LoggingScope.GROUP_OPS, "INFO",
-#                                    "Task '%s': AFTER handle(): previous state = '%s', current state = '%s'",
-#                                    task_path, previous_state.name, current_state.name)
-#
+                    previous_state = None
+                    current_state = task.determine_state()
+                    log_message(LoggingScope.GROUP_OPS, "INFO", "Task '%s' is in state '%s'",
+                                task_path, current_state.name)
+                    while (current_state is not None and
+                            current_state != EESSITaskState.DONE and
+                            previous_state != current_state):
+                        previous_state = current_state
+                        log_message(LoggingScope.GROUP_OPS, "INFO",
+                                    "Task '%s': BEFORE handle(): previous state = '%s', current state = '%s'",
+                                    task_path, previous_state.name, current_state.name)
+                        current_state = task.handle()
+                        log_message(LoggingScope.GROUP_OPS, "INFO",
+                                    "Task '%s': AFTER handle(): previous state = '%s', current state = '%s'",
+                                    task_path, previous_state.name, current_state.name)
+
                 except Exception as err:
                     log_message(LoggingScope.ERROR, "ERROR", "Failed to process task '%s': '%s'", task_path, str(err))
                     continue
