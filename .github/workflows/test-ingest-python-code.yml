@@ -31,7 +31,7 @@ jobs:
       - name: Install required Python packages + pytest + flake8
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt
+          python -m pip install -r scripts/automated_ingestion/requirements.txt
           python -m pip install pytest
           python -m pip install --upgrade flake8
 
