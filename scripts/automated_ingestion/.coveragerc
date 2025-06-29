@@ -1,0 +1,5 @@
+[run]
+omit =
+    scripts/automated_ingestion/automated_ingestion.py
+    scripts/automated_ingestion/eessitarball.py
+    scripts/automated_ingestion/utils.py
