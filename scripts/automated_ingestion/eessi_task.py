@@ -34,15 +34,15 @@ class EESSITaskState(Enum):
     def from_string(
         cls, name: str, default: Optional["EESSITaskState"] = None, case_sensitive: bool = False
     ) -> "EESSITaskState":
-        log_message(LoggingScope.TASK_OPS, "INFO", "from_string: '%s'", name)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "from_string: '%s'", name)
         if case_sensitive:
             to_return = cls.__members__.get(name, default)
-            log_message(LoggingScope.TASK_OPS, "INFO", "from_string will return: '%s'", to_return)
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "from_string will return: '%s'", to_return)
             return to_return
 
         try:
             to_return = cls[name.upper()]
-            log_message(LoggingScope.TASK_OPS, "INFO", "from_string will return: '%s'", to_return)
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "from_string will return: '%s'", to_return)
             return to_return
         except KeyError:
             return default
@@ -134,32 +134,32 @@ class EESSITask:
             # get all files in directory part of file_path_prefix
             directory_part = os.path.dirname(file_path_prefix)
             files = self.git_repo.get_contents(directory_part, ref=branch_name)
-            log_msg = "Found files %s in directory %s in branch %s"
-            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, files, directory_part, branch_name)
+            log_msg = "Found files '%s' in directory '%s' in branch '%s'"
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", log_msg, files, directory_part, branch_name)
             # check if any of the files has file_path_prefix as prefix
             for file in files:
                 if file.path.startswith(file_path_prefix):
-                    log_msg = "Found file %s in directory %s in branch %s"
-                    log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file.path, directory_part, branch_name)
+                    log_msg = "Found file '%s' in directory '%s' in branch '%s'"
+                    log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", log_msg, file.path, directory_part, branch_name)
                     return True
-            log_msg = "No file with prefix %s found in directory %s in branch %s"
-            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, file_path_prefix, directory_part, branch_name)
+            log_msg = "No file with prefix '%s' found in directory '%s' in branch '%s'"
+            log_message(LoggingScope.TASK_OPS, "INFO", log_msg, file_path_prefix, directory_part, branch_name)
             return False
         except UnknownObjectException:
             # file_path does not exist in branch
-            log_msg = "Directory %s or file with prefix %s does not exist in branch %s"
-            log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, directory_part, file_path_prefix, branch_name)
+            log_msg = "Directory '%s' or file with prefix '%s' does not exist in branch '%s'"
+            log_message(LoggingScope.TASK_OPS, "INFO", log_msg, directory_part, file_path_prefix, branch_name)
             return False
         except GithubException as err:
             if err.status == 404:
                 # file_path does not exist in branch
-                log_msg = "Directory %s or file with prefix %s does not exist in branch %s"
-                log_message(LoggingScope.TASK_OPS, 'INFO', log_msg, directory_part, file_path_prefix, branch_name)
+                log_msg = "Directory '%s' or file with prefix '%s' does not exist in branch '%s'"
+                log_message(LoggingScope.TASK_OPS, "INFO", log_msg, directory_part, file_path_prefix, branch_name)
                 return False
             else:
                 # if there was some other (e.g. connection) issue, log message and return False
-                log_msg = 'Unable to determine the state of %s, the GitHub API returned status %s!'
-                log_message(LoggingScope.ERROR, 'WARNING', log_msg, self.object, err.status)
+                log_msg = "Unable to determine the state of '%s', the GitHub API returned status '%s'!"
+                log_message(LoggingScope.ERROR, "WARNING", log_msg, self.object, err.status)
                 return False
         return False
 
@@ -323,23 +323,24 @@ class EESSITask:
             The state of the task.
         """
         # obtain repo and pr from metadata
-        log_message(LoggingScope.TASK_OPS, "INFO", "finding state of task '%s'", self.description.task_object)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "finding state of task '%s'", self.description.task_object)
         repo = self.description.get_repo_name()
         pr = self.description.get_pr_number()
-        log_message(LoggingScope.TASK_OPS, "INFO", "repo: '%s', pr: '%s'", repo, pr)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "repo: '%s', pr: '%s'", repo, pr)
 
         # obtain all sequence numbers in repo/pr dir which include a state file for this task
         sequence_numbers = self._determine_sequence_numbers_including_task_file(repo, pr)
         if len(sequence_numbers) == 0:
             # no sequence numbers found, so we return NEW_TASK
-            log_message(LoggingScope.TASK_OPS, "INFO", "no sequence numbers found, state: NEW_TASK")
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "no sequence numbers found, state: NEW_TASK")
             return EESSITaskState.NEW_TASK
         # we got at least one sequence number
         # if one value for a sequence number is True, we can determine the state from the file in the directory
         sequence_including_task = [key for key, value in sequence_numbers.items() if value is True]
         if len(sequence_including_task) == 0:
             # no sequence number includes the task file, so we return NEW_TASK
-            log_message(LoggingScope.TASK_OPS, "INFO", "no sequence number includes the task file, state: NEW_TASK")
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
+                        "no sequence number includes the task file, state: NEW_TASK")
             return EESSITaskState.NEW_TASK
         # we got at least one sequence number which includes the task file
         # we can determine the state from the filename in the directory
@@ -349,7 +350,7 @@ class EESSITask:
         task_file_name = self.description.get_task_file_name()
         metadata_file_state_path_prefix = f"{repo}/{pr}/{sequence_number}/{task_file_name}."
         state = self._get_state_for_metadata_file_prefix(metadata_file_state_path_prefix, sequence_number)
-        log_message(LoggingScope.TASK_OPS, "INFO", "state: '%s'", state)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "state: '%s'", state)
         return state
 
     @log_function_entry_exit()
@@ -377,7 +378,7 @@ class EESSITask:
                     if file.path.startswith(metadata_file_state_path_prefix):
                         # get state from file name taking only the suffix
                         state = EESSITaskState.from_string(file.name.split(".")[-1])
-                        log_message(LoggingScope.TASK_OPS, "INFO", "state: '%s'", state)
+                        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "state: '%s'", state)
                         states.append(state)
         if len(states) == 0:
             # did not find any file with metadata_file_state_path_prefix as prefix
@@ -387,7 +388,7 @@ class EESSITask:
         # sort the states and return the last one
         states.sort()
         state = states[-1]
-        log_message(LoggingScope.TASK_OPS, "INFO", "state: '%s'", state)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "state: '%s'", state)
         return state
 
     @log_function_entry_exit()
@@ -398,7 +399,7 @@ class EESSITask:
         try:
             # Get contents of the directory
             branch_name = self.git_repo.default_branch if branch_name is None else branch_name
-            log_message(LoggingScope.TASK_OPS, "INFO", "listing contents of '%s' in branch '%s'",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "listing contents of '%s' in branch '%s'",
                         directory_path, branch_name)
             contents = self.git_repo.get_contents(directory_path, ref=branch_name)
 
@@ -524,15 +525,15 @@ class EESSITask:
         branch_to_use = self.git_repo.default_branch if branch is None else branch
 
         if self._path_exists_in_branch(task_pointer_file, branch_name=branch_to_use):
-            log_message(LoggingScope.TASK_OPS, "INFO", "path '%s' exists in branch '%s'",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "path '%s' exists in branch '%s'",
                         task_pointer_file, branch_to_use)
 
             # get state from task file in branch to use
             # - read the EESSITaskState file in pull request directory
             pull_request_dir = self._determine_pull_request_dir(branch_name=branch_to_use)
-            log_message(LoggingScope.TASK_OPS, "INFO", "pull request directory: '%s'", pull_request_dir)
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "pull request directory: '%s'", pull_request_dir)
             task_state_file_path = f"{pull_request_dir}/TaskState"
-            log_message(LoggingScope.TASK_OPS, "INFO", "task state file path: '%s'", task_state_file_path)
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "task state file path: '%s'", task_state_file_path)
             task_state = self._read_task_state_from_file(task_state_file_path, branch_to_use)
 
             log_message(LoggingScope.TASK_OPS, "INFO", "task state in branch '%s': %s",
@@ -573,7 +574,7 @@ class EESSITask:
         try:
             branch_name = self.git_repo.default_branch if branch_name is None else branch_name
             existing_file = self.git_repo.get_contents(path, ref=branch_name)
-            log_message(LoggingScope.TASK_OPS, "INFO", "File '%s' already exists", path)
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "File '%s' already exists", path)
             return existing_file
         except GithubException as err:
             if err.status == 404:  # File doesn't exist
@@ -656,7 +657,7 @@ class EESSITask:
                 branch=branch_name
             )
 
-            log_message(LoggingScope.TASK_OPS, "INFO",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                         "File updated successfully. Commit SHA: '%s'", result["commit"].sha)
             return result
 
@@ -700,18 +701,20 @@ class EESSITask:
         """Determine the sequence number for the task"""
 
         sequence_numbers = self._sorted_list_of_sequence_numbers()
-        log_message(LoggingScope.TASK_OPS, "INFO", "number of sequence numbers: %d", len(sequence_numbers))
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "number of sequence numbers: %d", len(sequence_numbers))
         if len(sequence_numbers) == 0:
+            log_message(LoggingScope.TASK_OPS, "INFO", "no sequence numbers found, returning 0")
             return 0
 
-        log_message(LoggingScope.TASK_OPS, "INFO", "sequence numbers: [%s]", ", ".join(map(str, sequence_numbers)))
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
+                    "sequence numbers: [%s]", ", ".join(map(str, sequence_numbers)))
 
         # get the highest sequence number
         highest_sequence_number = sequence_numbers[-1]
-        log_message(LoggingScope.TASK_OPS, "INFO", "highest sequence number: %d", highest_sequence_number)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "highest sequence number: %d", highest_sequence_number)
 
         pull_request = self._find_pr_for_sequence_number(highest_sequence_number)
-        log_message(LoggingScope.TASK_OPS, "INFO", "pull request: '%s'", pull_request)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "pull request: '%s'", pull_request)
 
         if pull_request is None:
             log_message(LoggingScope.TASK_OPS, "INFO", "Did not find pull request for sequence number %d",
@@ -773,7 +776,7 @@ class EESSITask:
                 f"new task for {repo_name} PR {pr_number} seq {sequence_number}",
                 branch_name=branch_name
             )
-            log_message(LoggingScope.TASK_OPS, "INFO", "commit created: '%s'", commit)
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "commit created: '%s'", commit)
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, "ERROR", "Error creating commit: '%s'", err)
             # TODO: rollback previous changes (task description file, task state file)
@@ -803,12 +806,12 @@ class EESSITask:
     def _init_payload_object(self):
         """Initialize the payload object"""
         if self.payload is not None:
-            log_message(LoggingScope.TASK_OPS, "INFO", "payload object already initialized")
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "payload object already initialized")
             return
 
         # get name of of payload from metadata
         payload_name = self.description.metadata["payload"]["filename"]
-        log_message(LoggingScope.TASK_OPS, "INFO", "payload_name: '%s'", payload_name)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "payload_name: '%s'", payload_name)
 
         # get config and remote_client from self.description.task_object
         config = self.description.task_object.config
@@ -818,7 +821,7 @@ class EESSITask:
         #   with payload_name
         description_remote_file_path = self.description.task_object.remote_file_path
         payload_remote_file_path = os.path.join(os.path.dirname(description_remote_file_path), payload_name)
-        log_message(LoggingScope.TASK_OPS, "INFO", "payload_remote_file_path: '%s'", payload_remote_file_path)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "payload_remote_file_path: '%s'", payload_remote_file_path)
 
         # initialize payload object
         payload_object = EESSIDataAndSignatureObject(config, payload_remote_file_path, remote_client)
@@ -832,7 +835,7 @@ class EESSITask:
                     self.description.get_task_file_name())
         # determine next state
         next_state = self._next_state(EESSITaskState.NEW_TASK)
-        log_message(LoggingScope.TASK_OPS, "INFO", "next_state: '%s'", next_state)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "next_state: '%s'", next_state)
 
         # initialize payload object
         self._init_payload_object()
@@ -859,9 +862,10 @@ class EESSITask:
         try:
             prs = [pr for pr in list(self.git_repo.get_pulls(state="all"))
                    if pr.head.ref == branch_name]
-            log_message(LoggingScope.TASK_OPS, "INFO", "number of PRs found: %d", len(prs))
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "number of PRs found: %d", len(prs))
             if len(prs):
-                log_message(LoggingScope.TASK_OPS, "INFO", "1st PR found: %d, '%s'", prs[0].number, prs[0].head.ref)
+                log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
+                            "1st PR found: %d, '%s'", prs[0].number, prs[0].head.ref)
             return prs[0] if prs else None
         except Exception as err:
             log_message(LoggingScope.TASK_OPS, "ERROR", "Error finding PR for branch '%s': '%s'", branch_name, err)
@@ -881,20 +885,20 @@ class EESSITask:
         else:
             head_ref_wout_seq_num = feature_branch_name
 
-        log_message(LoggingScope.TASK_OPS, "INFO",
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                     "searching for PRs whose head_ref starts with: '%s'", head_ref_wout_seq_num)
 
         all_prs = [pr for pr in list(self.git_repo.get_pulls(state="all"))
                    if pr.head.ref.startswith(head_ref_wout_seq_num)]
-        log_message(LoggingScope.TASK_OPS, "INFO", "  number of PRs found: %d", len(all_prs))
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "  number of PRs found: %d", len(all_prs))
         for pr in all_prs:
-            log_message(LoggingScope.TASK_OPS, "INFO", "  PR #%d: '%s'", pr.number, pr.head.ref)
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "  PR #%d: '%s'", pr.number, pr.head.ref)
 
         # now, find the PR for the feature branch name (if any)
-        log_message(LoggingScope.TASK_OPS, "INFO",
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                     "searching PR for feature branch name: '%s'", feature_branch_name)
         pull_request = self._find_pr_for_branch(feature_branch_name)
-        log_message(LoggingScope.TASK_OPS, "INFO", "pull request for branch '%s': '%s'",
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "pull request for branch '%s': '%s'",
                     feature_branch_name, pull_request)
         return pull_request
 
@@ -1002,7 +1006,8 @@ class EESSITask:
 
         # check if task summary file already exists in repo on GitHub
         if self._path_exists_in_branch(task_summary_file_path, feature_branch_name):
-            log_message(LoggingScope.TASK_OPS, "INFO", "task summary file already exists: '%s'", task_summary_file_path)
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
+                        "task summary file already exists: '%s'", task_summary_file_path)
             task_summary = self.git_repo.get_contents(task_summary_file_path, ref=feature_branch_name)
             # return task_summary.decoded_content
             return task_summary
@@ -1024,7 +1029,7 @@ class EESSITask:
         commit_message = f"create summary for {task_file_name} in {feature_branch_name}"
         self._safe_create_file(task_summary_file_path, commit_message, task_summary,
                                branch_name=feature_branch_name)
-        log_message(LoggingScope.TASK_OPS, "INFO", "task summary file created: '%s'", task_summary_file_path)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO", "task summary file created: '%s'", task_summary_file_path)
 
         # return task summary
         return task_summary
@@ -1135,7 +1140,8 @@ class EESSITask:
                     self.description.get_task_file_name())
         next_state = self._next_state(EESSITaskState.PAYLOAD_STAGED)
         approved_state = EESSITaskState.APPROVED
-        log_message(LoggingScope.TASK_OPS, "INFO", "next_state: '%s', approved_state: '%s'", next_state, approved_state)
+        log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
+                    "next_state: '%s', approved_state: '%s'", next_state, approved_state)
 
         default_branch_name = self.git_repo.default_branch
         default_branch = self._get_branch_from_name(default_branch_name)
@@ -1146,19 +1152,19 @@ class EESSITask:
             # feature branch does not exist
             # TODO: could have been merged already --> check if PR corresponding to the feature branch exists
             # ASSUME: it has not existed before --> create it
-            log_message(LoggingScope.TASK_OPS, "INFO",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                         "branch '%s' does not exist, creating it", feature_branch_name)
 
             feature_branch = self.git_repo.create_git_ref(f"refs/heads/{feature_branch_name}", default_sha)
-            log_message(LoggingScope.TASK_OPS, "INFO",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                         "branch '%s' created: '%s'", feature_branch_name, feature_branch)
         else:
-            log_message(LoggingScope.TASK_OPS, "INFO",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                         "found existing branch for '%s': '%s'", feature_branch_name, feature_branch)
 
         pull_request = self._find_pr_for_branch(feature_branch_name)
         if not pull_request:
-            log_message(LoggingScope.TASK_OPS, "INFO",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                         "no PR found for branch '%s'", feature_branch_name)
 
             # TODO: add failure handling (capture result and act on it)
@@ -1169,7 +1175,7 @@ class EESSITask:
 
             return EESSITaskState.PULL_REQUEST
         else:
-            log_message(LoggingScope.TASK_OPS, "INFO",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                         "found existing PR for branch '%s': '%s'", feature_branch_name, pull_request)
             # TODO: check if PR is open or closed
             if pull_request.state == "closed":
@@ -1178,7 +1184,7 @@ class EESSITask:
                 # TODO: create issue
                 return EESSITaskState.PAYLOAD_STAGED
             else:
-                log_message(LoggingScope.TASK_OPS, "INFO",
+                log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                             "PR '%s' is open, updating task states", pull_request)
                 # TODO: add failure handling (capture result and act on it)
                 #   THINK about what a failure would mean and what to do about it.
@@ -1204,12 +1210,12 @@ class EESSITask:
         # TODO: check if feature branch exists, for now ASSUME it does
         pull_request = self._find_pr_for_branch(feature_branch_name)
         if pull_request:
-            log_message(LoggingScope.TASK_OPS, "INFO",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                         "found PR for branch '%s': '%s'", feature_branch_name, pull_request)
             if pull_request.state == "closed":
                 if pull_request.merged:
                     log_message(LoggingScope.TASK_OPS, "INFO",
-                                "PR '%s' is closed and merged, returning APPROVED state", pull_request)
+                                "PR '%s' is closed and merged (strange that state is PULL_REQUEST)", pull_request)
                     # TODO: How could we ended up here? state in default branch is PULL_REQUEST but
                     #         PR is merged, hence it should have been in the APPROVED state
                     #    ==> for now, just return EESSITaskState.PULL_REQUEST
@@ -1249,11 +1255,11 @@ class EESSITask:
                     self._update_task_state_file(EESSITaskState.REJECTED)
                     return EESSITaskState.REJECTED
             else:
-                log_message(LoggingScope.TASK_OPS, "INFO",
+                log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                             "PR '%s' is open, returning PULL_REQUEST state", pull_request)
                 return EESSITaskState.PULL_REQUEST
         else:
-            log_message(LoggingScope.TASK_OPS, "INFO",
+            log_message(LoggingScope.TASK_OPS_DETAILS, "INFO",
                         "no PR found for branch '%s'", feature_branch_name)
             # the method was called because the state of the task is PULL_REQUEST in the default branch
             # however, it's weird that the PR was not found for the feature branch

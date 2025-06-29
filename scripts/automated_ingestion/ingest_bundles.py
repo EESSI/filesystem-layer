@@ -182,7 +182,7 @@ def main():
                                     task_path, str(err))
                         continue
 
-                    log_message(LoggingScope.GROUP_OPS, "INFO", "Task: %s", task)
+                    log_message(LoggingScope.GROUP_OPS, "INFO", "Created EESSITask: '%s'", task)
 
 #                    previous_state = None
 #                    current_state = task.determine_state()
