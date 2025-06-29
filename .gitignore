@@ -1,3 +1,4 @@
 build
 hosts
 .coverage
+**/__pycache__
