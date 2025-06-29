@@ -9,6 +9,15 @@ from enum import IntFlag, auto
 from typing import Callable, Union
 
 
+LOG_LEVELS = {
+    'DEBUG': logging.DEBUG,
+    'INFO': logging.INFO,
+    'WARNING': logging.WARNING,
+    'ERROR': logging.ERROR,
+    'CRITICAL': logging.CRITICAL
+}
+
+
 class LoggingScope(IntFlag):
     """Enumeration of different logging scopes."""
     NONE = 0
@@ -31,6 +40,12 @@ ENABLED_LOGGING_SCOPES = LoggingScope.NONE
 
 # Global variable to track call stack depth
 _call_stack_depth = 0
+
+
+def error(msg, code=1):
+    """Print an error and exit."""
+    log_message(LoggingScope.ERROR, 'ERROR', msg)
+    sys.exit(code)
 
 
 def is_logging_scope_enabled(scope: LoggingScope) -> bool:
