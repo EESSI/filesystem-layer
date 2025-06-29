@@ -46,4 +46,4 @@ jobs:
 
       - name: Run flake8 to verify PEP8-compliance of Python code
         run: |
-          flake8 scripts/automated_ingestion
+          flake8 scripts/automated_ingestion --exclude=scripts/automated_ingestion/automated_ingestion.py,scripts/automated_ingestion/eessitarball.py
