@@ -2,7 +2,7 @@
 
 from eessi_data_object import EESSIDataAndSignatureObject
 # from eessi_task import EESSITask, TaskState
-# from eessi_task_description import EESSITaskDescription
+from eessi_task_description import EESSITaskDescription
 from eessi_s3_bucket import EESSIS3Bucket
 from eessi_logging import error, log_function_entry_exit, log_message, LoggingScope, LOG_LEVELS, set_logging_scopes
 from pid.decorator import pidfile  # noqa: F401
@@ -171,7 +171,7 @@ def main():
                 log_message(LoggingScope.GROUP_OPS, "INFO", "Processing task: '%s'", task_path)
 
                 try:
-                    _ = EESSIDataAndSignatureObject(config, task_path, s3_bucket)
+                    _ = EESSITaskDescription(EESSIDataAndSignatureObject(config, task_path, s3_bucket))
 #                    # create EESSITask for the task file
 #                    try:
 #                        task = EESSITask(
