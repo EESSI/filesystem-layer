@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from eessi_data_object import EESSIDataAndSignatureObject
-# from eessi_task import EESSITask, TaskState
+from eessi_task import EESSITask
 from eessi_task_description import EESSITaskDescription
 from eessi_s3_bucket import EESSIS3Bucket
 from eessi_logging import error, log_function_entry_exit, log_message, LoggingScope, LOG_LEVELS, set_logging_scopes
@@ -10,10 +10,9 @@ from pid import PidFileError
 
 import argparse
 import configparser
-# import github
+import github
 import json
 import logging
-# import os
 import sys
 from pathlib import Path
 from typing import List
@@ -152,8 +151,8 @@ def main():
 
     # TODO: check configuration: secrets, paths, permissions on dirs, etc
     extensions = args.extensions.split(",")
-    # gh_pat = config["secrets"]["github_pat"]
-    # gh_staging_repo = github.Github(gh_pat).get_repo(config["github"]["staging_repo"])
+    gh_pat = config["secrets"]["github_pat"]
+    gh_staging_repo = github.Github(gh_pat).get_repo(config["github"]["staging_repo"])
 
     buckets = json.loads(config["aws"]["staging_buckets"])
     for bucket, cvmfs_repo in buckets.items():
@@ -171,21 +170,20 @@ def main():
                 log_message(LoggingScope.GROUP_OPS, "INFO", "Processing task: '%s'", task_path)
 
                 try:
-                    _ = EESSITaskDescription(EESSIDataAndSignatureObject(config, task_path, s3_bucket))
-#                    # create EESSITask for the task file
-#                    try:
-#                        task = EESSITask(
-#                            EESSITaskDescription(EESSIDataAndSignatureObject(config, task_path, s3_bucket)),
-#                            config, cvmfs_repo, gh_staging_repo
-#                        )
-#
-#                    except Exception as err:
-#                        log_message(LoggingScope.ERROR, "ERROR", "Failed to create EESSITask for task %s: %s",
-#                                    task_path, str(err))
-#                        continue
-#
-#                    log_message(LoggingScope.GROUP_OPS, "INFO", "Task: %s", task)
-#
+                    # create EESSITask for the task file
+                    try:
+                        task = EESSITask(
+                            EESSITaskDescription(EESSIDataAndSignatureObject(config, task_path, s3_bucket)),
+                            config, cvmfs_repo, gh_staging_repo
+                        )
+
+                    except Exception as err:
+                        log_message(LoggingScope.ERROR, "ERROR", "Failed to create EESSITask for task '%s': '%s'",
+                                    task_path, str(err))
+                        continue
+
+                    log_message(LoggingScope.GROUP_OPS, "INFO", "Task: %s", task)
+
 #                    previous_state = None
 #                    current_state = task.determine_state()
 #                    log_message(LoggingScope.GROUP_OPS, "INFO", "Task '%s' is in state '%s'",
