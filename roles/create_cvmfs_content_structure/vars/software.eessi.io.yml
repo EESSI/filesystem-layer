@@ -14,6 +14,11 @@ files:
     dest: ''
     mode: '644'
 
+  - name: EESSI-modulerc
+    dest: 'init/modules/EESSI/.modulerc'
+    mode: '644'
+
 symlinks:
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
   init/modules/EESSI/2023.06.lua: /cvmfs/software.eessi.io/versions/2023.06/init/modules/EESSI/2023.06.lua
+  init/modules/EESSI/2025.06.lua: /cvmfs/software.eessi.io/versions/2025.06/init/modules/EESSI/2025.06.lua
