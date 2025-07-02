@@ -15,7 +15,7 @@ files:
     mode: '644'
 
   - name: EESSI-modulerc
-    dest: 'init/modules/EESSI/.modulerc'
+    dest: 'init/modules/EESSI/.modulerc.lua'
     mode: '644'
 
 symlinks:
