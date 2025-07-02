@@ -19,16 +19,22 @@ class EessiTarball:
     for which it interfaces with the S3 bucket, GitHub, and CVMFS.
     """
 
-    def __init__(self, object_name, config, git_staging_repo, s3, bucket):
+    def __init__(self, object_name, config, git_staging_repo, s3, bucket, cvmfs_repo):
         """Initialize the tarball object."""
         self.config = config
         self.git_repo = git_staging_repo
         self.metadata_file = object_name + config['paths']['metadata_file_extension']
+        self.metadata_sig_file = self.metadata_file + config['signatures']['signature_file_extension']
         self.object = object_name
+        self.object_sig = object_name + config['signatures']['signature_file_extension']
         self.s3 = s3
         self.bucket = bucket
+        self.cvmfs_repo = cvmfs_repo
         self.local_path = os.path.join(config['paths']['download_dir'], os.path.basename(object_name))
+        self.local_sig_path = self.local_path + config['signatures']['signature_file_extension']
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
+        self.local_metadata_sig_path = self.local_metadata_path + config['signatures']['signature_file_extension']
+        self.sig_verified = False
         self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
 
         self.states = {
@@ -47,22 +53,42 @@ class EessiTarball:
         """
         Download this tarball and its corresponding metadata file, if this hasn't been already done.
         """
-        if force or not os.path.exists(self.local_path):
-            try:
-                self.s3.download_file(self.bucket, self.object, self.local_path)
-            except:
-                logging.error(
-                    f'Failed to download tarball {self.object} from {self.bucket} to {self.local_path}.'
-                )
-                self.local_path = None
-        if force or not os.path.exists(self.local_metadata_path):
-            try:
-                self.s3.download_file(self.bucket, self.metadata_file, self.local_metadata_path)
-            except:
-                logging.error(
-                    f'Failed to download metadata file {self.metadata_file} from {self.bucket} to {self.local_metadata_path}.'
-                )
-                self.local_metadata_path = None
+        files = [
+            (self.object, self.local_path, self.object_sig, self.local_sig_path),
+            (self.metadata_file, self.local_metadata_path, self.metadata_sig_file, self.local_metadata_sig_path),
+        ]
+        skip = False
+        for (object, local_file, sig_object, local_sig_file) in files:
+            if force or not os.path.exists(local_file):
+                # First we try to download signature file, which may or may not be available
+                # and may be optional or required.
+                try:
+                    self.s3.download_file(self.bucket, sig_object, local_sig_file)
+                except:
+                    if self.config['signatures'].getboolean('signatures_required', True):
+                        logging.error(
+                            f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}.'
+                        )
+                        skip = True
+                        break
+                    else:
+                        logging.warning(
+                            f'Failed to download signature file {sig_object} for {object} from {self.bucket} to {local_sig_file}. ' +
+                             'Ignoring this, because signatures are not required with the current configuration.'
+                        )
+                # Now we download the file itself.
+                try:
+                    self.s3.download_file(self.bucket, object, local_file)
+                except:
+                    logging.error(
+                        f'Failed to download {object} from {self.bucket} to {local_file}.'
+                    )
+                    skip = True
+                    break
+        # If any required download failed, make sure to skip this tarball completely.
+        if skip:
+            self.local_path = None
+            self.local_metadata_path = None
 
     def find_state(self):
         """Find the state of this tarball by searching through the state directories in the git repository."""
@@ -74,10 +100,14 @@ class EessiTarball:
             except github.UnknownObjectException:
                 # no metadata file found in this state's directory, so keep searching...
                 continue
-            except github.GithubException:
-                # if there was some other (e.g. connection) issue, abort the search for this tarball
-                logging.warning(f'Unable to determine the state of {self.object}!')
-                return "unknown"
+            except github.GithubException as e:
+                if e.status == 404:
+                    # no metadata file found in this state's directory, so keep searching...
+                    continue
+                else:
+                    # if there was some other (e.g. connection) issue, abort the search for this tarball
+                    logging.warning(f'Unable to determine the state of {self.object}, the GitHub API returned status {e.status}!')
+                    return "unknown"
         else:
             # if no state was found, we assume this is a new tarball that was ingested to the bucket
             return "new"
@@ -151,6 +181,53 @@ class EessiTarball:
         handler = self.states[self.state]['handler']
         handler()
 
+    def verify_signatures(self):
+        """Verify the signatures of the downloaded tarball and metadata file using the corresponding signature files."""
+
+        sig_missing_msg = 'Signature file %s is missing.'
+        sig_missing = False
+        for sig_file in [self.local_sig_path, self.local_metadata_sig_path]:
+            if not os.path.exists(sig_file):
+                logging.warning(sig_missing_msg % sig_file)
+                sig_missing = True
+
+        if sig_missing:
+            # If signature files are missing, we return a failure,
+            # unless the configuration specifies that signatures are not required.
+            if self.config['signatures'].getboolean('signatures_required', True):
+                return False
+            else:
+                return True
+
+        # If signatures are provided, we should always verify them, regardless of the signatures_required.
+        # In order to do so, we need the verification script and an allowed signers file.
+        verify_script = self.config['signatures']['signature_verification_script']
+        allowed_signers_file = self.config['signatures']['allowed_signers_file']
+        if not os.path.exists(verify_script):
+            logging.error(f'Unable to verify signatures, the specified signature verification script does not exist!')
+            return False
+
+        if not os.path.exists(allowed_signers_file):
+            logging.error(f'Unable to verify signatures, the specified allowed signers file does not exist!')
+            return False
+
+        self.signatures = {}
+        for (file, sig_file) in [(self.local_path, self.local_sig_path), (self.local_metadata_path, self.local_metadata_sig_path)]:
+            verify_cmd = subprocess.run(
+                [verify_script, '--verify', '--terse', '--allowed-signers-file', allowed_signers_file, '--file', file, '--signature-file', sig_file],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE)
+            if verify_cmd.returncode == 0:
+                signature = json.loads(verify_cmd.stdout.decode('utf-8'))
+                self.signatures[file] = signature
+                logging.debug(f'Signature for {file} successfully verified: {signature}')
+            else:
+                logging.error(f'Failed to verify signature for {file}.')
+                return False
+
+        self.sig_verified = True
+        return True
+
     def verify_checksum(self):
         """Verify the checksum of the downloaded tarball with the one in its metadata file."""
         local_sha256 = sha256sum(self.local_path)
@@ -166,18 +243,31 @@ class EessiTarball:
         #TODO: check if there is an open issue for this tarball, and if there is, skip it.
         logging.info(f'Tarball {self.object} is ready to be ingested.')
         self.download()
+        logging.info('Verifying its signature...')
+        if not self.verify_signatures():
+            issue_msg = f'Failed to verify signatures for `{self.object}`'
+            logging.error(issue_msg)
+            if not self.issue_exists(issue_msg, state='open'):
+                self.git_repo.create_issue(title=issue_msg, body=issue_msg)
+            return
+        else:
+            logging.debug(f'Signatures of {self.object} and its metadata file successfully verified.')
+
         logging.info('Verifying its checksum...')
         if not self.verify_checksum():
-            logging.error('Checksum of downloaded tarball does not match the one in its metadata file!')
-            # Open issue?
+            issue_msg = f'Failed to verify checksum for `{self.object}`'
+            logging.error(issue_msg)
+            if not self.issue_exists(issue_msg, state='open'):
+                self.git_repo.create_issue(title=issue_msg, body=issue_msg)
             return
         else:
             logging.debug(f'Checksum of {self.object} matches the one in its metadata file.')
+
         script = self.config['paths']['ingestion_script']
         sudo = ['sudo'] if self.config['cvmfs'].getboolean('ingest_as_root', True) else []
         logging.info(f'Running the ingestion script for {self.object}...')
         ingest_cmd = subprocess.run(
-            sudo + [script, self.local_path],
+            sudo + [script, self.cvmfs_repo, self.local_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE)
         if ingest_cmd.returncode == 0:
@@ -186,7 +276,7 @@ class EessiTarball:
             if self.config.has_section('slack') and self.config['slack'].getboolean('ingestion_notification', False):
                 send_slack_message(
                     self.config['secrets']['slack_webhook'],
-                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.object))
+                    self.config['slack']['ingestion_message'].format(tarball=os.path.basename(self.object), cvmfs_repo=self.cvmfs_repo)
                 )
         else:
             issue_title = f'Failed to ingest {self.object}'
@@ -215,6 +305,11 @@ class EessiTarball:
         self.download(force=True)
         if not self.local_path or not self.local_metadata_path:
             logging.warn('Skipping this tarball...')
+            return
+
+        # Verify the signatures of the tarball and metadata file.
+        if not self.verify_signatures():
+            logging.warn('Signature verification of the tarball or its metadata failed, skipping this tarball...')
             return
 
         contents = ''
@@ -295,11 +390,20 @@ class EessiTarball:
         try:
             tarball_contents = self.get_contents_overview()
             pr_body = self.config['github']['pr_body'].format(
+                cvmfs_repo=self.cvmfs_repo,
                 pr_url=pr_url,
                 tar_overview=self.get_contents_overview(),
                 metadata=metadata,
             )
-            self.git_repo.create_pull(title='Ingest ' + filename, body=pr_body, head=git_branch, base='main')
+            pr_title = '[%s] Ingest %s' % (self.cvmfs_repo, filename)
+            if self.sig_verified:
+                pr_body += "\n\n:heavy_check_mark: :closed_lock_with_key: The signature of this tarball has been successfully verified:\n"
+                for path, meta in self.signatures.items():
+                    identity = meta.get("identity", "unknown")
+                    namespace = meta.get("namespace", "unknown")
+                    pr_body += f"- `{path}`\n  - identity=`{identity}`, namespace=`{namespace}`\n"
+                pr_title += ' :closed_lock_with_key:'
+            self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
         except Exception as err:
             issue_title = f'Failed to get contents of {self.object}'
             issue_body = self.config['github']['failed_tarball_overview_issue_body'].format(

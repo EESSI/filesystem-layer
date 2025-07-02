@@ -9,8 +9,17 @@ download_dir = /where/to/store/download/tarballs
 ingestion_script = /absolute/path/to/ingest-tarball.sh
 metadata_file_extension = .meta.txt
 
+[signatures]
+signatures_required = no
+signature_file_extension = .sig
+signature_verification_script = /absolute/path/to/sign_verify_file_ssh.sh
+allowed_signers_file = /path/to/allowed_signers
+
 [aws]
-staging_buckets = eessi-staging, eessi-staging-2023.06
+staging_buckets = {
+    "software.eessi.io-2023.06": "software.eessi.io",
+    "dev.eessi.io-2024.09": "dev.eessi.io",
+    "riscv.eessi.io-20240402": "riscv.eessi.io" }
 
 [cvmfs]
 ingest_as_root = yes
@@ -44,7 +53,7 @@ failed_tarball_overview_issue_body = An error occurred while trying to get the c
     ```
 pr_body = A new tarball has been staged for {pr_url}.
     Please review the contents of this tarball carefully.
-    Merging this PR will lead to automatic ingestion of the tarball.
+    Merging this PR will lead to automatic ingestion of the tarball to the repository {cvmfs_repo}.
     
     <details>
     <summary>Metadata of tarball</summary>
@@ -64,7 +73,7 @@ pr_body = A new tarball has been staged for {pr_url}.
 
 [slack]
 ingestion_notification = yes
-ingestion_message = Tarball `{tarball}` has been ingested into the CVMFS repository.
+ingestion_message = Tarball `{tarball}` has been ingested into the CVMFS repository `{cvmfs_repo}`.
 
 [logging]
 level = WARN

@@ -1,15 +1,15 @@
-ARG cvmfsversion=2.11.2
+ARG cvmfsversion=2.13.0
 ARG archspecversion=0.2.2
 ARG awscliversion=1.32.22
 ARG fuseoverlayfsversion=1.10
 
-FROM debian:sid-20240330-slim AS prepare-deb
+FROM debian:trixie-20250520-slim AS prepare-deb
 ARG cvmfsversion
 COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
 RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 
 
-FROM debian:sid-20240330-slim
+FROM debian:trixie-20250520-slim
 ARG cvmfsversion
 ARG archspecversion
 ARG awscliversion

@@ -25,25 +25,28 @@ permissions: read-all
 jobs:
   build_and_publish:
     name: Build and publish image
-    runs-on: self-hosted
+    #runs-on: self-hosted
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 720
     permissions:
       packages: write
       contents: read
     strategy:
       matrix:
-        tag: ['client:centos7', 'build-node:debian11', 'build-node:debian-sid']
+        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian12', 'build-node:debian13']
         platform: [amd64, arm64, riscv64]
         exclude:
           # exclude images that don't support RISC-V
-          - tag: client:centos7
+          - tag: client:rocky8
             platform: riscv64
           - tag: build-node:debian11
+            platform: riscv64
+          - tag: build-node:debian12
             platform: riscv64
 
     steps:
       - name: Check out the repo
-        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@e81a89b1732b9c48d79cd809d8d81d79c4647a18 # v2.1.0
@@ -52,7 +55,7 @@ jobs:
         uses: docker/setup-buildx-action@8c0edbc76e98fa90f69d9a2c020dcb50019dc325 # v2.2.1
 
       - name: Cache Docker layers
-        uses: actions/cache@9b0c1fce7a93df8e3bb8926b0d6e9d89e92f20a7 # v3.0.11
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ matrix.platform }}-${{ matrix.tag }}
@@ -97,7 +100,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        tag: ['client:centos7', 'build-node:debian11', 'build-node:debian-sid']
+        tag: ['client:rocky8', 'build-node:debian11', 'build-node:debian12', 'build-node:debian13']
     steps:
       - name: Login to GitHub Container Registry
         if: github.event_name != 'pull_request'
@@ -112,7 +115,7 @@ jobs:
           echo REPOSITORY_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]') >> $GITHUB_ENV
 
       - name: Create the final image using  "docker buildx imagetools create"
-        if: github.event_name != 'pull_request' && matrix.tag == 'build-node:debian-sid'
+        if: github.event_name != 'pull_request' && matrix.tag == 'build-node:debian13'
         run: |
           docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \
@@ -120,7 +123,7 @@ jobs:
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-riscv64
 
       - name: Create the final image using  "docker buildx imagetools create"
-        if: github.event_name != 'pull_request' && matrix.tag != 'build-node:debian-sid'
+        if: github.event_name != 'pull_request' && matrix.tag != 'build-node:debian13'
         run: |
           docker buildx imagetools create -t ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }} \
             ghcr.io/${{ env.REPOSITORY_OWNER }}/${{ matrix.tag }}-amd64 \

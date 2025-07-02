@@ -4,12 +4,19 @@
 /versions/*/compat/*/*/var
 /versions/*/compat/*/*/var/db/repos
 
-# Software layer paths:
-# /versions/<version>/software/{linux,macos}/{aarch64,riscv64,x86_64}/<vendor>/<microarchitecture>/software
+# Software layer paths
+# CPU targets: /versions/<version>/software/{linux,macos}/{aarch64,riscv64,x86_64}/<vendor>/<microarchitecture>/software
 /versions/*/software/*/*/*/*/software
 /versions/*/software/*/*/*/*/software/*/*
 /versions/*/software/*/*/*/*/modules
-# generic and some (aarch64) targets are one level less deep
+# Accelerator targets: /versions/<version>/software/{linux,macos}/{aarch64,riscv64,x86_64}/<vendor>/<microarchitecture>/accel/<vendor>/<type>/software
+/versions/*/software/*/*/*/*/accel/*/*/software
+/versions/*/software/*/*/*/*/accel/*/*/software/*/*
+/versions/*/software/*/*/*/*/accel/*/*/modules
+# generic and some (aarch64) targets are one level less deep (no <vendor>)
 /versions/*/software/*/*/*/software
 /versions/*/software/*/*/*/software/*/*
 /versions/*/software/*/*/*/modules
+/versions/*/software/*/*/*/accel/*/*/software
+/versions/*/software/*/*/*/accel/*/*/software/*/*
+/versions/*/software/*/*/*/accel/*/*/modules

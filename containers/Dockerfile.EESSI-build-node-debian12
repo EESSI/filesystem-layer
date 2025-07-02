@@ -1,0 +1,52 @@
+ARG cvmfsversion=2.13.0
+ARG awscliversion=1.40.35
+ARG unionfsfuseversion=3.6
+
+
+FROM debian:12.11 AS prepare-deb
+ARG cvmfsversion
+COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
+RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
+
+
+FROM debian:12.11
+ARG cvmfsversion
+ARG awscliversion
+ARG unionfsfuseversion
+
+COPY --from=prepare-deb /root/deb /root/deb
+
+RUN apt-get update
+RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev lsof strace
+# python3 and jq are required for eessi-upload-to-staging script (next to awscli)
+RUN apt-get install -y python3-pip jq
+RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian12_$(dpkg --print-architecture).deb \
+            /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian12_$(dpkg --print-architecture).deb \
+            /root/deb/cvmfs-libs_${cvmfsversion}~1+debian12_$(dpkg --print-architecture).deb \
+            /root/deb/cvmfs-config-default_latest_all.deb \
+            /root/deb/cvmfs-config-eessi_latest_all.deb
+
+#RUN apt-get install -y unionfs-fuse
+RUN apt-get install -y cmake pkg-config libfuse3-dev \
+  && curl -OL https://github.com/rpodgorny/unionfs-fuse/archive/refs/tags/v${unionfsfuseversion}.tar.gz \
+  && tar xfvz v${unionfsfuseversion}.tar.gz \
+  && cd unionfs-fuse-${unionfsfuseversion} \
+  && mkdir build \
+  && cd build \
+  && cmake .. \
+  && make install \
+  && command -v unionfs \
+  && unionfs --version \
+  && unionfs --help \
+  && apt-get remove -y cmake pkg-config libfuse3-dev
+
+RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
+  && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local \
+  && echo 'CVMFS_HIDE_MAGIC_XATTRS=yes' >> /etc/cvmfs/default.local
+
+RUN mkdir -p /cvmfs/software.eessi.io
+
+RUN useradd -ms /bin/bash eessi
+
+# stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
+RUN pip3 install --break-system-packages archspec awscli==${awscliversion}
