@@ -557,8 +557,13 @@ class EESSITask:
                 # the PR is merged, so we use the next sequence number
                 return highest_sequence_number + 1
             else:
-                # the PR is not merged, so we can use the current sequence number
-                return highest_sequence_number
+                # the PR is not merged, it may be closed though
+                if pull_request.state == 'closed':
+                    # PR has been closed, so we return the next sequence number
+                    return highest_sequence_number + 1
+                else:
+                    # PR is not closed, so we return the current highest sequence number
+                    return highest_sequence_number
 
     @log_function_entry_exit()
     def _handle_add_undetermined(self):
