@@ -34,7 +34,7 @@ class EessiTarball:
         self.local_sig_path = self.local_path + config['signatures']['signature_file_extension']
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
         self.local_metadata_sig_path = self.local_metadata_path + config['signatures']['signature_file_extension']
-        self.sig_verified = False
+        self.sig_verified = None
         self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
 
         self.states = {
@@ -190,6 +190,12 @@ class EessiTarball:
     def verify_signatures(self):
         """Verify the signatures of the downloaded tarball and metadata file using the corresponding signature files."""
 
+        # If the verification has already been done in this run, skip it, otherwise initialize to False
+        if self.sig_verified != None:
+            return self.sig_verified
+        else:
+            self.sig_verified = False
+
         sig_missing_msg = 'Signature file %s is missing.'
         sig_missing = False
         for sig_file in [self.local_sig_path, self.local_metadata_sig_path]:
@@ -231,6 +237,7 @@ class EessiTarball:
                 logging.error(f'Failed to verify signature for {file}.')
                 return False
 
+        # All checks have passed, so return success
         self.sig_verified = True
         return True
 
@@ -251,10 +258,7 @@ class EessiTarball:
         self.download()
         logging.info('Verifying its signature...')
         if not self.verify_signatures():
-            issue_msg = f'Failed to verify signatures for `{self.object}`'
-            logging.error(issue_msg)
-            if not self.issue_exists(issue_msg, state='open'):
-                self.git_repo.create_issue(title=issue_msg, body=issue_msg)
+            self.handle_failed_signature_verification()
             return
         else:
             logging.debug(f'Signatures of {self.object} and its metadata file successfully verified.')
@@ -302,6 +306,13 @@ class EessiTarball:
         """Process a tarball that has already been ingested."""
         logging.info(f'{self.object} has already been ingested, skipping...')
 
+    def handle_failed_signature_verification(self):
+        """Process a signature verification failure."""
+        sig_failed_msg = f'Failed to verify signatures for `{self.object}`.'
+        logging.error(sig_failed_msg)
+        if not self.issue_exists(sig_failed_msg, state='open'):
+            self.git_repo.create_issue(title=sig_failed_msg, body=sig_failed_msg)
+
     def mark_new_tarball_as_staged(self):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
@@ -315,7 +326,7 @@ class EessiTarball:
 
         # Verify the signatures of the tarball and metadata file.
         if not self.verify_signatures():
-            logging.warn('Signature verification of the tarball or its metadata failed, skipping this tarball...')
+            self.handle_failed_signature_verification()
             return
 
         contents = ''
@@ -348,6 +359,10 @@ class EessiTarball:
         tarball_metadata = self.git_repo.get_contents(file_path_staged)
         git_branch = filename + '_' + next_state
         self.download()
+        # Verify the signatures of the tarball and metadata file.
+        if not self.verify_signatures():
+            self.handle_failed_signature_verification()
+            return
 
         main_branch = self.git_repo.get_branch('main')
         if git_branch in [branch.name for branch in self.git_repo.get_branches()]:
