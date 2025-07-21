@@ -150,7 +150,7 @@ class EessiTarball:
                 for m in members
                 if m.isdir() and PurePosixPath(m.path).match(os.path.join(prefix, 'reprod', '*', '*', '*'))
             ]
-            other = [  # anything that is not in <prefix>/software nor <prefix>/modules
+            other = [  # anything that is not in <prefix>/software nor <prefix>/modules nor <prefix>/reprod
                 m.path
                 for m in members
                 if not PurePosixPath(prefix).joinpath('software') in PurePosixPath(m.path).parents
