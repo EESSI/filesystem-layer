@@ -145,15 +145,21 @@ class EessiTarball:
                 for m in members
                 if m.isfile() and PurePosixPath(m.path).match(os.path.join(prefix, 'modules', '*', '*', '*.lua'))
             ]
-            other = [  # anything that is not in <prefix>/software nor <prefix>/modules
+            reprod_dirs = [
+                m.path
+                for m in members
+                if m.isdir() and PurePosixPath(m.path).match(os.path.join(prefix, 'reprod', '*', '*', '*'))
+            ]
+            other = [  # anything that is not in <prefix>/software nor <prefix>/modules nor <prefix>/reprod
                 m.path
                 for m in members
                 if not PurePosixPath(prefix).joinpath('software') in PurePosixPath(m.path).parents
                    and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(m.path).parents
+                   and not PurePosixPath(prefix).joinpath('reprod') in PurePosixPath(m.path).parents
                 # if not fnmatch.fnmatch(m.path, os.path.join(prefix, 'software', '*'))
                 # and not fnmatch.fnmatch(m.path, os.path.join(prefix, 'modules', '*'))
             ]
-            members_list = sorted(swdirs + modfiles + other)
+            members_list = sorted(swdirs + modfiles + reprod_dirs + other)
 
         # Construct the overview.
         tar_members = '\n'.join(members_list)
