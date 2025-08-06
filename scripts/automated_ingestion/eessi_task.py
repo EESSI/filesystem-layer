@@ -114,7 +114,9 @@ class EESSITask:
                 return EESSITaskAction.ADD
             elif action_str == "update":
                 return EESSITaskAction.UPDATE
-        return EESSITaskAction.UNKNOWN
+        # temporarily return EESSITaskAction.ADD as default because the metadata
+        # file does not yet have an action defined yet
+        return EESSITaskAction.ADD
 
     @log_function_entry_exit()
     def _state_file_with_prefix_exists_in_repo_branch(self, file_path_prefix: str, branch_name: str = None) -> bool:
