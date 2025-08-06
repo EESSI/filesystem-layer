@@ -1,6 +1,6 @@
 from enum import Enum, auto
 from functools import total_ordering
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Optional, Any
 
 import base64
 import os
