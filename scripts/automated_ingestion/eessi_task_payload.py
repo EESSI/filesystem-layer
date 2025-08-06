@@ -69,25 +69,31 @@ class EESSITaskPayload:
             swdirs = [  # all directory names with the pattern: <prefix>/software/<name>/<version>
                 member.path
                 for member in members
-                if member.isdir() and PurePosixPath(member.path).match(os.path.join(prefix, "software", "*", "*"))
+                if member.isdir() and PurePosixPath(member.path).match(os.path.join(prefix, 'software', '*', '*'))
             ]
             modfiles = [  # all filenames with the pattern: <prefix>/modules/<category>/<name>/*.lua
                 member.path
                 for member in members
                 if member.isfile()
-                and PurePosixPath(member.path).match(os.path.join(prefix, "modules", "*", "*", "*.lua"))
+                and PurePosixPath(member.path).match(os.path.join(prefix, 'modules', '*', '*', '*.lua'))
             ]
-            other = [  # anything that is not in <prefix>/software nor <prefix>/modules
+            reprod_dirs = [
+                member.path
+                for member in members
+                if member.isdir() and PurePosixPath(member.path).match(os.path.join(prefix, 'reprod', '*', '*', '*'))
+            ]
+            other = [  # anything that is not in <prefix>/software nor <prefix>/modules nor <prefix>/reprod
                 member.path
                 for member in members
                 if (
-                    not PurePosixPath(prefix).joinpath("software") in PurePosixPath(member.path).parents
-                    and not PurePosixPath(prefix).joinpath("modules") in PurePosixPath(member.path).parents
+                    not PurePosixPath(prefix).joinpath('software') in PurePosixPath(member.path).parents
+                    and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(member.path).parents
+                    and not PurePosixPath(prefix).joinpath('reprod') in PurePosixPath(member.path).parents
                 )
                 # if not fnmatch.fnmatch(m.path, os.path.join(prefix, 'software', '*'))
                 # and not fnmatch.fnmatch(m.path, os.path.join(prefix, 'modules', '*'))
             ]
-            members_list = sorted(swdirs + modfiles + other)
+            members_list = sorted(swdirs + modfiles + reprod_dirs + other)
 
         # construct the overview
         overview = config["github"]["task_summary_payload_overview_template"].format(
