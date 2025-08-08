@@ -20,12 +20,12 @@
   ansible.builtin.command:
     cmd: "cvmfs_swissknife info -M -r http://localhost:{{ cvmfs_stratum0_http_ports[0] | default('80') }}/cvmfs/{{ this_cvmfs_repo.repository }}"
   changed_when: false
-  register: current_repo_meta
+  register: cvmfs_server_meta_info_current_repo_meta
 
 - name: Update the repository's meta information # noqa: inline-env-var no-changed-when
   ansible.builtin.command:
     cmd: "cvmfs_server update-repoinfo -f {{ cvmfs_server_meta_info_tmp_json_file.path }} {{ this_cvmfs_repo.repository }}"
-  when: (current_repo_meta.stdout | checksum) != cvmfs_server_meta_info_json_file_stat.stat.checksum
+  when: (cvmfs_server_meta_info_current_repo_meta.stdout | checksum) != cvmfs_server_meta_info_json_file_stat.stat.checksum
   become_user: "{{ cvmfs_repo_owner | default('root') }}"
   become: true
 
