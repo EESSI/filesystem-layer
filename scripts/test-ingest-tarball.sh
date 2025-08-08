@@ -56,6 +56,7 @@ tarballs_success=(
   "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 init"
   "$tstdir/eessi-2000.01-scripts-123456.tar.gz 2000.01 scripts"
   "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 software/linux/x86_64/intel/haswell"
+  "$tstdir/eessi-2000.01-software-123456.tar.zst 2000.01 software/linux/x86_64/intel/haswell"
 )
 
 # Test that should return an error
@@ -88,6 +89,9 @@ tarballs_fail=(
   # Invalid architecture
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat/linux/sparc"
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat"
+  # Invalid compression / file extension
+  "$tstdir/eessi-2000.01-software-123456.tar 2000.01 software/linux/x86_64/intel/haswell"
+  "$tstdir/eessi-2000.01-software-123456.tar.xz 2000.01 software/linux/x86_64/intel/haswell"
 )
 
 # update_lmod_caches.sh script requires that directory exists,
