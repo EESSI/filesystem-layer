@@ -48,7 +48,11 @@ class EESSITaskPayload:
         tar_num_members = len(members)
         paths = sorted([m.path for m in members])
 
-        if tar_num_members < 100:
+        # reduce limit for full listing from 100 to 3 because the description can
+        # include 10s of tarballs and thus even 100 maybe too many; using a very
+        # small number can still be useful if there is only a very small number
+        # of files, say an architecture specific configuration file
+        if tar_num_members < 3:
             tar_members_desc = "Full listing of the contents of the tarball:"
             members_list = paths
 
