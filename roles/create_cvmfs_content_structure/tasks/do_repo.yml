@@ -46,7 +46,7 @@
         - create_cvmfs_content_structure_publish_transaction
         - create_cvmfs_content_structure_create_symlinks.changed or
           create_cvmfs_content_structure_create_files.changed or
-          create_cvmfs_content_structure_create_directories.changed )
+          create_cvmfs_content_structure_create_directories.changed
       register: create_cvmfs_content_structure_publish
 
     - name: Abort transaction
