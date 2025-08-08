@@ -6,17 +6,17 @@
   ansible.builtin.stat:
     path: "{{ role_path }}/vars/{{ item.repository }}.yml"
   with_items: "{{ cvmfs_repositories | default(eessi_cvmfs_repositories) }}"
-  register: repo_vars_files
+  register: create_cvmfs_content_structure_repo_vars_files
 
 - name: "Apply do_repo for each repository with a vars file"
   ansible.builtin.include_tasks: do_repo.yml
   vars:
-    cvmfs_repo: "{{ repo_vars_file.item.repository }}"
-  when: repo_vars_file.stat.exists
-  with_items: "{{ repo_vars_files.results }}"
+    cvmfs_repo: "{{ create_cvmfs_content_structure_repo_vars_file.item.repository }}"
+  when: create_cvmfs_content_structure_repo_vars_file.stat.exists
+  with_items: "{{ create_cvmfs_content_structure_repo_vars_files.results }}"
   loop_control:
-    loop_var: repo_vars_file
+    loop_var: create_cvmfs_content_structure_repo_vars_file
   args:
     apply:
-      become: "{{ 'true' if repo_vars_file.item.owner != lookup('env', 'USER') else 'false' }}"
-      become_user: "{{ repo_vars_file.item.owner }}"
+      become: "{{ 'true' if create_cvmfs_content_structure_repo_vars_file.item.owner != lookup('env', 'USER') else 'false' }}"
+      become_user: "{{ create_cvmfs_content_structure_repo_vars_file.item.owner }}"
