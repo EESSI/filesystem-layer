@@ -6,7 +6,7 @@
 # This script has to be run on a CVMFS publisher node.
 
 # This script assumes that the given tarball is named like:
-# eessi-<version>-{compat,init,scripts,software}-[additional information]-<timestamp>.tar.gz
+# eessi-<version>-{compat,init,scripts,software}-[additional information]-<timestamp>.tar.{gz,zst}
 # It also assumes, and verifies, that the  name of the top-level directory of the contents of the
 # of the tarball matches <version>, and that name of the second level should is either compat, init, scripts, or software.
 
@@ -248,7 +248,7 @@ function ingest_compat_tarball() {
 
 # Check if a tarball has been specified
 if [ "$#" -ne 2 ]; then
-    error "usage: $0 <CVMFS repository name> <gzipped tarball>"
+    error "usage: $0 <CVMFS repository name> <tarball compressed with gzip or zstd>"
 fi
 
 cvmfs_repo="$1"
@@ -262,6 +262,24 @@ fi
 # Check if the given tarball exists
 if [ ! -f "${tar_file}" ]; then
     error "tar file ${tar_file} does not exist!"
+fi
+
+# Check which compression method is used for the tarball
+tar_file_ext="${tar_file##*.}"
+if [ "${tar_file_ext}" = "tar" ]; then
+    error "can only handle compressed tarballs at the moment."
+elif [ "${tar_file_ext}" = "gz" ]; then
+    decompress="gunzip -c"
+    if ( ! command -v gunzip >& /dev/null ); then
+        error "gunzip needs to be installed to handle gzip-compressed tarballs."
+    fi
+elif [ "${tar_file_ext}" = "zst" ]; then
+    decompress="zstd -c"
+    if ( ! command -v zstd >& /dev/null ); then
+        error "zstd needs to be installed to handle zstd-compressed tarballs."
+    fi
+else
+    error "don't know how to handle tarball extension ${tar_file_ext}."
 fi
 
 # Get some information about the tarball
