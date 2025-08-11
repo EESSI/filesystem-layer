@@ -1,0 +1,49 @@
+# This file is part of the EESSI filesystem layer,
+# see https://github.com/EESSI/filesystem-layer
+#
+# author: Thomas Roeblitz (@trz42)
+#
+# license: GPLv2
+#
+
+name: Run tests
+on: [push, pull_request]
+# Declare default permissions as read only.
+permissions: read-all
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        # for now, only test with Python 3.9+ (since we're testing in Ubuntu 24.04)
+        #python: [3.6, 3.7, 3.8, 3.9, '3.10', '3.11']
+        python: ['3.9', '3.10', '3.11']
+      fail-fast: false
+    steps:
+      - name: checkout
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8 # v3.1.0
+
+      - name: set up Python
+        uses: actions/setup-python@13ae5bb136fac2878aff31522b9efb785519f984 # v4.3.0
+        with:
+          python-version: ${{matrix.python}}
+
+      - name: Install required Python packages + pytest + flake8
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r scripts/automated_ingestion/requirements.txt
+          python -m pip install pytest
+          python -m pip install --upgrade flake8
+
+      - name: Run test suite (without coverage)
+        run: |
+          ./scripts/automated_ingestion/pytest.sh scripts/automated_ingestion --verbose
+
+      - name: Run test suite (with coverage)
+        run: |
+          python -m pip install pytest-cov
+          ./scripts/automated_ingestion/pytest.sh scripts/automated_ingestion -q --cov=scripts/automated_ingestion/eessi_logging.py
+
+      - name: Run flake8 to verify PEP8-compliance of Python code
+        run: |
+          flake8 scripts/automated_ingestion --exclude=scripts/automated_ingestion/automated_ingestion.py,scripts/automated_ingestion/eessitarball.py
