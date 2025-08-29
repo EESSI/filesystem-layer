@@ -81,7 +81,7 @@ def parse_args():
     return args
 
 
-@pid.decorator.pidfile('automated_ingestion.pid')
+@pidfile('shared_lock.pid')  # noqa: F401
 def main():
     """Main function."""
     args = parse_args()

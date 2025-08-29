@@ -17,7 +17,7 @@ ARG unionfsfuseversion
 COPY --from=prepare-deb /root/deb /root/deb
 
 RUN apt-get update
-RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev lsof strace
+RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev lsof strace zstd
 # python3 and jq are required for eessi-upload-to-staging script (next to awscli)
 RUN apt-get install -y python3-pip jq
 RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian12_$(dpkg --print-architecture).deb \

@@ -1,7 +1,7 @@
 ARG cvmfsversion=2.13.0
-ARG archspecversion=0.2.2
 ARG awscliversion=1.32.22
-ARG fuseoverlayfsversion=1.10
+ARG unionfsfuseversion=3.6
+
 
 FROM debian:trixie-20250520-slim AS prepare-deb
 ARG cvmfsversion
@@ -11,25 +11,34 @@ RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 
 FROM debian:trixie-20250520-slim
 ARG cvmfsversion
-ARG archspecversion
 ARG awscliversion
-ARG fuseoverlayfsversion
+ARG unionfsfuseversion
 
 COPY --from=prepare-deb /root/deb /root/deb
 
 RUN apt-get update
-RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev lsof strace
+RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev lsof strace zstd
 # python3 and jq are required for eessi-upload-to-staging script (next to awscli)
-RUN apt-get install -y python3-pip python3-venv jq
+RUN apt-get install -y python3-pip jq
 RUN dpkg -i /root/deb/cvmfs_${cvmfsversion}~1+debian13_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-fuse3_${cvmfsversion}~1+debian13_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-libs_${cvmfsversion}~1+debian13_$(dpkg --print-architecture).deb \
             /root/deb/cvmfs-config-default_latest_all.deb \
             /root/deb/cvmfs-config-eessi_latest_all.deb
 
-# download binary for specific version of fuse-overlayfs
-RUN curl -L -o /usr/local/bin/fuse-overlayfs https://github.com/containers/fuse-overlayfs/releases/download/v${fuseoverlayfsversion}/fuse-overlayfs-$(uname -m) \
-  && chmod +x /usr/local/bin/fuse-overlayfs
+#RUN apt-get install -y unionfs-fuse
+RUN apt-get install -y cmake pkg-config libfuse3-dev \
+  && curl -OL https://github.com/rpodgorny/unionfs-fuse/archive/refs/tags/v${unionfsfuseversion}.tar.gz \
+  && tar xfvz v${unionfsfuseversion}.tar.gz \
+  && cd unionfs-fuse-${unionfsfuseversion} \
+  && mkdir build \
+  && cd build \
+  && cmake .. \
+  && make install \
+  && command -v unionfs \
+  && unionfs --version \
+  && unionfs --help \
+  && apt-get remove -y cmake pkg-config libfuse3-dev
 
 RUN echo 'CVMFS_QUOTA_LIMIT=10000' > /etc/cvmfs/default.local \
   && echo 'CVMFS_CLIENT_PROFILE="single"' >> /etc/cvmfs/default.local \
@@ -39,6 +48,5 @@ RUN mkdir -p /cvmfs/software.eessi.io
 
 RUN useradd -ms /bin/bash eessi
 
-RUN python3 -m venv /opt/archspec && . /opt/archspec/bin/activate && pip3 install archspec==${archspecversion} && deactivate && ln -s /opt/archspec/bin/archspec /usr/local/bin/archspec
 # stick to awscli v1.x, 2.x is not available through PyPI (see https://github.com/aws/aws-cli/issues/4947)
-RUN python3 -m venv /opt/awscli && . /opt/awscli/bin/activate && pip3 install awscli==${awscliversion} && deactivate && ln -s /opt/awscli/bin/aws /usr/local/bin/aws
+RUN pip3 install --break-system-packages archspec awscli==${awscliversion}
