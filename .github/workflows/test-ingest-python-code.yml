@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         # for now, only test with Python 3.9+ (since we're testing in Ubuntu 24.04)
-        #python: [3.6, 3.7, 3.8, 3.9, '3.10', '3.11']
+        # python: [3.6, 3.7, 3.8, 3.9, '3.10', '3.11']
         python: ['3.9', '3.10', '3.11']
       fail-fast: false
     steps:
