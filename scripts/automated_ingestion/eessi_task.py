@@ -817,7 +817,7 @@ class EESSITask:
         # create task summary
         payload_name = self.description.metadata["payload"]["filename"]
         payload_summary = self.payload.analyse_contents(self.config)
-        payload_verified_icon = " :closed_lock_with_key:" if self.payload.signature_verified else ":warning:"
+        payload_verified_icon = " :closed_lock_with_key:" if self.payload.signature_verified else " :warning:"
         metadata_contents = self.description.get_contents()
 
         task_summary = self.config["github"]["task_summary_payload_template"].format(
