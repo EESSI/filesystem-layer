@@ -37,7 +37,7 @@ eessi_cvmfs_server_urls:
     urls:
       - "http://aws-eu-central-s1.eessi.science/cvmfs/@fqrn@"
       - "http://azure-us-east-s1.eessi.science/cvmfs/@fqrn@"
-      - "http://cvmfs-ext.gridpp.rl.ac.uk:8000/cvmfs/@fqrn@"
+      - "http://ral-uk-s1.eessi.science:8000/cvmfs/@fqrn@"
 
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
