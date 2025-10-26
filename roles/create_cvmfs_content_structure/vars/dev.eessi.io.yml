@@ -1,7 +1,7 @@
 # Specifications of files and symlinks for the dev.eessi.io CVMFS repository.
 # Paths for files and symlinks should be relative to the root of the repository.
 ---
-directories: []
+directories: [] # noqa: var-naming[no-role-prefix]
 
 files: # noqa: var-naming[no-role-prefix]
   - name: cvmfsdirtab-dev.eessi.io
@@ -12,4 +12,4 @@ files: # noqa: var-naming[no-role-prefix]
     dest: 'README'
     mode: '644'
 
-symlinks: []
+symlinks: [] # noqa: var-naming[no-role-prefix]
