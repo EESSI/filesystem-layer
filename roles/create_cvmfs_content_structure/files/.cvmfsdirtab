@@ -1,3 +1,6 @@
+# Nested catalog for each EESSI version
+/versions/*
+
 # Compatibility layer paths:
 # /versions/<version>/compat/{linux,macos}/{aarch64,riscv64,x86_64}
 /versions/*/compat/*/*
