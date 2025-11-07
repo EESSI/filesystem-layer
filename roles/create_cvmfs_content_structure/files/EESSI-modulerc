@@ -1,2 +1,2 @@
--- hide EESSI/2025.06 module until software layer has enough installations in it
-hide_version("EESSI/2025.06")
+-- make version 2023.06 the default version
+module_version("EESSI/2023.06", "default")
