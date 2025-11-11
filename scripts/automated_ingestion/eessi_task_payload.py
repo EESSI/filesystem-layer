@@ -3,7 +3,11 @@ from pathlib import PurePosixPath
 from typing import Dict
 
 import os
-import tarfile
+import sys
+if sys.version_info >= (3, 14):
+    import tarfile
+else:
+    from backports.zstd import tarfile
 
 from eessi_data_object import EESSIDataAndSignatureObject
 from eessi_logging import log_function_entry_exit
