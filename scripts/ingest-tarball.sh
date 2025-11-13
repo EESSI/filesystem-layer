@@ -274,7 +274,7 @@ elif [ "${tar_file_ext}" = "gz" ]; then
         error "gunzip needs to be installed to handle gzip-compressed tarballs."
     fi
 elif [ "${tar_file_ext}" = "zst" ]; then
-    decompress="zstd -c"
+    decompress="zstd -c -d"
     if ( ! command -v zstd >& /dev/null ); then
         error "zstd needs to be installed to handle zstd-compressed tarballs."
     fi
