@@ -290,6 +290,9 @@ contents_type_dir=$(echo "${tar_file_basename}" | cut -d- -f3)
 # e.g. the first file that actually belongs to the software layer for software tarballs
 # (and, hence, skip other files, like init scripts)
 tar_first_file=$(tar tf "${tar_file}" | grep -m 1 "/${contents_type_dir}/")
+if [ -z ${tar_first_file} ]; then
+    tar_first_file=$(tar tf "${tar_file}" | head -n 1)
+fi
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 # Handle longer prefix with project name in dev.eessi.io and
 # get the right basedir from the tarball name
