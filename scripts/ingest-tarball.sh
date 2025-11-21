@@ -185,7 +185,7 @@ function update_lmod_caches() {
     # Find the oldest version that we have, and use its Lmod to generate the cache to get better backwards compatibilty with old Lmod versions
     oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}" | head -n 1)
     oldest_stack_lmod_update_script="${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
-    ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}"
+    ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${oldest_stack_lmod_update_script}"
     ec=$?
     if [ $ec -eq 0 ]; then
         ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
