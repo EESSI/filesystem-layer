@@ -15,7 +15,7 @@ function error() {
 
 # Check if a stack base dir has been specified
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
-    error "usage: $0 <path to main directory of an EESSI stack>"
+    error "usage: $0 <path to main directory of an EESSI stack> [<path to Lmod's update_lmod_system_cache_files script>]"
 fi
 
 stack_base_dir="$1"
