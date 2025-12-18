@@ -81,7 +81,7 @@ function check_version() {
     fi
 
     # Cut off any suffix from the top-level directory name (which should correspond to the version)
-    unsuffixed_tar_top_level_dir=$(echo ${tar_top_level_dir} | sed -E 's/-[0-9A-Za-z._-]+//')
+    unsuffixed_tar_top_level_dir=$(echo ${tar_top_level_dir} | sed -E 's/-[0-9A-Za-z._-]+$//')
 
     # Check if the version encoded in the filename matches the unsuffixed top-level dir inside the tarball
     if [ "${version}" != "${unsuffixed_tar_top_level_dir}" ]
