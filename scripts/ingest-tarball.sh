@@ -80,10 +80,13 @@ function check_version() {
         error "${version} is not a valid EESSI version."
     fi
 
-    # Check if the version encoded in the filename matches the top-level dir inside the tarball
-    if [ "${version}" != "${tar_top_level_dir}" ]
+    # Cut off any suffix from the top-level directory name (which should correspond to the version)
+    unsuffixed_tar_top_level_dir=$(echo ${tar_top_level_dir} | sed -E 's/-[0-9A-Za-z._-]+$//')
+
+    # Check if the version encoded in the filename matches the unsuffixed top-level dir inside the tarball
+    if [ "${version}" != "${unsuffixed_tar_top_level_dir}" ]
     then
-        error "the version in the filename (${version}) does not match the top-level directory in the tarball (${tar_top_level_dir})."
+        error "the version in the filename (${version}) does not match the (unsuffixed) top-level directory in the tarball (${unsuffixed_tar_top_level_dir})."
     fi
 }
 
