@@ -2,6 +2,9 @@
 # Paths for files and symlinks should be relative to the root of the repository.
 ---
 directories: # noqa: var-naming[no-role-prefix]
+  - name: defaults
+    mode: '755'
+
   - name: init/modules/EESSI
     mode: '755'
 
