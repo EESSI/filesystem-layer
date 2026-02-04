@@ -32,15 +32,15 @@ files: # noqa: var-naming[no-role-prefix]
     mode: '644'
 
 symlinks: # noqa: var-naming[no-role-prefix]
-  #defaults/amd: '$(EESSI_AMD_OVERRIDE_DEFAULT:-/dev/null)'
+  # defaults/amd: '$(EESSI_AMD_OVERRIDE_DEFAULT:-/dev/null)'
   defaults/nvidia: '$(EESSI_NVIDIA_OVERRIDE_DEFAULT:-/dev/null)'
   defaults/override: '$(EESSI_LIB_OVERRIDE_DEFAULT:-/dev/null)'
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
   init/modules/EESSI/2023.06.lua: /cvmfs/software.eessi.io/versions/2023.06/init/modules/EESSI/2023.06.lua
   init/modules/EESSI/2025.06.lua: /cvmfs/software.eessi.io/versions/2025.06/init/modules/EESSI/2025.06.lua
-  #versions/2025.06/compat/linux/aarch64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
-  #versions/2025.06/compat/linux/riscv64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
-  #versions/2025.06/compat/linux/x86_64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
+  # versions/2025.06/compat/linux/aarch64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
+  # versions/2025.06/compat/linux/riscv64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
+  # versions/2025.06/compat/linux/x86_64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
   versions/2025.06/compat/linux/aarch64/lib/nvidia: '$(EESSI_202506_NVIDIA_OVERRIDE:-/cvmfs/software.eessi.io/defaults/nvidia)'
   versions/2025.06/compat/linux/riscv64/lib/nvidia: '$(EESSI_202506_NVIDIA_OVERRIDE:-/cvmfs/software.eessi.io/defaults/nvidia)'
   versions/2025.06/compat/linux/x86_64/lib/nvidia: '$(EESSI_202506_NVIDIA_OVERRIDE:-/cvmfs/software.eessi.io/defaults/nvidia)'
