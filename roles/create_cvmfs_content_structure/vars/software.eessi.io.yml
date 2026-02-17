@@ -10,13 +10,13 @@ directories: # noqa: var-naming[no-role-prefix]
 
   # These should exist, but we mainly list them here to prevent failures in CI (where the test repo is empty)
   - name: versions/2025.06/compat/linux/aarch64/lib
-    mode: '775'
+    mode: '755'
 
   - name: versions/2025.06/compat/linux/riscv64/lib
-    mode: '775'
+    mode: '755'
 
   - name: versions/2025.06/compat/linux/x86_64/lib
-    mode: '775'
+    mode: '755'
 
 files: # noqa: var-naming[no-role-prefix]
   - name: .cvmfsdirtab
