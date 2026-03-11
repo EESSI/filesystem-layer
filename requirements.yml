@@ -1,5 +1,5 @@
 ---
-# ansible-galaxy role install -r requirements.yml
+# ansible-galaxy install -r requirements.yml
 roles:
   - name: eessi.cvmfs
     src: https://github.com/EESSI/ansible-cvmfs
@@ -8,5 +8,7 @@ roles:
     version: 3.1.1
 
 collections:
+  - name: ansible.posix
+    version: 2.1.0
   - name: community.general
     version: '>=8.6.1'
