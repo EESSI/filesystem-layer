@@ -14,4 +14,3 @@ files: # noqa: var-naming[no-role-prefix]
 
 symlinks: # noqa: var-naming[no-role-prefix]
   host_injections: '$(EESSI_DEV_HOST_INJECTIONS:-/cvmfs/software.eessi.io/host_injections)'
-
