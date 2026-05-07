@@ -63,9 +63,11 @@
 
           # Stratum 1 servers for the eessi.io domain
           if [ "$CVMFS_USE_CDN" = "yes" ]; then
-              CVMFS_SERVER_URL="{{ eessi_cvmfs_server_cdn_urls | selectattr('domain', 'equalto', 'eessi.io') | map(attribute='urls') | sum(start=[]) | join(';') }}"
+              CVMFS_SERVER_URL="{{ eessi_cvmfs_server_cdn_urls | selectattr('domain', 'equalto', 'eessi.io') |
+                                   map(attribute='urls') | sum(start=[]) | join(';') }}"
           else
-              CVMFS_SERVER_URL="{{ eessi_cvmfs_server_urls | selectattr('domain', 'equalto', 'eessi.io') | map(attribute='urls') | sum(start=[]) | join(';') }}"
+              CVMFS_SERVER_URL="{{ eessi_cvmfs_server_urls | selectattr('domain', 'equalto', 'eessi.io') |
+                                   map(attribute='urls') | sum(start=[]) | join(';') }}"
           fi
 
         dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ item.domain }}.conf"
