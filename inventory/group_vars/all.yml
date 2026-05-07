@@ -39,6 +39,15 @@ eessi_cvmfs_server_urls:
       - "http://azure-us-east-s1.eessi.science/cvmfs/@fqrn@"
       - "http://ral-uk-s1.eessi.science:8000/cvmfs/@fqrn@"
 
+# URLs for all CDN Stratum 1 servers.
+eessi_cvmfs_server_cdn_urls:
+  - domain: eessi.io
+    use_geoapi: true
+    urls:
+      - "http://s1eessieu1-cvmfs.openhtc.io/cvmfs/@fqrn@"
+      - "http://s1eessina1-cvmfs.openhtc.io/cvmfs/@fqrn@"
+      - "http://s1ral-cvmfs.openhtc.io/cvmfs/@fqrn@"
+
 # Configuration of all the repositories.
 eessi_cvmfs_repositories:
   - repository: software.eessi.io
