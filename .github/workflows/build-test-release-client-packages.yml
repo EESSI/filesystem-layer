@@ -241,10 +241,14 @@ jobs:
         run: |
           ls /cvmfs/software.eessi.io/
           cfg=$(cvmfs_config showconfig software.eessi.io)
+          # Print the full configuration for debugging purposes
+          echo "$cfg"
           # Check that the GEO API is enabled
           echo "$cfg" | grep "CVMFS_USE_GEOAPI=yes"
           # CVMFS_CLIENT_PROFILE=single should set CVMFS_USE_CDN
           echo "$cfg" | grep "CVMFS_USE_CDN=yes"
+          # Check that the openhtc.io CDN URLs are used for the Stratum 1 servers
+          echo "$cfg" | grep "CVMFS_SERVER_URL" | grep "openhtc.io"
           # Check if we can still override the CDN setting
           echo "CVMFS_USE_CDN=custom_value" | sudo tee -a /etc/cvmfs/default.local
           sudo cvmfs_config reload software.eessi.io
