@@ -40,9 +40,6 @@
     - name: Make EESSI CVMFS domain configuration file
       ansible.builtin.copy:
         content: |
-          # Stratum 1 servers for the eessi.io domain
-          CVMFS_SERVER_URL="{{ item.urls | join(';') }}"
-
           # Public keys for the eessi.io domain
           CVMFS_KEYS_DIR="/etc/cvmfs/keys/{{ item.domain }}"
 
@@ -51,11 +48,26 @@
 
           # The client profile is supposed to be set in /etc/cvmfs/default.local
           if [ "$CVMFS_CLIENT_PROFILE" = "single" ]; then
-            if [ "$CVMFS_HTTP_PROXY" = "" ]; then
-              # For individual clients (laptops, clusters < 5 nodes), use a site proxy
-              # where possible and otherwise a direct stratum 1 connection
-              CVMFS_HTTP_PROXY="DIRECT"
-            fi
+              if [ "$CVMFS_HTTP_PROXY" = "" ]; then
+                  # For individual clients (laptops, clusters < 5 nodes), use a site proxy
+                  # where possible and otherwise a direct stratum 1 connection
+                  CVMFS_HTTP_PROXY="DIRECT"
+              fi
+          fi
+
+          # Check if we should use a CDN
+          CVMFS_USE_CDN="$CVMFS_USE_CDN"
+          if [ -z "$CVMFS_USE_CDN" ] && [ "$CVMFS_HTTP_PROXY" = "DIRECT" ] || [ "$CVMFS_HTTP_PROXY" = "auto;DIRECT" ]; then
+              CVMFS_USE_CDN="yes"
+          fi
+
+          # Stratum 1 servers for the eessi.io domain
+          if [ "$CVMFS_USE_CDN" = "yes" ]; then
+              CVMFS_SERVER_URL="{{ eessi_cvmfs_server_cdn_urls | selectattr('domain', 'equalto', 'eessi.io') |
+                                   map(attribute='urls') | sum(start=[]) | join(';') }}"
+          else
+              CVMFS_SERVER_URL="{{ eessi_cvmfs_server_urls | selectattr('domain', 'equalto', 'eessi.io') |
+                                   map(attribute='urls') | sum(start=[]) | join(';') }}"
           fi
 
         dest: "{{ package_source_dir }}/etc/cvmfs/domain.d/{{ item.domain }}.conf"
