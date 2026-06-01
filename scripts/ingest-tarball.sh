@@ -213,7 +213,7 @@ function update_lmod_caches() {
         lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
     fi
     if [ ! -f "${lmod_update_system_cache_script}" ]; then
-        echo_yellow "Lmod cache update failed: cannot find an Lmod installation."
+        echo_yellow "Lmod cache update failed: cannot find the Lmod cache update script (${lmod_update_system_cache_script})."
     else
         ${cvmfs_server} transaction "${cvmfs_repo}"
         ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${lmod_update_system_cache_script}"
