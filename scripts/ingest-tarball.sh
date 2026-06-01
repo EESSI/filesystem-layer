@@ -184,6 +184,8 @@ function update_lmod_caches() {
     then
         error "the script for updating the Lmod caches (${update_caches_script}) does not have execute permissions!"
     fi
+    # if we are not the repo owner, the Lmod cache script needs to be run with sudo to prevent "Permission denied" errors
+    is_repo_owner ||  update_caches_script="sudo ${update_caches_script}"
 
     # Determine which Lmod installation to use for updating the caches:
     #   - use $LMOD_LIBEXEC_DIR if set (and check if it indeed contains the required script, otherwise fail hard)
