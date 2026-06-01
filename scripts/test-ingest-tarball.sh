@@ -108,22 +108,33 @@ lmod_update_script="${lmod_libexec_path}/update_lmod_system_cache_files"
 touch "${lmod_update_script}"
 chmod u+x "${lmod_update_script}"
 
-
 # Run the tests that should succeed
-for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
-    t=$(create_tarball ${tarballs_success[$i]})
-    "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
-    if [ ! $? -eq 0 ]; then
-        echo ">> ${tarballs_success[$i]} test with existing repo FAILed!" >&2
-        echo ">> output:" >&2
-        cat "${TEST_OUTPUT}" >&2
-        echo >&2
-        num_tests_failed=$((num_tests_failed + 1))
-    else
-        num_tests_succeeded=$((num_tests_succeeded + 1))
+for ((lmod_envs = 0; lmod_envs < 3; lmod_envs++)); do
+    if [ $lmod_envs -eq 1 ]; then
+        mkdir -p "${CUSTOM_CVMFS_ROOT}/software.eessi.io/versions/2000.01/"
+        mv "${repo_version_root}/compat" "${CUSTOM_CVMFS_ROOT}/software.eessi.io/versions/2000.01/compat"
     fi
-    rm -f "${TEST_OUTPUT}"
-    num_tests=$((num_tests + 1))
+    if [ $lmod_envs -eq 2 ]; then
+        mkdir "${tstdir}/lmod"
+        mv "${CUSTOM_CVMFS_ROOT}/software.eessi.io/versions/2000.01/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files" "${tstdir}/lmod"
+        rm -rf "{CUSTOM_CVMFS_ROOT}/software.eessi.io/versions/2000.01/compat/"
+        export LMOD_LIBEXEC_DIR="${tstdir}/lmod"
+    fi
+    for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
+        t=$(create_tarball ${tarballs_success[$i]})
+        "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
+        if [ ! $? -eq 0 ]; then
+            echo ">> ${tarballs_success[$i]} test with existing repo FAILed!" >&2
+            echo ">> output:" >&2
+            cat "${TEST_OUTPUT}" >&2
+            echo >&2
+            num_tests_failed=$((num_tests_failed + 1))
+        else
+            num_tests_succeeded=$((num_tests_succeeded + 1))
+        fi
+        rm -f "${TEST_OUTPUT}"
+        num_tests=$((num_tests + 1))
+    done
 done
 
 # Run the tests that should fail
