@@ -171,7 +171,6 @@ for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     num_tests=$((num_tests + 1))
 done
 
-
 # Clean up
 rm -rf "${tstdir}"
 
