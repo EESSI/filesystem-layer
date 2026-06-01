@@ -205,7 +205,7 @@ function update_lmod_caches() {
             if [ -d "${CVMFS_ROOT}/software.eessi.io/${basedir}" ]; then
                 lmod_cvmfs_repo="software.eessi.io"
             else
-                print_yellow "Lmod cache update failed: cannot find a compatibility layer with an Lmod installation."
+                echo_yellow "Lmod cache update failed: cannot find a compatibility layer with an Lmod installation."
             fi
         fi
         # Find the oldest version that we have, and use its Lmod to generate the cache to get better backwards compatibilty with old Lmod versions
@@ -213,7 +213,7 @@ function update_lmod_caches() {
         lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
     fi
     if [ ! -f "${lmod_update_system_cache_script}" ]; then
-        print_yellow "Lmod cache update failed: cannot find an Lmod installation."
+        echo_yellow "Lmod cache update failed: cannot find an Lmod installation."
     else
         ${cvmfs_server} transaction "${cvmfs_repo}"
         ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${lmod_update_system_cache_script}"
