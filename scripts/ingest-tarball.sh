@@ -184,17 +184,46 @@ function update_lmod_caches() {
     then
         error "the script for updating the Lmod caches (${update_caches_script}) does not have execute permissions!"
     fi
-    ${cvmfs_server} transaction "${cvmfs_repo}"
-    # Find the oldest version that we have, and use its Lmod to generate the cache to get better backwards compatibilty with old Lmod versions
-    oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}" | head -n 1)
-    oldest_stack_lmod_update_script="${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
-    ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${oldest_stack_lmod_update_script}"
-    ec=$?
-    if [ $ec -eq 0 ]; then
-        ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+
+    # Determine which Lmod installation to use for updating the caches:
+    #   - use $LMOD_LIBEXEC_DIR if set (and check if it indeed contains the required script, otherwise fail hard)
+    #   - if not set:
+    #     - look for a compatibility layer (which should have Lmod installed) in the current CVMFS repository
+    #     - otherwise, fall back to software.eessi.io, if available
+    #     - use the oldest compatibility layer in either repository to create the caches
+    #   - if no Lmod installation is found: give up and print a warning that the caches will not be created/updated
+    lmod_cvmfs_repo="${cvmfs_repo}"
+    lmod_update_system_cache_script=""
+    if [ ! -z "${LMOD_LIBEXEC_DIR}" ]; then
+        if [ -f "${LMOD_LIBEXEC_DIR}/update_lmod_system_cache_files" ]; then
+            lmod_update_system_cache_script="${LMOD_LIBEXEC_DIR}/update_lmod_system_cache_files"
+        else
+            error "No update_lmod_system_cache_files script found in the given \$LMOD_LIBEXEC_DIR ($LMOD_LIBEXEC_DIR)."
+        fi
     else
-        ${cvmfs_server} abort -f "${cvmfs_repo}"
-        error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
+        if [ ! -d "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}/compat/linux/$(uname -m)/usr/share/Lmod" ]; then
+            if [ -d "${CVMFS_ROOT}/software.eessi.io/${basedir}" ]; then
+                lmod_cvmfs_repo="software.eessi.io"
+            else
+                print_yellow "Lmod cache update failed: cannot find a compatibility layer with an Lmod installation."
+            fi
+        fi
+        # Find the oldest version that we have, and use its Lmod to generate the cache to get better backwards compatibilty with old Lmod versions
+        oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}" | head -n 1)
+        lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
+    fi
+    if [ ! -f "${lmod_update_system_cache_script}" ]; then
+        print_yellow "Lmod cache update failed: cannot find an Lmod installation."
+    else
+        ${cvmfs_server} transaction "${cvmfs_repo}"
+        ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${lmod_update_system_cache_script}"
+        ec=$?
+        if [ $ec -eq 0 ]; then
+            ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+        else
+            ${cvmfs_server} abort -f "${cvmfs_repo}"
+            error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
+        fi
     fi
 }
 
@@ -213,9 +242,7 @@ function ingest_software_tarball() {
     check_arch
     check_os
     cvmfs_ingest_tarball
-    if [ "${cvmfs_repo}" = "software.eessi.io" ]; then
-        update_lmod_caches
-    fi
+    update_lmod_caches
 }
 
 function ingest_compat_tarball() {
