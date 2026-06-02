@@ -2,7 +2,25 @@
 # Paths for files and symlinks should be relative to the root of the repository.
 ---
 directories: # noqa: var-naming[no-role-prefix]
-  - name: defaults/compat
+  - name: defaults
+    mode: '755'
+
+  - name: defaults/compat/etc
+    mode: '755'
+
+  - name: defaults/compat/lib64
+    mode: '755'
+
+  - name: defaults/compat/usr/sbin
+    mode: '755'
+
+  - name: defaults/compat/var/db
+    mode: '755'
+
+  - name: defaults/compat/var/log
+    mode: '755'
+
+  - name: defaults/compat/var/spool
     mode: '755'
 
   - name: init/modules/EESSI
