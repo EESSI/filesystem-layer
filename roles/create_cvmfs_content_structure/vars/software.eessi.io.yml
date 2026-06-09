@@ -59,7 +59,7 @@ symlinks: # noqa: var-naming[no-role-prefix]
   defaults/compat/etc/gshadow: '$(EESSI_COMPAT_ETC_GSHADOW:-/etc/gshadow)'
   defaults/compat/etc/hosts: '$(EESSI_COMPAT_ETC_HOSTS:-/etc/hosts)'
   defaults/compat/etc/hosts.equiv: '$(EESSI_COMPAT_ETC_HOSTS_EQUIV:-/etc/hosts.equiv)'
-  defaults/compat/etc/ld.so.preload: '$(EESSI_COMPAT_ETC_LD_SO_PRELOAD:-/etc/ld.so.preload)'
+  # defaults/compat/etc/ld.so.preload: '$(EESSI_COMPAT_ETC_LD_SO_PRELOAD:-/etc/ld.so.preload)'
   defaults/compat/etc/localtime: '$(EESSI_COMPAT_ETC_LOCALTIME:-/etc/localtime)'
   defaults/compat/etc/netgroup: '$(EESSI_COMPAT_ETC_NETGROUP:-/etc/netgroup)'
   defaults/compat/etc/networks: '$(EESSI_COMPAT_ETC_NETWORKS:-/etc/networks)'
