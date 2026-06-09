@@ -5,6 +5,24 @@ directories: # noqa: var-naming[no-role-prefix]
   - name: defaults
     mode: '755'
 
+  - name: defaults/compat/etc
+    mode: '755'
+
+  - name: defaults/compat/lib64
+    mode: '755'
+
+  - name: defaults/compat/usr/sbin
+    mode: '755'
+
+  - name: defaults/compat/var/db
+    mode: '755'
+
+  - name: defaults/compat/var/log
+    mode: '755'
+
+  - name: defaults/compat/var/spool
+    mode: '755'
+
   - name: init/modules/EESSI
     mode: '755'
 
@@ -35,6 +53,32 @@ symlinks: # noqa: var-naming[no-role-prefix]
   # defaults/amd: '$(EESSI_AMD_OVERRIDE_DEFAULT:-/dev/null)'
   defaults/nvidia: '$(EESSI_NVIDIA_OVERRIDE_DEFAULT:-/dev/null)'
   defaults/override: '$(EESSI_LIB_OVERRIDE_DEFAULT:-/dev/null)'
+  defaults/compat/etc/ethers: '$(EESSI_COMPAT_ETC_ETHERS:-/etc/ethers)'
+  defaults/compat/etc/fstab: '$(EESSI_COMPAT_ETC_FSTAB:-/etc/fstab)'
+  defaults/compat/etc/group: '$(EESSI_COMPAT_ETC_GROUP:-/etc/group)'
+  defaults/compat/etc/gshadow: '$(EESSI_COMPAT_ETC_GSHADOW:-/etc/gshadow)'
+  defaults/compat/etc/hosts: '$(EESSI_COMPAT_ETC_HOSTS:-/etc/hosts)'
+  defaults/compat/etc/hosts.equiv: '$(EESSI_COMPAT_ETC_HOSTS_EQUIV:-/etc/hosts.equiv)'
+  # defaults/compat/etc/ld.so.preload: '$(EESSI_COMPAT_ETC_LD_SO_PRELOAD:-/etc/ld.so.preload)'
+  defaults/compat/etc/localtime: '$(EESSI_COMPAT_ETC_LOCALTIME:-/etc/localtime)'
+  defaults/compat/etc/netgroup: '$(EESSI_COMPAT_ETC_NETGROUP:-/etc/netgroup)'
+  defaults/compat/etc/networks: '$(EESSI_COMPAT_ETC_NETWORKS:-/etc/networks)'
+  defaults/compat/etc/nsswitch.conf: '$(EESSI_COMPAT_ETC_NSSWITCH_CONF:-/etc/nsswitch.conf)'
+  defaults/compat/etc/passwd: '$(EESSI_COMPAT_ETC_PASSWD:-/etc/passwd)'
+  defaults/compat/etc/protocols: '$(EESSI_COMPAT_ETC_PROTOCOLS:-/etc/protocols)'
+  defaults/compat/etc/resolv.conf: '$(EESSI_COMPAT_ETC_RESOLV_CONF:-/etc/resolv.conf)'
+  defaults/compat/etc/rpc: '$(EESSI_COMPAT_ETC_RPC:-/etc/rpc)'
+  defaults/compat/etc/services: '$(EESSI_COMPAT_ETC_SERVICES:-/etc/services)'
+  defaults/compat/etc/shadow: '$(EESSI_COMPAT_ETC_SHADOW:-/etc/shadow)'
+  defaults/compat/usr/sbin/sendmail: '$(EESSI_COMPAT_SENDMAIL:-/usr/sbin/sendmail)'
+  defaults/compat/var/db/passwd.db: '$(EESSI_COMPAT_VAR_DB_PASSWD_DB:-/var/db/passwd.db)'
+  defaults/compat/var/log/lastlog: '$(EESSI_COMPAT_VAR_LOG_LASTLOG:-/var/log/lastlog)'
+  defaults/compat/var/log/wtmp: '$(EESSI_COMPAT_VAR_LOG_WTMP:-/var/log/wtmp)'
+  defaults/compat/var/mail: '$(EESSI_COMPAT_VAR_MAIL:-/var/mail)'
+  defaults/compat/var/run: '$(EESSI_COMPAT_VAR_RUN:-/var/run)'
+  defaults/compat/var/spool/rwho: '$(EESSI_COMPAT_VAR_SPOOL_RWHO:-/var/spool/rwho)'
+  defaults/compat/var/tmp: '$(EESSI_COMPAT_VAR_TMP:-/var/tmp)'
+  defaults/compat/lib64/libnss_centrifydc.so.2: '$(EESSI_COMPAT_LIBNSS_CENTRIFYDB:-/lib64/libnss_centrifydc.so.2)'
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
   init/modules/EESSI/2023.06.lua: /cvmfs/software.eessi.io/versions/2023.06/init/modules/EESSI/2023.06.lua
   init/modules/EESSI/2025.06.lua: /cvmfs/software.eessi.io/versions/2025.06/init/modules/EESSI/2025.06.lua
