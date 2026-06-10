@@ -72,6 +72,7 @@ symlinks: # noqa: var-naming[no-role-prefix]
   defaults/compat/etc/shadow: '$(EESSI_COMPAT_ETC_SHADOW:-/etc/shadow)'
   defaults/compat/usr/sbin/sendmail: '$(EESSI_COMPAT_SENDMAIL:-/usr/sbin/sendmail)'
   defaults/compat/var/db/passwd.db: '$(EESSI_COMPAT_VAR_DB_PASSWD_DB:-/var/db/passwd.db)'
+  defaults/compat/var/lib/sss: '$(EESSI_COMPAT_VAR_LIB_SSS:-/var/lib/sss)'
   defaults/compat/var/log/lastlog: '$(EESSI_COMPAT_VAR_LOG_LASTLOG:-/var/log/lastlog)'
   defaults/compat/var/log/wtmp: '$(EESSI_COMPAT_VAR_LOG_WTMP:-/var/log/wtmp)'
   defaults/compat/var/mail: '$(EESSI_COMPAT_VAR_MAIL:-/var/mail)'
