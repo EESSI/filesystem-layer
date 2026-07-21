@@ -1,5 +1,5 @@
 ARG cvmfsversion=2.13.3
-ARG awscliversion=1.45.34
+ARG awscliversion=1.45.52
 ARG unionfsfuseversion=3.7
 
 # see https://hub.docker.com/_/debian/tags?name=trixie-20&ordering=last_updated
