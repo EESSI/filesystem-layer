@@ -12,7 +12,7 @@ os="${distro}${release}"
 
 if [ "$arch" = "riscv64" ]
 then
-    apt-get install -y devscripts libfuse3-dev cmake cpio golang libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release
+    apt-get install -y devscripts libfuse3-dev cmake cpio golang help2man libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release
     cd /tmp
     wget https://github.com/cvmfs/cvmfs/archive/refs/tags/cvmfs-${cvmfsversion}.tar.gz
     tar xzf cvmfs-${cvmfsversion}.tar.gz
@@ -34,10 +34,10 @@ then
 else
     mkdir -p /root/deb
     cd /root/deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}~1+${os}_${arch}.deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}~1+${os}_${arch}.deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-libs_${cvmfsversion}~1+${os}_${arch}.deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-shrinkwrap_${cvmfsversion}~1+${os}_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}+${os}_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}+${os}_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-libs_${cvmfsversion}+${os}_${arch}.deb
+    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-shrinkwrap_${cvmfsversion}+${os}_${arch}.deb
 fi
 
 cd /root/deb
