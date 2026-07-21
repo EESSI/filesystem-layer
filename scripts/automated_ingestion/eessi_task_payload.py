@@ -75,7 +75,7 @@ class EESSITaskPayload:
                 if member.isfile()
                 and PurePosixPath(member.path).match(os.path.join('**', 'modules', '*', '*', '*.lua'))
             ]
-            reprod_dirs = [ # reprod dirs with the pattern: <prefix>/reprod/<name>/<version>/<timestamp>
+            reprod_dirs = [  # reprod dirs with the pattern: <prefix>/reprod/<name>/<version>/<timestamp>
                 member.path
                 for member in members
                 if member.isdir() and PurePosixPath(member.path).match(os.path.join('**', 'reprod', '*', '*', '*'))
