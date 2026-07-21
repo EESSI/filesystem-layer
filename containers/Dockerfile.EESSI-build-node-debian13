@@ -3,13 +3,13 @@ ARG awscliversion=1.45.52
 ARG unionfsfuseversion=3.7
 
 # see https://hub.docker.com/_/debian/tags?name=trixie-20&ordering=last_updated
-FROM debian:trixie-20260610-slim AS prepare-deb
+FROM debian:trixie-20260713-slim AS prepare-deb
 ARG cvmfsversion
 COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
 RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 
 
-FROM debian:trixie-20260610-slim
+FROM debian:trixie-20260713-slim
 ARG cvmfsversion
 ARG awscliversion
 ARG unionfsfuseversion
