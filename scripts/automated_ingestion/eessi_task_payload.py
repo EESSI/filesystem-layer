@@ -84,9 +84,12 @@ class EESSITaskPayload:
                 member.path
                 for member in members
                 if (
-                    not PurePosixPath(member.path).full_match(os.path.join('**', 'software', '**'))
-                    and not PurePosixPath(member.path).full_match(os.path.join('**', 'modules', '**'))
-                    and not PurePosixPath(member.path).full_match(os.path.join('**', 'reprod', '**'))
+                    # full_match functionality is only available since Python 3.13
+                    # not PurePosixPath(member.path).full_match(os.path.join('**', 'software', '**'))
+                    # and not PurePosixPath(member.path).full_match(os.path.join('**', 'modules', '**'))
+                    # and not PurePosixPath(member.path).full_match(os.path.join('**', 'reprod', '**'))
+                    # for now, simply find any files installed outside the <version>/software subtree
+                    PurePosixPath(member.path).parts[1] != 'software'
                 )
             ]
             # remove duplicates by converting to a set, and then sort
