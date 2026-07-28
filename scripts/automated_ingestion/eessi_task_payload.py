@@ -80,18 +80,32 @@ class EESSITaskPayload:
                 for member in members
                 if member.isdir() and PurePosixPath(member.path).match(os.path.join('**', 'reprod', '*', '*', '*'))
             ]
-            other = [  # anything that does not have software, modules, nor reprod in its path
-                member.path
-                for member in members
-                if (
-                    # full_match functionality is only available since Python 3.13
-                    # not PurePosixPath(member.path).full_match(os.path.join('**', 'software', '**'))
-                    # and not PurePosixPath(member.path).full_match(os.path.join('**', 'modules', '**'))
-                    # and not PurePosixPath(member.path).full_match(os.path.join('**', 'reprod', '**'))
-                    # for now, simply find any files installed outside the <version>/software subtree
-                    PurePosixPath(member.path).parts[1] != 'software'
-                )
-            ]
+            # the following may detect other files, but full_match functionality requires Python 3.13 or newer
+            # other = [  # anything that does not have software, modules, nor reprod in its path
+            #     member.path
+            #     for member in members
+            #     if (
+            #           not PurePosixPath(member.path).full_match(os.path.join('**', 'software', '**'))
+            #           and not PurePosixPath(member.path).full_match(os.path.join('**', 'modules', '**'))
+            #           and not PurePosixPath(member.path).full_match(os.path.join('**', 'reprod', '**'))
+            #     )
+            # ]
+
+            # more basic approach to find any other files/directories included in the tarball
+            other = []
+            for member in members:
+                # skip anything that is part of a software installation, i.e. relative to any of the found software directories
+                if any([PurePosixPath(member.path).is_relative_to(sw_dir) for sw_dir in swdirs]):
+                    continue
+                # skip anything that is in a found reprod directory or which is a parent directory of a reprod directory
+                elif any([PurePosixPath(member.path).is_relative_to(reprod_dir) or PurePosixPath(reprod_dir).parent.match(member.path) for reprod_dir in reprod_dirs]):
+                    continue
+                # skip already found module files
+                elif member.path in modfiles:
+                   continue
+
+                other.append(member.path)
+
             # remove duplicates by converting to a set, and then sort
             members_list = sorted(set(swdirs + modfiles + reprod_dirs + other))
 
