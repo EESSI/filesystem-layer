@@ -94,11 +94,13 @@ class EESSITaskPayload:
             # more basic approach to find any other files/directories included in the tarball
             other = []
             for member in members:
-                # skip anything that is part of a software installation, i.e. relative to any of the found software directories
+                # skip files/dirs that are inside software directories
                 if any([PurePosixPath(member.path).is_relative_to(sw_dir) for sw_dir in swdirs]):
                     continue
-                # skip anything that is in a found reprod directory or which is a parent directory of a reprod directory
-                elif any([PurePosixPath(member.path).is_relative_to(reprod_dir) or PurePosixPath(reprod_dir).parent.match(member.path) for reprod_dir in reprod_dirs]):
+                # skip files/dirs that are in a reprod directory or which is a parent directory of a reprod directory
+                elif any([PurePosixPath(member.path).is_relative_to(reprod_dir) or
+                          PurePosixPath(reprod_dir).parent.match(member.path)
+                          for reprod_dir in reprod_dirs]):
                     continue
                 # skip already found module files
                 elif member.path in modfiles:
