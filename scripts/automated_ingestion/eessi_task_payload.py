@@ -104,7 +104,7 @@ class EESSITaskPayload:
                     continue
                 # skip already found module files
                 elif member.path in modfiles:
-                   continue
+                    continue
 
                 other.append(member.path)
 
