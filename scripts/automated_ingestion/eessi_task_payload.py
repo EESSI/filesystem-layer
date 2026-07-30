@@ -62,46 +62,54 @@ class EESSITaskPayload:
 
         else:
             tar_members_desc = "Summarized overview of the contents of the tarball:"
-            # determine prefix after filtering out '<EESSI version>/init' subdirectory,
-            # to get actual prefix for specific CPU target (like '2023.06/software/linux/aarch64/neoverse_v1')
-            init_subdir = os.path.join("*", "init")
-            non_init_paths = sorted(
-                [path for path in paths if not any(parent.match(init_subdir) for parent in PurePosixPath(path).parents)]
-            )
-            if non_init_paths:
-                prefix = os.path.commonprefix(non_init_paths)
-            else:
-                prefix = os.path.commonprefix(paths)
 
             # TODO: this only works for software tarballs, how to handle compat layer tarballs?
             swdirs = [  # all directory names with the pattern: <prefix>/software/<name>/<version>
                 member.path
                 for member in members
-                if member.isdir() and PurePosixPath(member.path).match(os.path.join(prefix, 'software', '*', '*'))
+                if member.isdir() and PurePosixPath(member.path).match(os.path.join('**', 'software', '*', '*'))
             ]
             modfiles = [  # all filenames with the pattern: <prefix>/modules/<category>/<name>/*.lua
                 member.path
                 for member in members
                 if member.isfile()
-                and PurePosixPath(member.path).match(os.path.join(prefix, 'modules', '*', '*', '*.lua'))
+                and PurePosixPath(member.path).match(os.path.join('**', 'modules', '*', '*', '*.lua'))
             ]
-            reprod_dirs = [
+            reprod_dirs = [  # reprod dirs with the pattern: <prefix>/reprod/<name>/<version>/<timestamp>
                 member.path
                 for member in members
-                if member.isdir() and PurePosixPath(member.path).match(os.path.join(prefix, 'reprod', '*', '*', '*'))
+                if member.isdir() and PurePosixPath(member.path).match(os.path.join('**', 'reprod', '*', '*', '*'))
             ]
-            other = [  # anything that is not in <prefix>/software nor <prefix>/modules nor <prefix>/reprod
-                member.path
-                for member in members
-                if (
-                    not PurePosixPath(prefix).joinpath('software') in PurePosixPath(member.path).parents
-                    and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(member.path).parents
-                    and not PurePosixPath(prefix).joinpath('reprod') in PurePosixPath(member.path).parents
-                )
-                # if not fnmatch.fnmatch(m.path, os.path.join(prefix, 'software', '*'))
-                # and not fnmatch.fnmatch(m.path, os.path.join(prefix, 'modules', '*'))
-            ]
-            members_list = sorted(swdirs + modfiles + reprod_dirs + other)
+            # the following may detect other files, but full_match functionality requires Python 3.13 or newer
+            # other = [  # anything that does not have software, modules, nor reprod in its path
+            #     member.path
+            #     for member in members
+            #     if (
+            #           not PurePosixPath(member.path).full_match(os.path.join('**', 'software', '**'))
+            #           and not PurePosixPath(member.path).full_match(os.path.join('**', 'modules', '**'))
+            #           and not PurePosixPath(member.path).full_match(os.path.join('**', 'reprod', '**'))
+            #     )
+            # ]
+
+            # more basic approach to find any other files/directories included in the tarball
+            other = []
+            for member in members:
+                # skip files/dirs that are inside software directories
+                if any([PurePosixPath(member.path).is_relative_to(sw_dir) for sw_dir in swdirs]):
+                    continue
+                # skip files/dirs that are in a reprod directory or which is a parent directory of a reprod directory
+                elif any([PurePosixPath(member.path).is_relative_to(reprod_dir) or
+                          PurePosixPath(reprod_dir).parent.match(member.path)
+                          for reprod_dir in reprod_dirs]):
+                    continue
+                # skip already found module files
+                elif member.path in modfiles:
+                    continue
+
+                other.append(member.path)
+
+            # remove duplicates by converting to a set, and then sort
+            members_list = sorted(set(swdirs + modfiles + reprod_dirs + other))
 
         # construct the overview
         overview = config["github"]["task_summary_payload_overview_template"].format(
