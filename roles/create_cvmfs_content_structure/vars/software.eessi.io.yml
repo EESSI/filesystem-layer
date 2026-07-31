@@ -8,7 +8,7 @@ directories: # noqa: var-naming[no-role-prefix]
   - name: defaults/compat/etc
     mode: '755'
 
-  - name: defaults/compat/lib64
+  - name: defaults/compat/usr/lib64
     mode: '755'
 
   - name: defaults/compat/usr/sbin
@@ -73,6 +73,8 @@ symlinks: # noqa: var-naming[no-role-prefix]
   defaults/compat/etc/rpc: '$(EESSI_COMPAT_ETC_RPC:-/etc/rpc)'
   defaults/compat/etc/services: '$(EESSI_COMPAT_ETC_SERVICES:-/etc/services)'
   defaults/compat/etc/shadow: '$(EESSI_COMPAT_ETC_SHADOW:-/etc/shadow)'
+  defaults/compat/lib64: usr/lib64
+  defaults/compat/usr/lib64/libnss_centrifydc.so.2: '$(EESSI_COMPAT_LIBNSS_CENTRIFYDB:-/usr/lib64/libnss_centrifydc.so.2)'
   defaults/compat/usr/sbin/sendmail: '$(EESSI_COMPAT_SENDMAIL:-/usr/sbin/sendmail)'
   defaults/compat/var/db/passwd.db: '$(EESSI_COMPAT_VAR_DB_PASSWD_DB:-/var/db/passwd.db)'
   defaults/compat/var/lib/sss: '$(EESSI_COMPAT_VAR_LIB_SSS:-/var/lib/sss)'
@@ -82,7 +84,6 @@ symlinks: # noqa: var-naming[no-role-prefix]
   defaults/compat/var/run: '$(EESSI_COMPAT_VAR_RUN:-/var/run)'
   defaults/compat/var/spool/rwho: '$(EESSI_COMPAT_VAR_SPOOL_RWHO:-/var/spool/rwho)'
   defaults/compat/var/tmp: '$(EESSI_COMPAT_VAR_TMP:-/var/tmp)'
-  defaults/compat/lib64/libnss_centrifydc.so.2: '$(EESSI_COMPAT_LIBNSS_CENTRIFYDB:-/lib64/libnss_centrifydc.so.2)'
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
   init/modules/EESSI/2023.06.lua: /cvmfs/software.eessi.io/versions/2023.06/init/modules/EESSI/2023.06.lua
   init/modules/EESSI/2025.06.lua: /cvmfs/software.eessi.io/versions/2025.06/init/modules/EESSI/2025.06.lua
