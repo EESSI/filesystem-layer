@@ -51,14 +51,14 @@
 
     - name: Abort transaction
       ansible.builtin.command:
-        cmd: "cvmfs_server abort {{ cvmfs_repo }}"
+        cmd: "cvmfs_server abort -f {{ cvmfs_repo }}"
         removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
       when: create_cvmfs_content_structure_publish is skipped
 
   rescue:
     - name: Abort transaction
       ansible.builtin.command:
-        cmd: "cvmfs_server abort {{ cvmfs_repo }}"
+        cmd: "cvmfs_server abort -f {{ cvmfs_repo }}"
         removes: "/var/spool/cvmfs/{{ cvmfs_repo }}/in_transaction.lock"
       when:
         - create_cvmfs_content_structure_start_transaction
