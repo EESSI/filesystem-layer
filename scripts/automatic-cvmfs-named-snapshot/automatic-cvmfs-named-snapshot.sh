@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Automatically create a named snapshot for a given CVMFS repository.
+# This script has to be run on a CVMFS publisher node.
+
+# This script assumes that the given repository name is valid and exists in the CVMFS repositories.
+# It also assumes that the repository is not currently in a transaction and that it has not had a transaction in the past 30 minutes.
+
+# Only if it passes these checks, the script will open a transaction to the given repository and run the cvmfs_server publish command.
+# The script will increment the snapshot number by 1 for each new named snapshot.
+
+# Usage: ./automatic-cvmfs-named-snapshot.sh <cvmfs_repo>
+
 # Function to check if the repository is currently in a transaction
 function check_transaction() {
     if cvmfs_server transaction | grep -q "${cvmfs_repo}"; then
