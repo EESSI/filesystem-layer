@@ -87,7 +87,7 @@ symlinks: # noqa: var-naming[no-role-prefix]
   host_injections: '$(EESSI_HOST_INJECTIONS:-/opt/eessi)'
   init/modules/EESSI/2023.06.lua: /cvmfs/software.eessi.io/versions/2023.06/init/modules/EESSI/2023.06.lua
   init/modules/EESSI/2025.06.lua: /cvmfs/software.eessi.io/versions/2025.06/init/modules/EESSI/2025.06.lua
-  init/modules/EESSI/2026.06.lua: /cvmfs/software.eessi.io/versions/2025.06/init/modules/EESSI/2026.06.lua
+  init/modules/EESSI/2026.06.lua: /cvmfs/software.eessi.io/versions/2026.06/init/modules/EESSI/2026.06.lua
   # versions/2025.06/compat/linux/aarch64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
   # versions/2025.06/compat/linux/riscv64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
   # versions/2025.06/compat/linux/x86_64/lib/amd: '$(EESSI_202506_AMD_OVERRIDE:-/cvmfs/software.eessi.io/defaults/amd)'
