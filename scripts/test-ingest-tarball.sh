@@ -1,10 +1,13 @@
 #!/bin/bash
 
-INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
-TEST_OUTPUT=/dev/null # change to /dev/stdout to print test outputs for debugging purposes
-
 # Temporary base dir for the tests
 tstdir=$(mktemp -d)
+
+# let ingest-tarball.sh script not use /cvmfs, but a temporary directory we can create
+export CUSTOM_CVMFS_ROOT=${tstdir}/cvmfs
+
+INGEST_SCRIPT=$(dirname "$(realpath $0)")/ingest-tarball.sh
+TEST_OUTPUT=${tstdir}/out.txt
 
 # Statistics
 num_tests=0
@@ -53,6 +56,10 @@ tarballs_success=(
   "$tstdir/eessi-2000.01-init-123456.tar.gz 2000.01 init"
   "$tstdir/eessi-2000.01-scripts-123456.tar.gz 2000.01 scripts"
   "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01 software/linux/x86_64/intel/haswell"
+  "$tstdir/eessi-2000.01-software-123456.tar.zst 2000.01 software/linux/x86_64/intel/haswell"
+  # Version suffixes inside the tarball are allowed if they match: -[0-9A-Za-z._-]+
+  "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01-001 software/linux/x86_64/intel/haswell"
+  "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01-20250101-001-abc software/linux/x86_64/intel/haswell"
 )
 
 # Test that should return an error
@@ -85,18 +92,49 @@ tarballs_fail=(
   # Invalid architecture
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat/linux/sparc"
   "$tstdir/eessi-2000.01-compat-123456.tar.gz 2000.01 compat"
+  # Invalid compression / file extension
+  "$tstdir/eessi-2000.01-software-123456.tar 2000.01 software/linux/x86_64/intel/haswell"
+  "$tstdir/eessi-2000.01-software-123456.tar.xz 2000.01 software/linux/x86_64/intel/haswell"
+  # Invalid version suffix in the tarball
+  "$tstdir/eessi-2000.01-software-123456.tar.gz 2000.01#001 software/linux/x86_64/intel/haswell"
 )
 
+# update_lmod_caches.sh script requires that directory exists,
+# and that script to update Lmod cache is found in there
+repo_version_root="${CUSTOM_CVMFS_ROOT}/my.repo.tld/versions/2000.01"
+lmod_libexec_path="${repo_version_root}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/"
+mkdir -p "${lmod_libexec_path}"
+lmod_update_script="${lmod_libexec_path}/update_lmod_system_cache_files"
+touch "${lmod_update_script}"
+chmod u+x "${lmod_update_script}"
+
 # Run the tests that should succeed
-for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
-    t=$(create_tarball ${tarballs_success[$i]})
-    "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
-    if [ ! $? -eq 0 ]; then
-        num_tests_failed=$((num_tests_failed + 1))
-    else
-        num_tests_succeeded=$((num_tests_succeeded + 1))
+for ((lmod_envs = 0; lmod_envs < 3; lmod_envs++)); do
+    if [ $lmod_envs -eq 1 ]; then
+        mkdir -p "${CUSTOM_CVMFS_ROOT}/software.eessi.io/versions/2000.01/"
+        mv "${repo_version_root}/compat" "${CUSTOM_CVMFS_ROOT}/software.eessi.io/versions/2000.01/compat"
     fi
-    num_tests=$((num_tests + 1))
+    if [ $lmod_envs -eq 2 ]; then
+        mkdir "${tstdir}/lmod"
+        mv "${CUSTOM_CVMFS_ROOT}/software.eessi.io/versions/2000.01/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files" "${tstdir}/lmod"
+        rm -rf "{CUSTOM_CVMFS_ROOT}/software.eessi.io/versions/2000.01/compat/"
+        export LMOD_LIBEXEC_DIR="${tstdir}/lmod"
+    fi
+    for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
+        t=$(create_tarball ${tarballs_success[$i]})
+        "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
+        if [ ! $? -eq 0 ]; then
+            echo ">> ${tarballs_success[$i]} test with existing repo FAILed!" >&2
+            echo ">> output:" >&2
+            cat "${TEST_OUTPUT}" >&2
+            echo >&2
+            num_tests_failed=$((num_tests_failed + 1))
+        else
+            num_tests_succeeded=$((num_tests_succeeded + 1))
+        fi
+        rm -f "${TEST_OUTPUT}"
+        num_tests=$((num_tests + 1))
+    done
 done
 
 # Run the tests that should fail
@@ -104,10 +142,15 @@ for ((i = 0; i < ${#tarballs_fail[@]}; i++)); do
     t=$(create_tarball ${tarballs_fail[$i]})
     "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
+        echo ">> ${tarballs_fail[$i]} test passed, but should have failed!" >&2
+        echo ">> output:" >&2
+        cat "${TEST_OUTPUT}" >&2
+        echo >&2
         num_tests_failed=$((num_tests_failed + 1))
     else
         num_tests_succeeded=$((num_tests_succeeded + 1))
     fi
+    rm -f "${TEST_OUTPUT}"
     num_tests=$((num_tests + 1))
 done
 
@@ -116,10 +159,15 @@ for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
     "${INGEST_SCRIPT}" "my.nonexistingrepo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
+        echo ">> ${tarballs_success[$i]} test passed with non-existing repo, should have failed!" >&2
+        echo ">> output:" >&2
+        cat "${TEST_OUTPUT}" >&2
+        echo >&2
         num_tests_failed=$((num_tests_failed + 1))
     else
         num_tests_succeeded=$((num_tests_succeeded + 1))
     fi
+    rm -f "${TEST_OUTPUT}"
     num_tests=$((num_tests + 1))
 done
 

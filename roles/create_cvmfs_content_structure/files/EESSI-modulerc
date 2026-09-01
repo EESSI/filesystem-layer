@@ -1,0 +1,2 @@
+-- make version 2023.06 the default version
+module_version("EESSI/2023.06", "default")

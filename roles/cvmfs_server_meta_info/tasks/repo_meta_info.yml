@@ -3,33 +3,34 @@
   ansible.builtin.tempfile:
     state: file
     suffix: .json
-  register: tmp_json_file
+  register: cvmfs_server_meta_info_tmp_json_file
 
 - name: Add meta information for repository to temporary json file
   ansible.builtin.copy:
-    content: "{{ cvmfs_repo_meta | combine(this_cvmfs_repo_meta) | to_nice_json(indent=2, sort_keys=false) }}"
-    dest: "{{ tmp_json_file.path }}"
-    mode: 0644
+    content: "{{ cvmfs_server_meta_info_repo | combine(this_cvmfs_repo_meta) | to_nice_json(indent=2, sort_keys=false) }}"
+    dest: "{{ cvmfs_server_meta_info_tmp_json_file.path }}"
+    mode: "0644"
 
 - name: Calculate the checksum of the json file
   ansible.builtin.stat:
-    path: "{{ tmp_json_file.path }}"
-  register: json_file_stat
+    path: "{{ cvmfs_server_meta_info_tmp_json_file.path }}"
+  register: cvmfs_server_meta_info_json_file_stat
 
 - name: Get the current meta information of this repository from the server
   ansible.builtin.command:
     cmd: "cvmfs_swissknife info -M -r http://localhost:{{ cvmfs_stratum0_http_ports[0] | default('80') }}/cvmfs/{{ this_cvmfs_repo.repository }}"
   changed_when: false
-  register: current_repo_meta
+  register: cvmfs_server_meta_info_current_repo_meta
 
-- name: Update the repository's meta information
+- name: Update the repository's meta information # noqa: inline-env-var no-changed-when
   ansible.builtin.command:
-    cmd: "cvmfs_server update-repoinfo -f {{ tmp_json_file.path }} {{ this_cvmfs_repo.repository }}"
-  when: (current_repo_meta.stdout | checksum) != json_file_stat.stat.checksum
+    cmd: "cvmfs_server update-repoinfo -f {{ cvmfs_server_meta_info_tmp_json_file.path }} {{ this_cvmfs_repo.repository }}"
+  when: (cvmfs_server_meta_info_current_repo_meta.stdout | checksum) != cvmfs_server_meta_info_json_file_stat.stat.checksum
   become_user: "{{ cvmfs_repo_owner | default('root') }}"
+  become: true
 
 - name: Remove temporary json file
   ansible.builtin.file:
-    path: "{{ tmp_json_file.path }}"
+    path: "{{ cvmfs_server_meta_info_tmp_json_file.path }}"
     state: absent
 ...

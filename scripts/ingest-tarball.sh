@@ -6,11 +6,13 @@
 # This script has to be run on a CVMFS publisher node.
 
 # This script assumes that the given tarball is named like:
-# eessi-<version>-{compat,init,scripts,software}-[additional information]-<timestamp>.tar.gz
+# eessi-<version>-{compat,init,scripts,software}-[additional information]-<timestamp>.tar.{gz,zst}
 # It also assumes, and verifies, that the  name of the top-level directory of the contents of the
 # of the tarball matches <version>, and that name of the second level should is either compat, init, scripts, or software.
 
 # Only if it passes these checks, the tarball gets ingested to the base dir in the repository specified below.
+
+CVMFS_ROOT=${CUSTOM_CVMFS_ROOT:-/cvmfs}
 
 basedir=versions
 decompress="gunzip -c"
@@ -78,10 +80,13 @@ function check_version() {
         error "${version} is not a valid EESSI version."
     fi
 
-    # Check if the version encoded in the filename matches the top-level dir inside the tarball
-    if [ "${version}" != "${tar_top_level_dir}" ]
+    # Cut off any suffix from the top-level directory name (which should correspond to the version)
+    unsuffixed_tar_top_level_dir=$(echo ${tar_top_level_dir} | sed -E 's/-[0-9A-Za-z._-]+$//')
+
+    # Check if the version encoded in the filename matches the unsuffixed top-level dir inside the tarball
+    if [ "${version}" != "${unsuffixed_tar_top_level_dir}" ]
     then
-        error "the version in the filename (${version}) does not match the top-level directory in the tarball (${tar_top_level_dir})."
+        error "the version in the filename (${version}) does not match the (unsuffixed) top-level directory in the tarball (${unsuffixed_tar_top_level_dir})."
     fi
 }
 
@@ -179,9 +184,49 @@ function update_lmod_caches() {
     then
         error "the script for updating the Lmod caches (${update_caches_script}) does not have execute permissions!"
     fi
-    ${cvmfs_server} transaction "${cvmfs_repo}"
-    ${update_caches_script} /cvmfs/${cvmfs_repo}/${basedir}/${version}
-    ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+    # if we are not the repo owner, the Lmod cache script needs to be run with sudo to prevent "Permission denied" errors
+    is_repo_owner ||  update_caches_script="sudo ${update_caches_script}"
+
+    # Determine which Lmod installation to use for updating the caches:
+    #   - use $LMOD_LIBEXEC_DIR if set (and check if it indeed contains the required script, otherwise fail hard)
+    #   - if not set:
+    #     - look for a compatibility layer (which should have Lmod installed) in the current CVMFS repository
+    #     - otherwise, fall back to software.eessi.io, if available
+    #     - use the oldest compatibility layer in either repository to create the caches
+    #   - if no Lmod installation is found: give up and print a warning that the caches will not be created/updated
+    lmod_cvmfs_repo="${cvmfs_repo}"
+    lmod_update_system_cache_script=""
+    if [ ! -z "${LMOD_LIBEXEC_DIR}" ]; then
+        if [ -f "${LMOD_LIBEXEC_DIR}/update_lmod_system_cache_files" ]; then
+            lmod_update_system_cache_script="${LMOD_LIBEXEC_DIR}/update_lmod_system_cache_files"
+        else
+            error "No update_lmod_system_cache_files script found in the given \$LMOD_LIBEXEC_DIR ($LMOD_LIBEXEC_DIR)."
+        fi
+    else
+        if [ ! -d "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}/compat/linux/$(uname -m)/usr/share/Lmod" ]; then
+            if [ -d "${CVMFS_ROOT}/software.eessi.io/${basedir}" ]; then
+                lmod_cvmfs_repo="software.eessi.io"
+            else
+                echo_yellow "Lmod cache update failed: cannot find a compatibility layer with an Lmod installation."
+            fi
+        fi
+        # Find the oldest version that we have, and use its Lmod to generate the cache to get better backwards compatibilty with old Lmod versions
+        oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}" | head -n 1)
+        lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
+    fi
+    if [ ! -f "${lmod_update_system_cache_script}" ]; then
+        echo_yellow "Lmod cache update failed: cannot find the Lmod cache update script (${lmod_update_system_cache_script})."
+    else
+        ${cvmfs_server} transaction "${cvmfs_repo}"
+        ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${lmod_update_system_cache_script}"
+        ec=$?
+        if [ $ec -eq 0 ]; then
+            ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+        else
+            ${cvmfs_server} abort -f "${cvmfs_repo}"
+            error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
+        fi
+    fi
 }
 
 function ingest_init_tarball() {
@@ -206,18 +251,20 @@ function ingest_compat_tarball() {
     # Handle the ingestion of tarballs containing a compatibility layer
     check_arch
     check_os
-    compat_layer_path="/cvmfs/${cvmfs_repo}/${basedir}/${version}/compat/${os}/${arch}"
+    compat_layer_path="${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}/compat/${os}/${arch}"
     # Assume that we already had a compat layer in place if there is a startprefix script in the corresponding CVMFS directory
     if [ -f "${compat_layer_path}/startprefix" ];
     then
         echo_yellow "Compatibility layer for version ${version}, OS ${os}, and architecture ${arch} already exists!"
         ${cvmfs_server} transaction "${cvmfs_repo}"
-        last_suffix=$((ls -1d ${compat_layer_path}-* | tail -n 1 | xargs basename | cut -d- -f2) 2> /dev/null)
+        # hide the last dir in the path by prepending it with a dot
+        hidden_compat_layer_path="$(dirname ${compat_layer_path})/.$(basename ${compat_layer_path})"
+        last_suffix=$((ls -1d ${hidden_compat_layer_path}-* | tail -n 1 | xargs basename | cut -d- -f2) 2> /dev/null)
         new_suffix=$(printf '%03d\n' $((${last_suffix:-0} + 1)))
-        old_layer_suffixed_path="${compat_layer_path}-${new_suffix}"
-        echo_yellow "Moving the existing compat layer from ${compat_layer_path} to ${old_layer_suffixed_path}..."
-        mv ${compat_layer_path} ${old_layer_suffixed_path}
-        tar -C "/cvmfs/${cvmfs_repo}/${basedir}/" -xzf "${tar_file}"
+        old_layer_hidden_suffixed_path="${hidden_compat_layer_path}-${new_suffix}"
+        echo_yellow "Moving the existing compat layer from ${compat_layer_path} to ${old_layer_hidden_suffixed_path}..."
+        mv ${compat_layer_path} ${old_layer_hidden_suffixed_path}
+        tar -C "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/" -xzf "${tar_file}"
         ${cvmfs_server} publish -m "updated compat layer for ${version}, ${os}, ${arch}" "${cvmfs_repo}"
         ec=$?
         if [ $ec -eq 0 ]
@@ -236,7 +283,7 @@ function ingest_compat_tarball() {
 
 # Check if a tarball has been specified
 if [ "$#" -ne 2 ]; then
-    error "usage: $0 <CVMFS repository name> <gzipped tarball>"
+    error "usage: $0 <CVMFS repository name> <tarball compressed with gzip or zstd>"
 fi
 
 cvmfs_repo="$1"
@@ -252,11 +299,35 @@ if [ ! -f "${tar_file}" ]; then
     error "tar file ${tar_file} does not exist!"
 fi
 
+# Check which compression method is used for the tarball
+tar_file_ext="${tar_file##*.}"
+if [ "${tar_file_ext}" = "tar" ]; then
+    error "can only handle compressed tarballs at the moment."
+elif [ "${tar_file_ext}" = "gz" ]; then
+    decompress="gunzip -c"
+    if ( ! command -v gunzip >& /dev/null ); then
+        error "gunzip needs to be installed to handle gzip-compressed tarballs."
+    fi
+elif [ "${tar_file_ext}" = "zst" ]; then
+    decompress="zstd -c -d"
+    if ( ! command -v zstd >& /dev/null ); then
+        error "zstd needs to be installed to handle zstd-compressed tarballs."
+    fi
+else
+    error "don't know how to handle tarball extension ${tar_file_ext}."
+fi
+
 # Get some information about the tarball
 tar_file_basename=$(basename "${tar_file}")
 version=$(echo "${tar_file_basename}" | cut -d- -f2)
 contents_type_dir=$(echo "${tar_file_basename}" | cut -d- -f3)
-tar_first_file=$(tar tf "${tar_file}" | head -n 1)
+# find the first file in the tarball that corresponds to $contents_type_dir,
+# e.g. the first file that actually belongs to the software layer for software tarballs
+# (and, hence, skip other files, like init scripts)
+tar_first_file=$(tar tf "${tar_file}" | grep -m 1 "/${contents_type_dir}/")
+if [ -z ${tar_first_file} ]; then
+    tar_first_file=$(tar tf "${tar_file}" | head -n 1)
+fi
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
 # Handle longer prefix with project name in dev.eessi.io and
 # get the right basedir from the tarball name

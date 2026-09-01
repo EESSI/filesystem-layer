@@ -1,3 +1,4 @@
+backports.zstd ; python_version<'3.14'
 boto3
 pid
 PyGithub

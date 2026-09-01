@@ -1,15 +1,29 @@
+# Nested catalog for each EESSI version
+/versions/*
+
 # Compatibility layer paths:
 # /versions/<version>/compat/{linux,macos}/{aarch64,riscv64,x86_64}
 /versions/*/compat/*/*
 /versions/*/compat/*/*/var
 /versions/*/compat/*/*/var/db/repos
 
-# Software layer paths:
-# /versions/<version>/software/{linux,macos}/{aarch64,riscv64,x86_64}/<vendor>/<microarchitecture>/software
+# Software layer paths
+# CPU targets: /versions/<version>/software/{linux,macos}/{aarch64,riscv64,x86_64}/<vendor>/<microarchitecture>/software
 /versions/*/software/*/*/*/*/software
 /versions/*/software/*/*/*/*/software/*/*
 /versions/*/software/*/*/*/*/modules
-# generic and some (aarch64) targets are one level less deep
+/versions/*/software/*/*/*/*/reprod
+# Accelerator targets: /versions/<version>/software/{linux,macos}/{aarch64,riscv64,x86_64}/<vendor>/<microarchitecture>/accel/<vendor>/<type>/software
+/versions/*/software/*/*/*/*/accel/*/*/software
+/versions/*/software/*/*/*/*/accel/*/*/software/*/*
+/versions/*/software/*/*/*/*/accel/*/*/modules
+/versions/*/software/*/*/*/*/accel/*/*/reprod
+# generic and some (aarch64) targets are one level less deep (no <vendor>)
 /versions/*/software/*/*/*/software
 /versions/*/software/*/*/*/software/*/*
 /versions/*/software/*/*/*/modules
+/versions/*/software/*/*/*/reprod
+/versions/*/software/*/*/*/accel/*/*/software
+/versions/*/software/*/*/*/accel/*/*/software/*/*
+/versions/*/software/*/*/*/accel/*/*/modules
+/versions/*/software/*/*/*/accel/*/*/reprod

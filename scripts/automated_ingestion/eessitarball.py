@@ -34,6 +34,7 @@ class EessiTarball:
         self.local_sig_path = self.local_path + config['signatures']['signature_file_extension']
         self.local_metadata_path = self.local_path + config['paths']['metadata_file_extension']
         self.local_metadata_sig_path = self.local_metadata_path + config['signatures']['signature_file_extension']
+        self.sig_verified = None
         self.url = f'https://{bucket}.s3.amazonaws.com/{object_name}'
 
         self.states = {
@@ -144,15 +145,21 @@ class EessiTarball:
                 for m in members
                 if m.isfile() and PurePosixPath(m.path).match(os.path.join(prefix, 'modules', '*', '*', '*.lua'))
             ]
-            other = [  # anything that is not in <prefix>/software nor <prefix>/modules
+            reprod_dirs = [
+                m.path
+                for m in members
+                if m.isdir() and PurePosixPath(m.path).match(os.path.join(prefix, 'reprod', '*', '*', '*'))
+            ]
+            other = [  # anything that is not in <prefix>/software nor <prefix>/modules nor <prefix>/reprod
                 m.path
                 for m in members
                 if not PurePosixPath(prefix).joinpath('software') in PurePosixPath(m.path).parents
                    and not PurePosixPath(prefix).joinpath('modules') in PurePosixPath(m.path).parents
+                   and not PurePosixPath(prefix).joinpath('reprod') in PurePosixPath(m.path).parents
                 # if not fnmatch.fnmatch(m.path, os.path.join(prefix, 'software', '*'))
                 # and not fnmatch.fnmatch(m.path, os.path.join(prefix, 'modules', '*'))
             ]
-            members_list = sorted(swdirs + modfiles + other)
+            members_list = sorted(swdirs + modfiles + reprod_dirs + other)
 
         # Construct the overview.
         tar_members = '\n'.join(members_list)
@@ -183,6 +190,12 @@ class EessiTarball:
     def verify_signatures(self):
         """Verify the signatures of the downloaded tarball and metadata file using the corresponding signature files."""
 
+        # If the verification has already been done in this run, skip it, otherwise initialize to False
+        if self.sig_verified != None:
+            return self.sig_verified
+        else:
+            self.sig_verified = False
+
         sig_missing_msg = 'Signature file %s is missing.'
         sig_missing = False
         for sig_file in [self.local_sig_path, self.local_metadata_sig_path]:
@@ -210,17 +223,22 @@ class EessiTarball:
             logging.error(f'Unable to verify signatures, the specified allowed signers file does not exist!')
             return False
 
+        self.signatures = {}
         for (file, sig_file) in [(self.local_path, self.local_sig_path), (self.local_metadata_path, self.local_metadata_sig_path)]:
             verify_cmd = subprocess.run(
-                [verify_script, '--verify', '--allowed-signers-file', allowed_signers_file, '--file', file, '--signature-file', sig_file],
+                [verify_script, '--verify', '--terse', '--allowed-signers-file', allowed_signers_file, '--file', file, '--signature-file', sig_file],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             if verify_cmd.returncode == 0:
-                logging.debug(f'Signature for {file} successfully verified.')
+                signature = json.loads(verify_cmd.stdout.decode('utf-8'))
+                self.signatures[file] = signature
+                logging.debug(f'Signature for {file} successfully verified: {signature}')
             else:
                 logging.error(f'Failed to verify signature for {file}.')
                 return False
 
+        # All checks have passed, so return success
+        self.sig_verified = True
         return True
 
     def verify_checksum(self):
@@ -240,10 +258,7 @@ class EessiTarball:
         self.download()
         logging.info('Verifying its signature...')
         if not self.verify_signatures():
-            issue_msg = f'Failed to verify signatures for `{self.object}`'
-            logging.error(issue_msg)
-            if not self.issue_exists(issue_msg, state='open'):
-                self.git_repo.create_issue(title=issue_msg, body=issue_msg)
+            self.handle_failed_signature_verification()
             return
         else:
             logging.debug(f'Signatures of {self.object} and its metadata file successfully verified.')
@@ -291,6 +306,13 @@ class EessiTarball:
         """Process a tarball that has already been ingested."""
         logging.info(f'{self.object} has already been ingested, skipping...')
 
+    def handle_failed_signature_verification(self):
+        """Process a signature verification failure."""
+        sig_failed_msg = f'Failed to verify signatures for `{self.object}`.'
+        logging.error(sig_failed_msg)
+        if not self.issue_exists(sig_failed_msg, state='open'):
+            self.git_repo.create_issue(title=sig_failed_msg, body=sig_failed_msg)
+
     def mark_new_tarball_as_staged(self):
         """Process a new tarball that was added to the staging bucket."""
         next_state = self.next_state(self.state)
@@ -304,7 +326,8 @@ class EessiTarball:
 
         # Verify the signatures of the tarball and metadata file.
         if not self.verify_signatures():
-            logging.warn('Signature verification of the tarball or its metadata failed, skipping this tarball...')
+            self.handle_failed_signature_verification()
+            return
 
         contents = ''
         with open(self.local_metadata_path, 'r') as meta:
@@ -336,6 +359,10 @@ class EessiTarball:
         tarball_metadata = self.git_repo.get_contents(file_path_staged)
         git_branch = filename + '_' + next_state
         self.download()
+        # Verify the signatures of the tarball and metadata file.
+        if not self.verify_signatures():
+            self.handle_failed_signature_verification()
+            return
 
         main_branch = self.git_repo.get_branch('main')
         if git_branch in [branch.name for branch in self.git_repo.get_branches()]:
@@ -390,6 +417,13 @@ class EessiTarball:
                 metadata=metadata,
             )
             pr_title = '[%s] Ingest %s' % (self.cvmfs_repo, filename)
+            if self.sig_verified:
+                pr_body += "\n\n:heavy_check_mark: :closed_lock_with_key: The signature of this tarball has been successfully verified:\n"
+                for path, meta in self.signatures.items():
+                    identity = meta.get("identity", "unknown")
+                    namespace = meta.get("namespace", "unknown")
+                    pr_body += f"- `{path}`\n  - identity=`{identity}`, namespace=`{namespace}`\n"
+                pr_title += ' :closed_lock_with_key:'
             self.git_repo.create_pull(title=pr_title, body=pr_body, head=git_branch, base='main')
         except Exception as err:
             issue_title = f'Failed to get contents of {self.object}'

@@ -1,11 +1,11 @@
 ---
 - name: Create a meta.json containing the CVMFS Server Meta Information
   ansible.builtin.copy:
-    content: "{{ cvmfs_server_meta | to_nice_json(indent=2, sort_keys=false) }}"
+    content: "{{ cvmfs_server_meta_info_server | to_nice_json(indent=2, sort_keys=false) }}"
     dest: "{{ cvmfs_srv_mount }}/cvmfs/info/v1/meta.json"
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
   become: true
   when: (cvmfs_repositories | length) > 0
 
