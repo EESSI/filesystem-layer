@@ -14,7 +14,7 @@
 
 CVMFS_ROOT=${CUSTOM_CVMFS_ROOT:-/cvmfs}
 
-basedir=versions
+basedir=
 decompress="gunzip -c"
 cvmfs_server="cvmfs_server"
 # list of supported architectures for compat and software layers
@@ -59,6 +59,14 @@ function check_repo_vars() {
     if [ -z "${basedir}" ] || [ "${basedir}" == "/" ]
     then
         error "the 'basedir' variable has to be set to a subdirectory of the CVMFS repository."
+    fi
+
+    # basedir is interpreted relative to the root of the CVMFS repository
+    if [[ "${basedir}" == /* ||
+          "/${basedir}/" == *"/../"* ||
+          "/${basedir}/" == *"/./"* ]]
+    then
+        error "the 'basedir' variable must be a repository-relative path without '.' or '..' components."
     fi
 }
 
@@ -195,6 +203,7 @@ function update_lmod_caches() {
     #     - use the oldest compatibility layer in either repository to create the caches
     #   - if no Lmod installation is found: give up and print a warning that the caches will not be created/updated
     lmod_cvmfs_repo="${cvmfs_repo}"
+    lmod_basedir="${basedir}"
     lmod_update_system_cache_script=""
     if [ ! -z "${LMOD_LIBEXEC_DIR}" ]; then
         if [ -f "${LMOD_LIBEXEC_DIR}/update_lmod_system_cache_files" ]; then
@@ -204,15 +213,16 @@ function update_lmod_caches() {
         fi
     else
         if [ ! -d "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}/compat/linux/$(uname -m)/usr/share/Lmod" ]; then
-            if [ -d "${CVMFS_ROOT}/software.eessi.io/${basedir}" ]; then
+            if [ -d "${CVMFS_ROOT}/software.eessi.io/versions" ]; then
                 lmod_cvmfs_repo="software.eessi.io"
+                lmod_basedir="versions"
             else
                 echo_yellow "Lmod cache update failed: cannot find a compatibility layer with an Lmod installation."
             fi
         fi
         # Find the oldest version that we have, and use its Lmod to generate the cache to get better backwards compatibilty with old Lmod versions
-        oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}" | head -n 1)
-        lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
+        oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${lmod_cvmfs_repo}/${lmod_basedir}" | head -n 1)
+        lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${lmod_basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
     fi
     if [ ! -f "${lmod_update_system_cache_script}" ]; then
         echo_yellow "Lmod cache update failed: cannot find the Lmod cache update script (${lmod_update_system_cache_script})."
@@ -281,13 +291,15 @@ function ingest_compat_tarball() {
 }
 
 
-# Check if a tarball has been specified
-if [ "$#" -ne 2 ]; then
-    error "usage: $0 <CVMFS repository name> <tarball compressed with gzip or zstd>"
+# Check if a tarball and optional versions subpath have been specified
+if [ "$#" -lt 2 ] || [ "$#" -gt 3 ]; then
+    error "usage: $0 <CVMFS repository name> <tarball compressed with gzip or zstd> [versions subpath]"
 fi
 
 cvmfs_repo="$1"
 tar_file="$2"
+basedir="${3:-versions}"
+basedir="${basedir%/}"
 
 # Check if the CVMFS repository exists
 if ( ! cvmfs_server list | grep -q "${cvmfs_repo}" ); then
@@ -329,15 +341,6 @@ if [ -z ${tar_first_file} ]; then
     tar_first_file=$(tar tf "${tar_file}" | head -n 1)
 fi
 tar_top_level_dir=$(echo "${tar_first_file}" | cut -d/ -f1)
-# Handle longer prefix with project name in dev.eessi.io and
-# get the right basedir from the tarball name
-if [ "${cvmfs_repo}" = "dev.eessi.io" ]; then
-    # the project name is the second to last field in the filename (e.g. eessi-2023.06-software-linux-x86_64-amd-zen4-myproject-1744725142.tar.gz)
-    project_name=$(echo "${tar_file_basename}" | rev | cut -d- -f2 | rev)
-    basedir="${project_name}"/versions
-else
-    basedir=versions
-fi
 
 tar_contents_start_level=2
 tar_contents_type_dir=$(tar tf "${tar_file}" | head -n 2 | tail -n 1 | cut -d/ -f${tar_contents_start_level})
