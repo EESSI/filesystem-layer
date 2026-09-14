@@ -60,6 +60,14 @@ function check_repo_vars() {
     then
         error "the 'basedir' variable has to be set to a subdirectory of the CVMFS repository."
     fi
+
+    # basedir is interpreted relative to the root of the CVMFS repository
+    if [[ "${basedir}" == /* ||
+          "/${basedir}/" == *"/../"* ||
+          "/${basedir}/" == *"/./"* ]]
+    then
+        error "the 'basedir' variable must be a repository-relative path without '.' or '..' components."
+    fi
 }
 
 function check_version() {
