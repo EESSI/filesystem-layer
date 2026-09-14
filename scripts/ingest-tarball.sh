@@ -203,6 +203,7 @@ function update_lmod_caches() {
     #     - use the oldest compatibility layer in either repository to create the caches
     #   - if no Lmod installation is found: give up and print a warning that the caches will not be created/updated
     lmod_cvmfs_repo="${cvmfs_repo}"
+    lmod_basedir="${basedir}"
     lmod_update_system_cache_script=""
     if [ ! -z "${LMOD_LIBEXEC_DIR}" ]; then
         if [ -f "${LMOD_LIBEXEC_DIR}/update_lmod_system_cache_files" ]; then
@@ -212,15 +213,16 @@ function update_lmod_caches() {
         fi
     else
         if [ ! -d "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}/compat/linux/$(uname -m)/usr/share/Lmod" ]; then
-            if [ -d "${CVMFS_ROOT}/software.eessi.io/${basedir}" ]; then
+            if [ -d "${CVMFS_ROOT}/software.eessi.io/versions" ]; then
                 lmod_cvmfs_repo="software.eessi.io"
+                lmod_basedir="versions"
             else
                 echo_yellow "Lmod cache update failed: cannot find a compatibility layer with an Lmod installation."
             fi
         fi
         # Find the oldest version that we have, and use its Lmod to generate the cache to get better backwards compatibilty with old Lmod versions
-        oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}" | head -n 1)
-        lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
+        oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${lmod_cvmfs_repo}/${lmod_basedir}" | head -n 1)
+        lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${lmod_basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
     fi
     if [ ! -f "${lmod_update_system_cache_script}" ]; then
         echo_yellow "Lmod cache update failed: cannot find the Lmod cache update script (${lmod_update_system_cache_script})."
