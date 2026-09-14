@@ -60,6 +60,14 @@ function check_repo_vars() {
     then
         error "the 'basedir' variable has to be set to a subdirectory of the CVMFS repository."
     fi
+
+    # basedir is interpreted relative to the root of the CVMFS repository
+    if [[ "${basedir}" == /* ||
+          "/${basedir}/" == *"/../"* ||
+          "/${basedir}/" == *"/./"* ]]
+    then
+        error "the 'basedir' variable must be a repository-relative path without '.' or '..' components."
+    fi
 }
 
 function check_version() {
@@ -195,6 +203,7 @@ function update_lmod_caches() {
     #     - use the oldest compatibility layer in either repository to create the caches
     #   - if no Lmod installation is found: give up and print a warning that the caches will not be created/updated
     lmod_cvmfs_repo="${cvmfs_repo}"
+    lmod_basedir="${basedir}"
     lmod_update_system_cache_script=""
     if [ ! -z "${LMOD_LIBEXEC_DIR}" ]; then
         if [ -f "${LMOD_LIBEXEC_DIR}/update_lmod_system_cache_files" ]; then
@@ -204,15 +213,16 @@ function update_lmod_caches() {
         fi
     else
         if [ ! -d "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}/compat/linux/$(uname -m)/usr/share/Lmod" ]; then
-            if [ -d "${CVMFS_ROOT}/software.eessi.io/${basedir}" ]; then
+            if [ -d "${CVMFS_ROOT}/software.eessi.io/versions" ]; then
                 lmod_cvmfs_repo="software.eessi.io"
+                lmod_basedir="versions"
             else
                 echo_yellow "Lmod cache update failed: cannot find a compatibility layer with an Lmod installation."
             fi
         fi
         # Find the oldest version that we have, and use its Lmod to generate the cache to get better backwards compatibilty with old Lmod versions
-        oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}" | head -n 1)
-        lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
+        oldest_stack=$(ls -1 -v "${CVMFS_ROOT}/${lmod_cvmfs_repo}/${lmod_basedir}" | head -n 1)
+        lmod_update_system_cache_script="${CVMFS_ROOT}/${lmod_cvmfs_repo}/${lmod_basedir}/${oldest_stack}/compat/linux/$(uname -m)/usr/share/Lmod/libexec/update_lmod_system_cache_files"
     fi
     if [ ! -f "${lmod_update_system_cache_script}" ]; then
         echo_yellow "Lmod cache update failed: cannot find the Lmod cache update script (${lmod_update_system_cache_script})."
@@ -280,14 +290,69 @@ function ingest_compat_tarball() {
 
 }
 
+display_help() {
+  echo "usage: $0 [OPTIONS] TARBALL"
+  echo " OPTIONS:"
+  echo "  -b | --basedir     - basedir (relative to the root of the CVMFS repository) to be used"
+  echo "                       for ingesting the tarball [default: versions]"
+  echo "  -h | --help        - display this usage help and exit [default: false]"
+  echo "  -r | --repository  - name of the CVMFS repository to which the tarball should be ingested"
+  echo "                       [default: software.eessi.io]"
+  echo
+  echo "The given TARBALL can be an uncompressed tarball (.tar) or a tarball compressed with gzip (.tar.gz) or zstd (.tar.zst)."
+}
 
-# Check if a tarball has been specified
-if [ "$#" -ne 2 ]; then
-    error "usage: $0 <CVMFS repository name> <tarball compressed with gzip or zstd>"
-fi
+# set defaults for command-line arguments
+basedir="versions"
+cvmfs_repo="software.eessi.io"
 
-cvmfs_repo="$1"
-tar_file="$2"
+POSITIONAL_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    -b|--basedir)
+      basedir="$2"
+      shift 2
+      ;;
+    -h|--help)
+      display_help
+      exit 0
+      ;;
+    -r|--repository)
+      cvmfs_repo="$2"
+      shift 2
+      ;;
+    -*)
+      echo_red "Unknown option: $1" >&2
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+set -- "${POSITIONAL_ARGS[@]}"
+
+case $# in
+  1)
+    # New syntax: ingest-tarball.sh [-r <REPOSITORY>] <TARBALL>
+    tar_file="$1"
+    ;;
+  2)
+    # Old syntax: ingest-tarball.sh REPOSITORY TARBALL
+    echo_yellow "Warning: the 'ingest-tarball.sh <REPOSITORY> <TARBALL>' syntax is deprecated; use '-r REPOSITORY' to specify the repository." >&2
+    echo_yellow "Run ingest-tarball.sh -h' for more usage details." >&2
+    cvmfs_repo="$1"
+    tar_file="$2"
+    ;;
+  *)
+    echo_red "Incorrect usage, make sure that you provide a tarball filename." >&2
+    display_help
+    exit 1
+    ;;
+esac
 
 # Check if the CVMFS repository exists
 if ( ! cvmfs_server list | grep -q "${cvmfs_repo}" ); then

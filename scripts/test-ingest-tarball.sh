@@ -122,7 +122,7 @@ for ((lmod_envs = 0; lmod_envs < 3; lmod_envs++)); do
     fi
     for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
         t=$(create_tarball ${tarballs_success[$i]})
-        "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
+        "${INGEST_SCRIPT}" -r "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
         if [ ! $? -eq 0 ]; then
             echo ">> ${tarballs_success[$i]} test with existing repo FAILed!" >&2
             echo ">> output:" >&2
@@ -140,7 +140,7 @@ done
 # Run the tests that should fail
 for ((i = 0; i < ${#tarballs_fail[@]}; i++)); do
     t=$(create_tarball ${tarballs_fail[$i]})
-    "${INGEST_SCRIPT}" "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
+    "${INGEST_SCRIPT}" -r "my.repo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
         echo ">> ${tarballs_fail[$i]} test passed, but should have failed!" >&2
         echo ">> output:" >&2
@@ -157,7 +157,7 @@ done
 # Run the tests that should succeed again, but with a non-existing repo; now they should fail
 for ((i = 0; i < ${#tarballs_success[@]}; i++)); do
     t=$(create_tarball ${tarballs_success[$i]})
-    "${INGEST_SCRIPT}" "my.nonexistingrepo.tld" "$t" >& "${TEST_OUTPUT}"
+    "${INGEST_SCRIPT}" -r "my.nonexistingrepo.tld" "$t" >& "${TEST_OUTPUT}"
     if [ ! $? -eq 1 ]; then
         echo ">> ${tarballs_success[$i]} test passed with non-existing repo, should have failed!" >&2
         echo ">> output:" >&2
