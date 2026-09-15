@@ -14,7 +14,6 @@
 
 CVMFS_ROOT=${CUSTOM_CVMFS_ROOT:-/cvmfs}
 
-basedir=versions
 decompress="gunzip -c"
 cvmfs_server="cvmfs_server"
 # list of supported architectures for compat and software layers
@@ -400,8 +399,6 @@ if [ "${cvmfs_repo}" = "dev.eessi.io" ]; then
     # the project name is the second to last field in the filename (e.g. eessi-2023.06-software-linux-x86_64-amd-zen4-myproject-1744725142.tar.gz)
     project_name=$(echo "${tar_file_basename}" | rev | cut -d- -f2 | rev)
     basedir="${project_name}"/versions
-else
-    basedir=versions
 fi
 
 tar_contents_start_level=2
