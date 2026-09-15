@@ -14,7 +14,6 @@
 
 CVMFS_ROOT=${CUSTOM_CVMFS_ROOT:-/cvmfs}
 
-basedir=versions
 decompress="gunzip -c"
 cvmfs_server="cvmfs_server"
 # list of supported architectures for compat and software layers
