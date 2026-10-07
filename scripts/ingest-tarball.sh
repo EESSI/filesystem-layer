@@ -41,6 +41,14 @@ function error() {
     exit 1
 }
 
+function mock_cvmfs_server() {
+    # Mock cvmfs_server for testing purposes
+    printf "Mock cvmfs_server called with arguments: %s\n" "$*"
+    if [[ "$1" == "list" ]]; then
+        echo "software.eessi.io (stratum0 / local)"
+    fi
+}
+
 function is_repo_owner() {
     if [ -f "/etc/cvmfs/repositories.d/${cvmfs_repo}/server.conf" ]
     then
@@ -321,6 +329,12 @@ while [[ $# -gt 0 ]]; do
       cvmfs_repo="$2"
       shift 2
       ;;
+    -n|--dry-run)
+      dry_run=true
+      cvmfs_server="mock_cvmfs_server"
+      echo_yellow "Dry run: cvmfs_server commands will be mocked and not executed."
+      shift
+      ;;
     -*)
       echo_red "Unknown option: $1" >&2
       exit 1
@@ -354,7 +368,7 @@ case $# in
 esac
 
 # Check if the CVMFS repository exists
-if ( ! cvmfs_server list | grep -q "${cvmfs_repo}" ); then
+if ( ! ${cvmfs_server} list | grep -q "${cvmfs_repo}" ); then
     error "CVMFS repository ${cvmfs_repo} does not exist!"
 fi
 
