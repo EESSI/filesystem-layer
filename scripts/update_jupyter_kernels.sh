@@ -68,8 +68,8 @@ for archdir in ${architectures}; do
     MODULEPATH="${ARCH_MODULEPATH}"
 
     ${EB_JPT_CLI} store-kernels \
-        --filter-paths "^${stack_base_dir}" \
-        --filter-env-paths "^${stack_base_dir}" \
+        --filter-paths "^${stack_base_dir}/software/linux/${arch_subdir}/" \
+        --filter-env-paths "^${stack_base_dir}/software/linux/${arch_subdir}/" \
         "${stack_base_dir}/software/linux/${arch_subdir}/.jupyter/kernels"
     
     exit_code=$?
