@@ -246,6 +246,32 @@ function update_lmod_caches() {
     fi
 }
 
+function update_jupyter_kernels() {
+    # Update the Lmod caches for the stacks of all supported CPUs
+    script_dir=$(dirname $(realpath $BASH_SOURCE))
+    update_jpt_kernels_script=${script_dir}/update_jupyter_kernels.sh
+    if [ ! -f ${update_jpt_kernels_script} ]
+    then
+        error "cannot find the script for updating the Jupyter kernels; it should be placed in the same directory as the ingestion script!"
+    fi
+    if [ ! -x ${update_jpt_kernels_script} ]
+    then
+        error "the script for updating the Jupyter kernels (${update_jpt_kernels_script}) does not have execute permissions!"
+    fi
+    # if we are not the repo owner, the Lmod cache script needs to be run with sudo to prevent "Permission denied" errors
+    is_repo_owner ||  update_jpt_kernels_script="sudo ${update_jpt_kernels_script}"
+
+    ${cvmfs_server} transaction "${cvmfs_repo}"
+    ${update_jpt_kernels_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${version}"
+    ec=$?
+    if [ $ec -eq 0 ]; then
+        ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+    else
+        ${cvmfs_server} abort -f "${cvmfs_repo}"
+        error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
+    fi
+}
+
 function ingest_init_tarball() {
     # Handle the ingestion of tarballs containing init scripts
     cvmfs_ingest_tarball
@@ -261,7 +287,10 @@ function ingest_software_tarball() {
     check_arch
     check_os
     cvmfs_ingest_tarball
-    update_lmod_caches
+    # echo_yellow "Updating the Lmod caches for ${cvmfs_repo} after ingesting ${tar_file_basename}..."
+    # update_lmod_caches
+    echo_yellow "Updating the Jupyter kernels for ${cvmfs_repo} after ingesting ${tar_file_basename}..."
+    update_jupyter_kernels
 }
 
 function ingest_compat_tarball() {
