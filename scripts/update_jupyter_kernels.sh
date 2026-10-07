@@ -70,7 +70,7 @@ for archdir in ${architectures}; do
     ${EB_JPT_CLI} store-kernels \
         --filter-paths "^${stack_base_dir}" \
         --filter-env-paths "^${stack_base_dir}" \
-        "${stack_base_dir}/software/linux/${arch_subdir}/.jupyter/kernels" \
+        "${stack_base_dir}/software/linux/${arch_subdir}/.jupyter/kernels"
     
     exit_code=$?
     if [[ ${exit_code} -eq 0 ]]; then
