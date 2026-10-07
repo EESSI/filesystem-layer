@@ -67,6 +67,7 @@ for archdir in ${architectures}; do
     module load EESSI/${version_dir}
     MODULEPATH="${ARCH_MODULEPATH}"
 
+    export EB_JUPYTER_KERNEL_DISPLAY_PREFIX="EESSI/${version_dir} -"
     ${EB_JPT_CLI} store-kernels \
         --filter-paths "^${stack_base_dir}/software/linux/${arch_subdir}/" \
         --filter-env-paths "^${stack_base_dir}/software/linux/${arch_subdir}/" \
