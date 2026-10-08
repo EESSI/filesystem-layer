@@ -71,12 +71,23 @@ for archdir in ${architectures}; do
     ${EB_JPT_CLI} store-kernels \
         --filter-paths "^${stack_base_dir}/software/linux/${arch_subdir}/" \
         --filter-env-paths "^${stack_base_dir}/software/linux/${arch_subdir}/" \
-        "${stack_base_dir}/software/linux/${arch_subdir}/.jupyter/kernels"
-    
+        ${tmpdir}/output/kernels
+        # "${stack_base_dir}/software/linux/${arch_subdir}/.jupyter/kernels"
+
     exit_code=$?
     if [[ ${exit_code} -eq 0 ]]; then
         echo_green "Updated the Jupyter kernels for ${archdir}."
     else
         error "Failed to update the Jupyter kernels for ${archdir}!"
     fi
+
+    # Keep a backup of the existing kernels, and move the new kernels to the proper location
+    KERNEL_DIR="${stack_base_dir}/software/linux/${arch_subdir}/.jupyter/kernels"
+    if [ -d "${KERNEL_DIR}" ]; then
+        BACKUP_DIR="${KERNEL_DIR}.bak_$(date +%Y%m%d_%H%M%S)"
+        echo_yellow "Moving existing Jupyter kernels for ${archdir} to ${BACKUP_DIR} ..."
+        mv "${KERNEL_DIR}" "${BACKUP_DIR}" || error "Failed to move existing Jupyter kernels for ${archdir} to a backup directory!"
+    fi
+    mkdir -p "${KERNEL_DIR}" || error "Failed to create the Jupyter kernels directory for ${archdir}!"
+    mv ${tmpdir}/output/kernels/* "${KERNEL_DIR}/" || error "Failed to move the new Jupyter kernels for ${archdir} to the target directory!"
 done
