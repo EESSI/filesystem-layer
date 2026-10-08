@@ -49,9 +49,7 @@ pip install "${EB_JPT_PACKAGE}[cli] @ git+${EB_JPT_KERNELS_REPO}@${EB_JPT_KERNEL
 # pip install "/home/crivella/Documents/GIT/easybuild-jupyter-kernels[cli]"
 
 architectures=$(find ${stack_base_dir}/software/ -maxdepth 5 -type d -name modules -exec dirname {} \;)
-# Create/update the Lmod cache for all CPU targets
-# Only use the first arch for testing
-# architectures=("${architectures[0]}")
+# Create/update the hard-coded jupyter kernels for all CPU targets
 for archdir in ${architectures}; do
     # Get the MODULEPATH that one would have by loading the EESSI stack for this architecture and version
     module purge
@@ -62,6 +60,7 @@ for archdir in ${architectures}; do
     module load EESSI/${version_dir}
     ARCH_MODULEPATH="$MODULEPATH"
     ARCH_EPREFIX="$EESSI_EPREFIX"
+    ARCH_LMOD_RC="$LMOD_RC"
 
     # Run using a viable architecture during `module load EESSI` to get compat layer binaries that works, but replace
     # the module loaded with the actual architecture we want to update the kernels for
@@ -74,6 +73,8 @@ for archdir in ${architectures}; do
     # Ensure the compat layer binaries are in the PATH in case the kernels uses them to run commands
     # Append them so that the correect binaries for the actual architecture are used first when running `module load``
     PREVIOUS_PATH="${PATH}"
+    PREVIOUS_LMOD_RC="${LMOD_RC}"
+    export LMOD_RC="${ARCH_LMOD_RC}"
     export PATH="${PATH}:${ARCH_EPREFIX}/bin:${ARCH_EPREFIX}/usr/bin"
 
     export EB_JUPYTER_KERNEL_DISPLAY_PREFIX="EESSI/${version_dir} -"
@@ -88,6 +89,7 @@ for archdir in ${architectures}; do
 
     # Restore the previous PATH so that `module purge` does not leave the manually added paths potentially causing
     # issues for the next architecture in the loop
+    export LMOD_RC="${PREVIOUS_LMOD_RC}"
     export PATH="${PREVIOUS_PATH}"
 
     exit_code=$?

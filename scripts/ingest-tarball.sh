@@ -287,9 +287,7 @@ function ingest_software_tarball() {
     check_arch
     check_os
     cvmfs_ingest_tarball
-    # echo_yellow "Updating the Lmod caches for ${cvmfs_repo} after ingesting ${tar_file_basename}..."
-    # update_lmod_caches
-    echo_yellow "Updating the Jupyter kernels for ${cvmfs_repo} after ingesting ${tar_file_basename}..."
+    update_lmod_caches
     update_jupyter_kernels
 }
 
