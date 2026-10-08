@@ -50,14 +50,18 @@ pip install "${EB_JPT_PACKAGE}[cli] @ git+${EB_JPT_KERNELS_REPO}@${EB_JPT_KERNEL
 
 architectures=$(find ${stack_base_dir}/software/ -maxdepth 5 -type d -name modules -exec dirname {} \;)
 # Create/update the Lmod cache for all CPU targets
+# Only use the first arch for testing
+# architectures=("${architectures[0]}")
 for archdir in ${architectures}; do
     # Get the MODULEPATH that one would have by loading the EESSI stack for this architecture and version
     module purge
     arch_subdir=$(realpath --relative-to="${stack_base_dir}/software/linux" "${archdir}")
     export EESSI_SOFTWARE_SUBDIR_OVERRIDE="${arch_subdir}"
+    echo "------------------------------------------------------------------------------------------------------------"
     echo_yellow "Loading EESSI stack version ${version_dir} for architecture ${EESSI_SOFTWARE_SUBDIR_OVERRIDE}..."
     module load EESSI/${version_dir}
     ARCH_MODULEPATH="$MODULEPATH"
+    ARCH_EPREFIX="$EESSI_EPREFIX"
 
     # Run using a viable architecture during `module load EESSI` to get compat layer binaries that works, but replace
     # the module loaded with the actual architecture we want to update the kernels for
@@ -67,12 +71,24 @@ for archdir in ${architectures}; do
     module load EESSI/${version_dir}
     MODULEPATH="${ARCH_MODULEPATH}"
 
+    # Ensure the compat layer binaries are in the PATH in case the kernels uses them to run commands
+    # Append them so that the correect binaries for the actual architecture are used first when running `module load``
+    PREVIOUS_PATH="${PATH}"
+    export PATH="${PATH}:${ARCH_EPREFIX}/bin:${ARCH_EPREFIX}/usr/bin"
+
     export EB_JUPYTER_KERNEL_DISPLAY_PREFIX="EESSI/${version_dir} -"
+    # --filter-paths: Only pickup kernels from directories that match the given regex pattern
+    # --filter-env-paths: Filter PATH-like environment variables to only include directories that match the given
+    #                     regex pattern (multiple --filter-env-paths imply OR logic)
     ${EB_JPT_CLI} store-kernels \
         --filter-paths "^${stack_base_dir}/software/linux/${arch_subdir}/" \
         --filter-env-paths "^${stack_base_dir}/software/linux/${arch_subdir}/" \
+        --filter-env-paths "^${ARCH_EPREFIX}.*/bin$" \
         ${tmpdir}/output/kernels
-        # "${stack_base_dir}/software/linux/${arch_subdir}/.jupyter/kernels"
+
+    # Restore the previous PATH so that `module purge` does not leave the manually added paths potentially causing
+    # issues for the next architecture in the loop
+    export PATH="${PREVIOUS_PATH}"
 
     exit_code=$?
     if [[ ${exit_code} -eq 0 ]]; then
