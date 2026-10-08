@@ -247,7 +247,7 @@ function update_lmod_caches() {
 }
 
 function update_jupyter_kernels() {
-    # Update the Lmod caches for the stacks of all supported CPUs
+    # Update the Jupyter kernels for the stacks of all supported CPUs
     script_dir=$(dirname $(realpath $BASH_SOURCE))
     update_jpt_kernels_script=${script_dir}/update_jupyter_kernels.sh
     if [ ! -f ${update_jpt_kernels_script} ]
@@ -258,17 +258,17 @@ function update_jupyter_kernels() {
     then
         error "the script for updating the Jupyter kernels (${update_jpt_kernels_script}) does not have execute permissions!"
     fi
-    # if we are not the repo owner, the Lmod cache script needs to be run with sudo to prevent "Permission denied" errors
+    # if we are not the repo owner, the Jupyter kernels script needs to be run with sudo to prevent "Permission denied" errors
     is_repo_owner ||  update_jpt_kernels_script="sudo ${update_jpt_kernels_script}"
 
     ${cvmfs_server} transaction "${cvmfs_repo}"
     ${update_jpt_kernels_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${version}"
     ec=$?
     if [ $ec -eq 0 ]; then
-        ${cvmfs_server} publish -m "update Lmod caches after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+        ${cvmfs_server} publish -m "update Jupyter kernels after ingesting ${tar_file_basename}" "${cvmfs_repo}"
     else
         ${cvmfs_server} abort -f "${cvmfs_repo}"
-        error "Update of Lmod caches after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
+        error "Update of Jupyter kernels after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
     fi
 }
 
@@ -287,7 +287,7 @@ function ingest_software_tarball() {
     check_arch
     check_os
     cvmfs_ingest_tarball
-    update_lmod_caches
+    # update_lmod_caches
     update_jupyter_kernels
 }
 
@@ -332,6 +332,9 @@ display_help() {
   echo "  -h | --help        - display this usage help and exit [default: false]"
   echo "  -r | --repository  - name of the CVMFS repository to which the tarball should be ingested"
   echo "                       [default: software.eessi.io]"
+  echo "  -n | --dry-run     - dry run: cvmfs_server commands will be mocked and not executed [default: false]"
+  echo "                       Commands might still try to write to the CVMFS repository, so either point the script"
+  echo "                       to a test repository with -r, or use overlayfs to allow writing on top of EESSI."
   echo
   echo "The given TARBALL can be an uncompressed tarball (.tar) or a tarball compressed with gzip (.tar.gz) or zstd (.tar.zst)."
 }
