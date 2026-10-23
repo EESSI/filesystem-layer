@@ -27,7 +27,7 @@ COPY --from=build-fuse-overlayfs /usr/local/bin/fuse-overlayfs /usr/local/bin/fu
 
 RUN yum update -y
 RUN yum install -y sudo vim openssh-clients lsof strace squashfs-tools
-RUN elversion="$(rpm -q --queryformat '%{RELEASE}' rpm | cut -d '.' -f 2)" \
+RUN elversion="$(rpm -q --queryformat '%{RELEASE}' rpm | cut -d '.' -f 2 | cut -d '_' -f 1)" \
   && yum install -y /root/rpmbuild/RPMS/$(uname -m)/cvmfs-${cvmfsversion}-1.${elversion}.$(uname -m).rpm \
                     /root/rpmbuild/RPMS/$(uname -m)/cvmfs-fuse3-${cvmfsversion}-1.${elversion}.$(uname -m).rpm \
                     /root/rpmbuild/RPMS/$(uname -m)/cvmfs-libs-${cvmfsversion}-1.${elversion}.$(uname -m).rpm \
