@@ -39,7 +39,7 @@ export SINGULARITY_BIND="$EESSI_TMPDIR/var-run-cvmfs:/var/run/cvmfs,$EESSI_TMPDI
 export SINGULARITY_HOME="$EESSI_TMPDIR/home:/home/$USER"
 export EESSI_STACK_READONLY="container:cvmfs2 software.eessi.io /cvmfs_ro/software.eessi.io"
 export EESSI_STACK_WRITABLE_OVERLAY="container:fuse-overlayfs -o lowerdir=/cvmfs_ro/software.eessi.io -o upperdir=$EESSI_TMPDIR/overlay-upper -o workdir=$EESSI_TMPDIR/overlay-work /cvmfs/software.eessi.io"
-singularity shell --fusemount "$EESSI_STACK_READONLY" --fusemount "$EESSI_STACK_WRITABLE_OVERLAY" docker://ghcr.io/eessi/build-node:debian11
+singularity shell --fusemount "$EESSI_STACK_READONLY" --fusemount "$EESSI_STACK_WRITABLE_OVERLAY" docker://ghcr.io/eessi/build-node:debian13
 ```
 
 For more details about building software, see: https://eessi.github.io/docs/software_layer/build_nodes/
