@@ -2,7 +2,7 @@
 cvmfsversion=$1
 arch=$(dpkg --print-architecture)
 
-apt-get update && apt-get upgrade
+apt-get update && apt-get upgrade -y
 apt-get install -y wget lsb-release
 
 distro=$(lsb_release -si | tr [:upper:] [:lower:])
