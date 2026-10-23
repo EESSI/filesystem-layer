@@ -2,6 +2,7 @@ cvmfsversion=$1
 arch=$(uname -m)
 
 yum install -y wget
+yum update -y
 elversion="$(rpm -q --queryformat '%{RELEASE}' rpm | cut -d '.' -f 2)"
 if [ "$arch" = "riscv64" ]
 then
