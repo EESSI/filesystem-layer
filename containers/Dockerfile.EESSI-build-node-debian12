@@ -1,15 +1,15 @@
-ARG cvmfsversion=2.13.3
-ARG awscliversion=1.40.35
-ARG unionfsfuseversion=3.6
+ARG cvmfsversion=2.14.1
+ARG awscliversion=1.46.2
+ARG unionfsfuseversion=3.8
 
 
-FROM debian:12.11 AS prepare-deb
+FROM debian:12.15 AS prepare-deb
 ARG cvmfsversion
 COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
 RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 
 
-FROM debian:12.11
+FROM debian:12.15
 ARG cvmfsversion
 ARG awscliversion
 ARG unionfsfuseversion
