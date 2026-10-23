@@ -12,6 +12,7 @@ ARG GID=20
 
 RUN set -eux; \
     apt-get update -o Acquire::Retries=5 -o Acquire::http::Timeout=30; \
+    apt-get upgrade -y; \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         wget \
