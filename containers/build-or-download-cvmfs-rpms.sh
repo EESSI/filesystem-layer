@@ -3,7 +3,7 @@ arch=$(uname -m)
 
 yum install -y wget
 yum update -y
-elversion="$(rpm -q --queryformat '%{RELEASE}' rpm | cut -d '.' -f 2)"
+elversion="$(rpm -q --queryformat '%{RELEASE}' rpm | cut -d '.' -f 2 | cut -d '_' -f 1)"
 if [ "$arch" = "riscv64" ]
 then
     yum install -y epel-release
