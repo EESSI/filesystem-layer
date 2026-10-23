@@ -5,6 +5,7 @@ ARG unionfsfuseversion=3.8
 # see https://hub.docker.com/_/debian/tags?name=trixie-20&ordering=last_updated
 FROM debian:13.7-slim AS prepare-deb
 ARG cvmfsversion
+ENV DEBIAN_FRONTEND noninteractive
 COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
 RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 
@@ -13,6 +14,8 @@ FROM debian:13.7-slim
 ARG cvmfsversion
 ARG awscliversion
 ARG unionfsfuseversion
+
+ENV DEBIAN_FRONTEND noninteractive
 
 COPY --from=prepare-deb /root/deb /root/deb
 
