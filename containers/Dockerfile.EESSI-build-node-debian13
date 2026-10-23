@@ -1,22 +1,25 @@
-ARG cvmfsversion=2.13.3
-ARG awscliversion=1.45.52
-ARG unionfsfuseversion=3.7
+ARG cvmfsversion=2.14.1
+ARG awscliversion=1.46.2
+ARG unionfsfuseversion=3.8
 
 # see https://hub.docker.com/_/debian/tags?name=trixie-20&ordering=last_updated
-FROM debian:trixie-20260713-slim AS prepare-deb
+FROM debian:13.7-slim AS prepare-deb
 ARG cvmfsversion
+ENV DEBIAN_FRONTEND=noninteractive
 COPY ./containers/build-or-download-cvmfs-debs.sh /build-or-download-cvmfs-debs.sh
 RUN sh /build-or-download-cvmfs-debs.sh ${cvmfsversion}
 
 
-FROM debian:trixie-20260713-slim
+FROM debian:13.7-slim
 ARG cvmfsversion
 ARG awscliversion
 ARG unionfsfuseversion
 
+ENV DEBIAN_FRONTEND noninteractive
+
 COPY --from=prepare-deb /root/deb /root/deb
 
-RUN apt-get update
+RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y sudo vim openssh-client gawk autofs curl attr uuid fuse3 libfuse2 psmisc gdb uuid-dev lsof strace zstd
 # python3 and jq are required for eessi-upload-to-staging script (next to awscli)
 RUN apt-get install -y python3-pip jq

@@ -2,7 +2,7 @@
 cvmfsversion=$1
 arch=$(dpkg --print-architecture)
 
-apt-get update
+apt-get update && apt-get upgrade -y
 apt-get install -y wget lsb-release
 
 distro=$(lsb_release -si | tr [:upper:] [:lower:])
@@ -12,7 +12,7 @@ os="${distro}${release}"
 
 if [ "$arch" = "riscv64" ]
 then
-    apt-get install -y devscripts libfuse3-dev cmake cpio golang help2man libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release
+    apt-get install -y devscripts libfuse3-dev cmake cpio golang help2man libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release libarchive-dev nlohmann-json3-dev
     cd /tmp
     wget https://github.com/cvmfs/cvmfs/archive/refs/tags/cvmfs-${cvmfsversion}.tar.gz
     tar xzf cvmfs-${cvmfsversion}.tar.gz
