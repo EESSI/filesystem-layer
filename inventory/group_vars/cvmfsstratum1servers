@@ -1,3 +1,5 @@
 ---
 
 cvmfs_squid_conf_src: "{{ local_stratum1_cvmfs_squid_conf_src | default('eessi_stratum1_squid.conf.j2') }}"
+cvmfs_stratum1_snapshot_time:
+  minute: "*/10"

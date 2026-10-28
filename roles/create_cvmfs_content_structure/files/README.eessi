@@ -1,0 +1,20 @@
+EESSI - the European Environment for Scientific Software Installations
+
+Getting started
+---------------
+
+1) Set up your environment by sourcing the initialisation script for a particular version of EESSI:
+
+    source /cvmfs/software.eessi.io/versions/2023.06/init/bash
+
+2) Explore the software included in EESSI via the "module avail" command.
+
+3) Load one or more modules, and start running the software!
+
+
+Links
+-----
+
+website: https://eessi.io
+documentation: https://eessi.io/docs
+support: https://www.eessi.io/docs/support (contact support@eessi.io via e-mail)

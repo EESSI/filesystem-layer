@@ -6,7 +6,7 @@ RUN apt-get update
 RUN apt-get install -y cron gpg python3-pip git
 RUN env DEBIAN_FRONTEND=noninteractive DEBCONF_NONINTERACTIVE_SEEN=true apt-get install -y systemd
 
-RUN pip3 install ansible
+RUN pip3 install "ansible<9.0.0"
 
 COPY ./.github/workflows/test-playbook.sh /test-playbook.sh
 

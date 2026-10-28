@@ -1,4 +1,4 @@
 build
 hosts
-roles/galaxyproject.cvmfs
-roles/geerlingguy.repo-epel
+.coverage
+**/__pycache__

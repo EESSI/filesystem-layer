@@ -2,14 +2,11 @@
 ## This file is managed by Ansible.  ALL CHANGES WILL BE OVERWRITTEN.
 ##
 
-# Contact dual-stack websites over IPv4 first
-dns_v4_first on
-
 # List of local IP addresses (separate IPs and/or CIDR notation) allowed to access your local proxy
 acl local_nodes src {{ cvmfs_localproxy_allowed_clients|join(' ') }}
 
 # Destination domains that are allowed
-acl stratum_ones dstdomain .eessi-hpc.org
+acl stratum_ones dstdomain .eessi.science
 
 # Squid port (default: 3128)
 {% for port in cvmfs_localproxy_http_ports %}
@@ -28,6 +25,9 @@ http_access deny all
 
 # Cache settings
 minimum_expiry_time 0
+collapsed_forwarding on
+url_rewrite_extras XXX
+store_id_extras XXX
 maximum_object_size 1024 MB
 cache_mem 128 MB
 maximum_object_size_in_memory 128 KB
