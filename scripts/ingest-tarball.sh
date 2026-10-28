@@ -273,7 +273,7 @@ function ingest_compat_tarball() {
         old_layer_hidden_suffixed_path="${hidden_compat_layer_path}-${new_suffix}"
         echo_yellow "Moving the existing compat layer from ${compat_layer_path} to ${old_layer_hidden_suffixed_path}..."
         mv ${compat_layer_path} ${old_layer_hidden_suffixed_path}
-        tar -C "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/" -xzf "${tar_file}"
+        tar --no-same-owner --no-same-permissions -C "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/" -xzf "${tar_file}"
         ${cvmfs_server} publish -m "updated compat layer for ${version}, ${os}, ${arch}" "${cvmfs_repo}"
         ec=$?
         if [ $ec -eq 0 ]
