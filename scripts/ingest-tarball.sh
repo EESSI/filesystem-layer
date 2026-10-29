@@ -41,6 +41,14 @@ function error() {
     exit 1
 }
 
+function mock_cvmfs_server() {
+    # Mock cvmfs_server for testing purposes
+    printf "Mock cvmfs_server called with arguments: %s\n" "$*"
+    if [[ "$1" == "list" ]]; then
+        echo "software.eessi.io (stratum0 / local)"
+    fi
+}
+
 function is_repo_owner() {
     if [ -f "/etc/cvmfs/repositories.d/${cvmfs_repo}/server.conf" ]
     then
@@ -238,6 +246,32 @@ function update_lmod_caches() {
     fi
 }
 
+function update_jupyter_kernels() {
+    # Update the Jupyter kernels for the stacks of all supported CPUs
+    script_dir=$(dirname $(realpath $BASH_SOURCE))
+    update_jpt_kernels_script=${script_dir}/update_jupyter_kernels.sh
+    if [ ! -f ${update_jpt_kernels_script} ]
+    then
+        error "cannot find the script for updating the Jupyter kernels; it should be placed in the same directory as the ingestion script!"
+    fi
+    if [ ! -x ${update_jpt_kernels_script} ]
+    then
+        error "the script for updating the Jupyter kernels (${update_jpt_kernels_script}) does not have execute permissions!"
+    fi
+    # if we are not the repo owner, the Jupyter kernels script needs to be run with sudo to prevent "Permission denied" errors
+    is_repo_owner ||  update_jpt_kernels_script="sudo ${update_jpt_kernels_script}"
+
+    ${cvmfs_server} transaction "${cvmfs_repo}"
+    ${update_jpt_kernels_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${version}"
+    ec=$?
+    if [ $ec -eq 0 ]; then
+        ${cvmfs_server} publish -m "update Jupyter kernels after ingesting ${tar_file_basename}" "${cvmfs_repo}"
+    else
+        ${cvmfs_server} abort -f "${cvmfs_repo}"
+        error "Update of Jupyter kernels after ingesting ${tar_file_basename} for ${cvmfs_repo} failed!"
+    fi
+}
+
 function ingest_init_tarball() {
     # Handle the ingestion of tarballs containing init scripts
     cvmfs_ingest_tarball
@@ -253,7 +287,8 @@ function ingest_software_tarball() {
     check_arch
     check_os
     cvmfs_ingest_tarball
-    update_lmod_caches
+    # update_lmod_caches
+    update_jupyter_kernels
 }
 
 function ingest_compat_tarball() {
@@ -297,6 +332,9 @@ display_help() {
   echo "  -h | --help        - display this usage help and exit [default: false]"
   echo "  -r | --repository  - name of the CVMFS repository to which the tarball should be ingested"
   echo "                       [default: software.eessi.io]"
+  echo "  -n | --dry-run     - dry run: cvmfs_server commands will be mocked and not executed [default: false]"
+  echo "                       Commands might still try to write to the CVMFS repository, so either point the script"
+  echo "                       to a test repository with -r, or use overlayfs to allow writing on top of EESSI."
   echo
   echo "The given TARBALL can be an uncompressed tarball (.tar) or a tarball compressed with gzip (.tar.gz) or zstd (.tar.zst)."
 }
@@ -320,6 +358,12 @@ while [[ $# -gt 0 ]]; do
     -r|--repository)
       cvmfs_repo="$2"
       shift 2
+      ;;
+    -n|--dry-run)
+      dry_run=true
+      cvmfs_server="mock_cvmfs_server"
+      echo_yellow "Dry run: cvmfs_server commands will be mocked and not executed."
+      shift
       ;;
     -*)
       echo_red "Unknown option: $1" >&2
@@ -354,7 +398,7 @@ case $# in
 esac
 
 # Check if the CVMFS repository exists
-if ( ! cvmfs_server list | grep -q "${cvmfs_repo}" ); then
+if ( ! ${cvmfs_server} list | grep -q "${cvmfs_repo}" ); then
     error "CVMFS repository ${cvmfs_repo} does not exist!"
 fi
 
