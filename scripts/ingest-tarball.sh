@@ -225,6 +225,8 @@ function update_lmod_caches() {
     fi
     if [ ! -f "${lmod_update_system_cache_script}" ]; then
         echo_yellow "Lmod cache update failed: cannot find the Lmod cache update script (${lmod_update_system_cache_script})."
+    elif [ ! -d "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" ]; then
+        echo_yellow "Stack directory ${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version} does not exist, skipping Lmod cache update step."
     else
         ${cvmfs_server} transaction "${cvmfs_repo}"
         ${update_caches_script} "${CVMFS_ROOT}/${cvmfs_repo}/${basedir}/${version}" "${lmod_update_system_cache_script}"
