@@ -33,7 +33,7 @@ RUN useradd  --uid ${UID} --gid ${GID} \
     chmod 0440 /etc/sudoers.d/${USERNAME}
 
 # Install cvmfsexec
-ARG CVMFSEXEC_VERSION=v4.54
+ARG CVMFSEXEC_VERSION=v4.51
 RUN git clone --branch ${CVMFSEXEC_VERSION} --depth 1 https://github.com/cvmfs/cvmfsexec.git /opt/cvmfsexec && \
     cd /opt/cvmfsexec && \
     ./makedist default && \
