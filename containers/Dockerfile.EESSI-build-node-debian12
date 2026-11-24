@@ -1,5 +1,5 @@
-ARG cvmfsversion=2.14.1
-ARG awscliversion=1.46.2
+ARG cvmfsversion=2.14.2
+ARG awscliversion=1.46.3
 ARG unionfsfuseversion=3.8
 
 
