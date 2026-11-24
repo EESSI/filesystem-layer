@@ -10,35 +10,12 @@ release=$(lsb_release -sr)
 
 os="${distro}${release}"
 
-if [ "$arch" = "riscv64" ]
-then
-    apt-get install -y devscripts libfuse3-dev cmake cpio golang help2man libcap-dev libssl-dev libfuse-dev pkg-config libattr1-dev python3-dev python3-setuptools python3-dev python3-setuptools uuid-dev libz-dev lsb-release libarchive-dev nlohmann-json3-dev
-    cd /tmp
-    wget https://github.com/cvmfs/cvmfs/archive/refs/tags/cvmfs-${cvmfsversion}.tar.gz
-    tar xzf cvmfs-${cvmfsversion}.tar.gz
-    cd cvmfs-cvmfs-${cvmfsversion}
-    mkdir /root/deb
-    sed -i 's/amd64 armhf arm64/amd64 armhf arm64 riscv64/' packaging/debian/cvmfs/control*
-    # debian13 provides libfuse3-4, see https://github.com/cvmfs/cvmfs/pull/3847
-    [ $os = "debian13" ] && sed -i 's/libfuse3-3 (>= 3.3.0)/libfuse3-3 (>= 3.3.0) | libfuse3-4/g' packaging/debian/cvmfs/control*
-    # valgrind is not available (yet) for RISC-V
-    sed -i 's/, valgrind//' packaging/debian/cvmfs/control*
-    # QEMU shows the host CPU in /proc/cpuinfo, so we need to tweak the CPU detection for some packages and use uname -m instead
-    sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/libcrypto/src/configureHook.sh
-    sed -i "s/rv64/riscv64/" externals/libcrypto/src/configureHook.sh
-    sed -i "s/^ISA=.*/ISA=\$(uname -m)/" externals/protobuf/src/configureHook.sh
-    sed -i "s/rv64/riscv64/" externals/protobuf/src/configureHook.sh
-
-    cd ci/cvmfs
-    ./deb.sh /tmp/cvmfs-cvmfs-${cvmfsversion} /root/deb
-else
-    mkdir -p /root/deb
-    cd /root/deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}+${os}_${arch}.deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}+${os}_${arch}.deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-libs_${cvmfsversion}+${os}_${arch}.deb
-    wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-shrinkwrap_${cvmfsversion}+${os}_${arch}.deb
-fi
+mkdir -p /root/deb
+cd /root/deb
+wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs_${cvmfsversion}+${os}_${arch}.deb
+wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-fuse3_${cvmfsversion}+${os}_${arch}.deb
+wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-libs_${cvmfsversion}+${os}_${arch}.deb
+wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-${cvmfsversion}/cvmfs-shrinkwrap_${cvmfsversion}+${os}_${arch}.deb
 
 cd /root/deb
 wget https://ecsft.cern.ch/dist/cvmfs/cvmfs-config/cvmfs-config-default_latest_all.deb
